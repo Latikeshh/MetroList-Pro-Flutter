@@ -1,8 +1,3 @@
-/**
- * Metrolist Project (C) 2026
- * Licensed under GPL-3.0 | See git history for contributors
- */
-
 package com.metrolist.music.ui.screens.settings
 
 import androidx.compose.animation.core.animateFloatAsState
@@ -472,6 +467,50 @@ fun StorageSettings(
                         },
                     ),
                 ),
+        )
+
+        val (exportFormat, onExportFormatChange) = com.metrolist.music.utils.rememberEnumPreference(
+            key = com.metrolist.music.constants.ExportFormatKey,
+            defaultValue = com.metrolist.music.constants.ExportFormat.M4A
+        )
+        var showExportFormatDialog by remember { mutableStateOf(false) }
+
+        if (showExportFormatDialog) {
+            com.metrolist.music.ui.component.EnumDialog(
+                onDismiss = { showExportFormatDialog = false },
+                onSelect = {
+                    onExportFormatChange(it)
+                    showExportFormatDialog = false
+                },
+                title = stringResource(R.string.export_format),
+                current = exportFormat,
+                values = com.metrolist.music.constants.ExportFormat.entries,
+                valueText = { format ->
+                    when (format) {
+                        com.metrolist.music.constants.ExportFormat.M4A -> stringResource(R.string.export_format_m4a)
+                        com.metrolist.music.constants.ExportFormat.MP3 -> stringResource(R.string.export_format_mp3)
+                    }
+                },
+            )
+        }
+
+        Material3SettingsGroup(
+            title = stringResource(R.string.export_format),
+            items = listOf(
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.download),
+                    title = { Text(stringResource(R.string.export_format)) },
+                    description = {
+                        Text(
+                            when (exportFormat) {
+                                com.metrolist.music.constants.ExportFormat.M4A -> stringResource(R.string.export_format_m4a)
+                                com.metrolist.music.constants.ExportFormat.MP3 -> stringResource(R.string.export_format_mp3)
+                            }
+                        )
+                    },
+                    onClick = { showExportFormatDialog = true }
+                )
+            )
         )
     }
 

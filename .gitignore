@@ -116,3 +116,13 @@ app/src/main/cpp/coverart/
 .cortexkit
 .mcp.json
 *.har
+
+# Temporary audit & instruction markdown files
+AUTOMATED_INAPP_UPDATER_AUDIT.md
+COUNTRY_MUSIC_DISCOVERY_FEASIBILITY.md
+KEYSTORE_INSTRUCTIONS.md
+PULL_REQUEST_DESCRIPTION.md
+development_guide.md
+*_AUDIT.md
+*_FEASIBILITY.md
+*_INSTRUCTIONS.md

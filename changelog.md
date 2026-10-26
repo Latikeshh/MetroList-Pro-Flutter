@@ -1,3 +1,9 @@
+---v2026.10.24.1
+# Metrolist Pro 2026.10.24.1 Hotfix Release
+- Updated in-app automated release updater
+- Direct APK download and repository release navigation enabled
+- General stability improvements
+
 ---v2026.10.24
 # Metrolist Pro 2026.10.24 Release
 - Renamed application to Metrolist Pro

@@ -154,9 +154,20 @@ object LatikeshExporter {
                 )
 
                 val playbackData = playbackResult.getOrThrow()
+                val exportFormatPref = appContext.dataStore.data.first()[com.metrolist.music.constants.ExportFormatKey]
+                val exportFormat = exportFormatPref.toEnum(com.metrolist.music.constants.ExportFormat.M4A)
+
                 val mimeType = playbackData.format.mimeType.orEmpty().ifBlank { "audio/mpeg" }
-                val isMp3 = mimeType.contains("mpeg") || mimeType.contains("mp3")
-                val extension = if (isMp3) ".mp3" else if (mimeType.contains("mp4") || mimeType.contains("m4a")) ".m4a" else ".mp3"
+                val isServerMp3 = mimeType.contains("mpeg") || mimeType.contains("mp3")
+                val extension = if (exportFormat == com.metrolist.music.constants.ExportFormat.MP3) {
+                    ".mp3"
+                } else if (isServerMp3) {
+                    ".mp3"
+                } else if (mimeType.contains("mp4") || mimeType.contains("m4a")) {
+                    ".m4a"
+                } else {
+                    ".mp3"
+                }
 
                 val sanitizedTitle = mediaMetadata.title.replace(Regex("[\\\\/:*?\"<>|]"), "_")
                 val primaryArtist = mediaMetadata.artists.firstOrNull()?.name ?: ""
@@ -325,7 +336,11 @@ object LatikeshExporter {
                     "$sanitizedTitle [$startFormatted to $endFormatted]"
                 }
 
-                val fileName = "$baseFileName.m4a"
+                val exportFormatPref = appContext.dataStore.data.first()[com.metrolist.music.constants.ExportFormatKey]
+                val exportFormat = exportFormatPref.toEnum(com.metrolist.music.constants.ExportFormat.M4A)
+                val targetExtension = if (exportFormat == com.metrolist.music.constants.ExportFormat.MP3) ".mp3" else ".m4a"
+
+                val fileName = "$baseFileName$targetExtension"
 
                 // Check if file already exists in public storage
                 if (isAudioFileAlreadyExported(appContext, fileName)) {

@@ -156,6 +156,12 @@ val CrossfadeGaplessKey = booleanPreferencesKey("crossfadeGapless")
 val MaxImageCacheSizeKey = intPreferencesKey("maxImageCacheSize")
 val MaxSongCacheSizeKey = intPreferencesKey("maxSongCacheSize")
 val EnableSongCacheKey = booleanPreferencesKey("enableSongCache")
+val ExportFormatKey = stringPreferencesKey("exportFormat")
+
+enum class ExportFormat {
+    M4A,
+    MP3,
+}
 
 val PauseListenHistoryKey = booleanPreferencesKey("pauseListenHistory")
 val PauseSearchHistoryKey = booleanPreferencesKey("pauseSearchHistory")
