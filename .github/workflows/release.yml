@@ -277,16 +277,30 @@ jobs:
         with:
           path: downloaded_artifacts/
 
-      - name: Organize APKs for release
+      - name: Organize and validate all platform assets
+        shell: bash
         run: |
-          echo "Organizing APK files..."
+          set -euo pipefail
           mkdir -p release_files
+          find downloaded_artifacts -type f \( -name "*.apk" -o -name "*.zip" \) -exec cp {} release_files/ \;
 
-          find downloaded_artifacts -name "*.apk" -exec cp {} release_files/ \;
+          echo "Release assets:"
+          ls -lah release_files/
 
-          echo "APKs ready for release:"
-          ls -la release_files/
-
+          required_assets=(
+            "Metrolist-Pro.apk"
+            "Metrolist-Pro-with-Google-Cast.apk"
+            "Metrolist-Pro-izzy.apk"
+            "Metrolist-Pro-Windows-x64.zip"
+            "Metrolist-Pro-iOS.zip"
+            "Metrolist-Pro-macOS.zip"
+          )
+          for asset in "${required_assets[@]}"; do
+            if [[ ! -s "release_files/$asset" ]]; then
+              echo "::error::Required release asset missing or empty: $asset"
+              exit 1
+            fi
+          done
       - name: Parse release notes from changelog
         run: |
           VERSION="${{ needs.check-version.outputs.new_version }}"
@@ -324,7 +338,7 @@ jobs:
             --title "${{ needs.check-version.outputs.new_version }}" \
             --notes-file attributed_release_notes.md \
             --latest \
-            release_files/*.apk
+            release_files/*.apk release_files/*.zip
 
           echo "Release created successfully!"
 
