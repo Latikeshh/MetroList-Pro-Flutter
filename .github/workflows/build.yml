@@ -63,9 +63,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Visual Studio C++ Environment
-        uses: ilammy/msvc-dev-cmd@v1
-
       - name: Set up Flutter SDK
         uses: subosito/flutter-action@v2
         with:
@@ -76,22 +73,51 @@ jobs:
       - name: Enable Windows Desktop Target
         run: flutter config --enable-windows-desktop
 
-      - name: Clean Flutter Caches
+      - name: Clean Flutter project
         run: flutter clean
 
       - name: Get Flutter Dependencies
         run: flutter pub get
 
+      # Current windows-latest includes Visual Studio 2026. Avoid hardcoding a
+      # Visual Studio 2019/2022 generator. Remove stale CMake state and let
+      # Flutter/CMake select the installed generator automatically.
+      - name: Remove stale Windows CMake build state
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force build\windows -ErrorAction SilentlyContinue
+          Remove-Item -Recurse -Force windows\flutter\ephemeral -ErrorAction SilentlyContinue
+          Remove-Item Env:CMAKE_GENERATOR -ErrorAction SilentlyContinue
+          Remove-Item Env:CMAKE_GENERATOR_PLATFORM -ErrorAction SilentlyContinue
+          Remove-Item Env:FLUTTER_CMAKE_GENERATOR -ErrorAction SilentlyContinue
+
+      - name: Verify Visual Studio C++ toolchain
+        shell: pwsh
+        run: |
+          flutter doctor -v
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (Test-Path $vswhere) {
+            & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          }
+
       - name: Build Windows Executable
-        env:
-          FLUTTER_CMAKE_GENERATOR: "Visual Studio 17 2022"
-          CMAKE_GENERATOR: "Visual Studio 17 2022"
-          CMAKE_GENERATOR_PLATFORM: "x64"
-        run: flutter build windows --release
+        shell: pwsh
+        run: flutter build windows --release -v
+
+      - name: Verify Windows Release Output
+        shell: pwsh
+        run: |
+          $releaseDir = "build\windows\x64\runner\Release"
+          if (!(Test-Path "$releaseDir\metrolist_pro.exe")) {
+            Write-Error "Expected executable not found at $releaseDir\metrolist_pro.exe"
+            Get-ChildItem -Recurse build\windows | Select-Object -First 100 FullName
+            exit 1
+          }
 
       - name: Compress Windows Build into ZIP
+        shell: pwsh
         run: |
-          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "Metrolist-Pro-Windows-x64.zip"
+          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "Metrolist-Pro-Windows-x64.zip" -Force
 
       - name: Upload Windows ZIP Artifact
         uses: actions/upload-artifact@v4
@@ -148,7 +174,7 @@ jobs:
           channel: "stable"
           cache: true
 
-      - name: Enable macOS Target
+      - name: Enable macOS Desktop Target
         run: flutter config --enable-macos-desktop
 
       - name: Get Flutter Dependencies
@@ -234,7 +260,7 @@ jobs:
               echo
               echo "## Changes since previous build"
               gh api "repos/$GITHUB_REPOSITORY/compare/$PREVIOUS_NIGHTLY_SHA...$GITHUB_SHA" \
-                --jq '.commits[] | "* \(.commit.message | split("\n")[0]) (\(.sha[0:7]))"'
+                --jq '.commits[] | "* \\(.commit.message | split("\\n")[0]) (\\(.sha[0:7]))"'
             fi
           } > release-notes.md
 
