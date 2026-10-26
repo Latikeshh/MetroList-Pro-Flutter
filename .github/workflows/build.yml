@@ -1,4 +1,4 @@
-name: Build Metrolist Pro (Android & Windows)
+name: Build & Release Metrolist Pro (Android, Windows, iOS, macOS)
 
 on:
   workflow_dispatch:
@@ -17,9 +17,9 @@ concurrency:
 
 jobs:
   build_android:
-    name: Build Android APK
+    name: Build Android App (APK Zip)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - uses: actions/checkout@v4
@@ -43,19 +43,28 @@ jobs:
       - name: Build Android Release APK
         run: flutter build apk --release
 
-      - name: Upload Android APK
+      - name: Package Android Build into ZIP
+        run: |
+          mkdir -p android_out
+          cp build/app/outputs/flutter-apk/app-release.apk android_out/Metrolist-Pro-Android.apk
+          cd android_out && zip -r ../Metrolist-Pro-Android.zip Metrolist-Pro-Android.apk
+
+      - name: Upload Android ZIP Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Metrolist-Pro-Android-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: Metrolist-Pro-Android
+          path: Metrolist-Pro-Android.zip
 
   build_windows:
-    name: Build Windows Desktop App
+    name: Build Windows Desktop App (ZIP)
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Visual Studio C++ Environment
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Set up Flutter SDK
         uses: subosito/flutter-action@v2
@@ -73,12 +82,163 @@ jobs:
       - name: Build Windows Executable
         run: flutter build windows --release
 
-      - name: Compress Windows Release Build
+      - name: Compress Windows Build into ZIP
         run: |
           Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "Metrolist-Pro-Windows-x64.zip"
 
-      - name: Upload Windows Desktop Zip
+      - name: Upload Windows ZIP Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Metrolist-Pro-Windows-x64
           path: Metrolist-Pro-Windows-x64.zip
+
+  build_ios:
+    name: Build iOS App (ZIP)
+    runs-on: macos-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: "stable"
+          cache: true
+
+      - name: Enable iOS Target
+        run: flutter config --enable-ios
+
+      - name: Get Flutter Dependencies
+        run: flutter pub get
+
+      - name: Build iOS App (Unsigned)
+        run: flutter build ios --release --no-codesign
+
+      - name: Compress iOS App into ZIP
+        run: |
+          cd build/ios/iphoneos && zip -r ../../../Metrolist-Pro-iOS.zip Runner.app
+
+      - name: Upload iOS ZIP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Metrolist-Pro-iOS
+          path: Metrolist-Pro-iOS.zip
+
+  build_macos:
+    name: Build macOS Desktop App (ZIP)
+    runs-on: macos-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: "stable"
+          cache: true
+
+      - name: Enable macOS Target
+        run: flutter config --enable-macos-desktop
+
+      - name: Get Flutter Dependencies
+        run: flutter pub get
+
+      - name: Build macOS Executable
+        run: flutter build macos --release
+
+      - name: Compress macOS Build into ZIP
+        run: |
+          cd build/macos/Build/Products/Release && zip -r ../../../../../Metrolist-Pro-macOS.zip metrolist_pro.app
+
+      - name: Upload macOS ZIP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Metrolist-Pro-macOS
+          path: Metrolist-Pro-macOS.zip
+
+  publish_release:
+    name: Publish GitHub Nightly Release
+    if: always() && (needs.build_android.result == 'success' || needs.build_windows.result == 'success' || needs.build_ios.result == 'success' || needs.build_macos.result == 'success')
+    needs: [build_android, build_windows, build_ios, build_macos]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Android Artifact
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: Metrolist-Pro-Android
+          path: release_files
+
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: Metrolist-Pro-Windows-x64
+          path: release_files
+
+      - name: Download iOS Artifact
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: Metrolist-Pro-iOS
+          path: release_files
+
+      - name: Download macOS Artifact
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: Metrolist-Pro-macOS
+          path: release_files
+
+      - name: Publish GitHub Nightly Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Release Files Ready:"
+          ls -la release_files/
+
+          ATTACHMENTS=$(find release_files -name "*.zip" -o -name "*.apk")
+          if [ -z "$ATTACHMENTS" ]; then
+            echo "No build artifacts found to release."
+            exit 1
+          fi
+
+          PREVIOUS_NIGHTLY_SHA=$(gh release view nightly --json targetCommitish --jq .targetCommitish 2>/dev/null || true)
+          {
+            echo "Automated cross-platform build from main at commit $GITHUB_SHA."
+            echo ""
+            echo "### Downloads for All Platforms"
+            echo "* **Android:** Metrolist-Pro-Android.zip"
+            echo "* **Windows:** Metrolist-Pro-Windows-x64.zip"
+            echo "* **iOS:** Metrolist-Pro-iOS.zip"
+            echo "* **macOS:** Metrolist-Pro-macOS.zip"
+            if [ -n "$PREVIOUS_NIGHTLY_SHA" ] && [ "$PREVIOUS_NIGHTLY_SHA" != "$GITHUB_SHA" ]; then
+              echo
+              echo "## Changes since previous build"
+              gh api "repos/$GITHUB_REPOSITORY/compare/$PREVIOUS_NIGHTLY_SHA...$GITHUB_SHA" \
+                --jq '.commits[] | "* \(.commit.message | split("\n")[0]) (\(.sha[0:7]))"'
+            fi
+          } > release-notes.md
+
+          if gh release view nightly > /dev/null 2>&1; then
+            gh release delete nightly --yes --cleanup-tag
+          fi
+
+          gh release create nightly \
+            release_files/* \
+            --target "$GITHUB_SHA" \
+            --title "Metrolist Pro Nightly Release" \
+            --notes-file release-notes.md \
+            --prerelease \
+            --latest=false
