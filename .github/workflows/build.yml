@@ -57,11 +57,14 @@ jobs:
 
   build_windows:
     name: Build Windows Desktop App (ZIP)
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 25
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Visual Studio C++ Environment
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Set up Flutter SDK
         uses: subosito/flutter-action@v2
@@ -79,9 +82,8 @@ jobs:
       - name: Get Flutter Dependencies
         run: flutter pub get
 
-      # Current windows-latest includes Visual Studio 2026. Avoid hardcoding a
-      # Visual Studio 2019/2022 generator. Remove stale CMake state and let
-      # Flutter/CMake select the installed generator automatically.
+      # Keep Flutter 3.24.5 on the Windows Server 2022 image with Visual Studio 2022.
+      # Clear generated CMake state so the build cannot reuse a different generator.
       - name: Remove stale Windows CMake build state
         shell: pwsh
         run: |
@@ -260,7 +262,7 @@ jobs:
               echo
               echo "## Changes since previous build"
               gh api "repos/$GITHUB_REPOSITORY/compare/$PREVIOUS_NIGHTLY_SHA...$GITHUB_SHA" \
-                --jq '.commits[] | "* \\(.commit.message | split("\\n")[0]) (\\(.sha[0:7]))"'
+                --jq '.commits[] | "* \(.commit.message | split("\n")[0]) (\(.sha[0:7]))"'
             fi
           } > release-notes.md
 
