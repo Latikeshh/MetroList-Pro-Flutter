@@ -32,7 +32,7 @@ class _DesktopPlayerBarState extends State<DesktopPlayerBar> {
       context: context,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: SizedBox(
+        child: Container(
           width: 420,
           padding: const EdgeInsets.all(16),
           child: SingleChildScrollView(
