@@ -198,7 +198,7 @@ jobs:
           path: Metrolist-Pro-macOS.zip
 
   build_web:
-    name: Build Web App & Deploy GitHub Pages
+    name: Build & Deploy Live Web App (GitHub Pages)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -220,17 +220,7 @@ jobs:
       - name: Build Web App
         run: flutter build web --release --base-href "/MetroList-Pro-Flutter/"
 
-      - name: Package Web Build into ZIP
-        run: |
-          cd build/web && zip -r ../../Metrolist-Pro-Web.zip *
-
-      - name: Upload Web ZIP Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Metrolist-Pro-Web
-          path: Metrolist-Pro-Web.zip
-
-      - name: Deploy to GitHub Pages
+      - name: Deploy Live Web App to GitHub Pages
         if: github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -278,13 +268,6 @@ jobs:
           name: Metrolist-Pro-macOS
           path: release_files
 
-      - name: Download Web Artifact
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: Metrolist-Pro-Web
-          path: release_files
-
       - name: Publish GitHub Nightly Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -302,13 +285,14 @@ jobs:
           {
             echo "Automated cross-platform build from main at commit $GITHUB_SHA."
             echo ""
-            echo "### Downloads for All Platforms"
-            echo "* **Live Web App:** https://latikeshh.github.io/MetroList-Pro-Flutter/"
+            echo "### 🌐 Live Web Version"
+            echo "Play instantly in your browser: **https://latikeshh.github.io/MetroList-Pro-Flutter/**"
+            echo ""
+            echo "### 📦 Native App Downloads"
             echo "* **Android:** Metrolist-Pro-Android.zip"
             echo "* **Windows:** Metrolist-Pro-Windows-x64.zip"
             echo "* **iOS:** Metrolist-Pro-iOS.zip"
             echo "* **macOS:** Metrolist-Pro-macOS.zip"
-            echo "* **Web Package:** Metrolist-Pro-Web.zip"
             if [ -n "$PREVIOUS_NIGHTLY_SHA" ] && [ "$PREVIOUS_NIGHTLY_SHA" != "$GITHUB_SHA" ]; then
               echo
               echo "## Changes since previous build"

@@ -125,6 +125,12 @@ class _HomeScreenState extends State<HomeScreen> {
   List<YTItem> _searchResults = [];
   bool _isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _performSearch('Top Hits');
+  }
+
   void _performSearch(String query) async {
     if (query.trim().isEmpty) return;
     setState(() {
@@ -171,6 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
               controller: _searchController,
               hintText: 'Search songs, artists, albums...',
               leading: const Icon(Icons.search),
+              onChanged: _performSearch,
               onSubmitted: _performSearch,
               trailing: [
                 if (_searchController.text.isNotEmpty)
