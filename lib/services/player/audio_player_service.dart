@@ -3,6 +3,7 @@ library;
 import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
 import '../innertube/models/yt_item.dart';
+import '../storage/local_database.dart';
 import 'audio_source_resolver.dart';
 
 class PositionData {
@@ -111,6 +112,9 @@ class AudioPlayerService {
 
       _currentSong = song;
       _songSubject.add(song);
+
+      // Record song in local history database
+      LocalDatabaseService().addToHistory(song);
 
       final resolution = await _resolver.resolveAudioStream(song);
       if (resolution != null && resolution.streamUrl.isNotEmpty) {
