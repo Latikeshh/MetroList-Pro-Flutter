@@ -7,6 +7,7 @@ import 'services/innertube/models/yt_item.dart';
 import 'services/player/audio_player_service.dart';
 import 'ui/player/mini_player.dart';
 import 'ui/player/expanded_player.dart';
+import 'ui/player/desktop_player_bar.dart';
 import 'ui/screens/explore/explore_screen.dart';
 import 'ui/screens/library/library_screen.dart';
 import 'ui/component/latikesh_update_dialog.dart';
@@ -66,6 +67,78 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktopWidth = MediaQuery.of(context).size.width >= 720;
+
+    if (isDesktopWidth) {
+      return Scaffold(
+        body: Row(
+          children: [
+            NavigationRail(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              labelType: NavigationRailLabelType.all,
+              leading: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.graphic_eq_rounded,
+                      size: 32,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Metrolist',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              destinations: const [
+                NavigationRailDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home),
+                  label: Text('Home'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.explore_outlined),
+                  selectedIcon: Icon(Icons.explore),
+                  label: Text('Explore'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.library_music_outlined),
+                  selectedIcon: Icon(Icons.library_music),
+                  label: Text('Library'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.settings_outlined),
+                  selectedIcon: Icon(Icons.settings),
+                  label: Text('Settings'),
+                ),
+              ],
+            ),
+            const VerticalDivider(thickness: 1, width: 1),
+            Expanded(
+              child: IndexedStack(
+                index: _currentIndex,
+                children: _screens,
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: DesktopPlayerBar(
+          onExpandPlayer: _openExpandedPlayer,
+        ),
+      );
+    }
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -217,6 +290,102 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
+                ),
+              )
+            else if (MediaQuery.of(context).size.width >= 720)
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 220,
+                    childAspectRatio: 0.78,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: _searchResults.length,
+                  itemBuilder: (context, index) {
+                    final item = _searchResults[index];
+                    return Card(
+                      clipBehavior: Clip.antiAlias,
+                      color: Theme.of(context).colorScheme.surfaceContainer,
+                      elevation: 1,
+                      child: InkWell(
+                        onTap: () {
+                          if (item is SongItem) {
+                            _playSongItem(item);
+                          }
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: item.thumbnailUrl != null
+                                        ? Image.network(
+                                            item.thumbnailUrl!,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => Container(
+                                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                              child: const Icon(Icons.music_note, size: 48),
+                                            ),
+                                          )
+                                        : Container(
+                                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                            child: const Icon(Icons.music_note, size: 48),
+                                          ),
+                                  ),
+                                  if (item is SongItem)
+                                    Positioned(
+                                      right: 8,
+                                      bottom: 8,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Theme.of(context).colorScheme.primary,
+                                        ),
+                                        child: IconButton(
+                                          icon: const Icon(Icons.play_arrow_rounded),
+                                          color: Theme.of(context).colorScheme.onPrimary,
+                                          onPressed: () => _playSongItem(item),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    item is SongItem
+                                        ? (item.artists.isNotEmpty ? item.artists.join(', ') : 'Song')
+                                        : (item is ArtistItem ? (item.subscribers ?? 'Artist') : 'Media'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               )
             else

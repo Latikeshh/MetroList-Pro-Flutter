@@ -39,9 +39,11 @@ class AudioSourceResolver {
     'https://piped-api.garudalinux.org',
   ];
 
-  Future<AudioSourceResolutionResult?> resolveAudioStream(SongItem song) async {
+  Future<List<String>> resolveAudioStreamUrls(SongItem song) async {
     final videoId = song.id.trim();
-    if (videoId.isEmpty || videoId.startsWith('local:')) return null;
+    if (videoId.isEmpty || videoId.startsWith('local:')) return const [];
+
+    final List<String> candidateUrls = [];
 
     // Try Direct YouTube InnerTube /player API endpoint (ANDROID_MUSIC context)
     try {
@@ -82,16 +84,11 @@ class AudioSourceResolver {
 
             if (audioFormats.isNotEmpty) {
               audioFormats.sort((a, b) => _toInt(b['bitrate']).compareTo(_toInt(a['bitrate'])));
-              final best = audioFormats.first;
-              final url = best['url'] as String;
-              final mime = best['mimeType']?.toString().toLowerCase() ?? '';
-              final format = mime.contains('mp4') || mime.contains('m4a') ? 'm4a' : 'webm';
-
-              return AudioSourceResolutionResult(
-                streamUrl: url,
-                format: format,
-                bitrate: _toInt(best['bitrate']),
-              );
+              for (final f in audioFormats) {
+                if (f['url'] is String) {
+                  candidateUrls.add(f['url'] as String);
+                }
+              }
             }
           }
         }
@@ -118,24 +115,28 @@ class AudioSourceResolver {
         if (candidates.isEmpty) continue;
 
         candidates.sort((a, b) => _toInt(b['bitrate']).compareTo(_toInt(a['bitrate'])));
-        final best = candidates.first;
-        final url = best['url'] as String;
-        final mime = best['mimeType']?.toString().toLowerCase() ?? '';
-        final format = mime.contains('mp4') || mime.contains('m4a')
-            ? 'm4a'
-            : mime.contains('webm')
-                ? 'webm'
-                : 'unknown';
-        return AudioSourceResolutionResult(
-          streamUrl: url,
-          format: format,
-          bitrate: _toInt(best['bitrate']),
-        );
+        for (final c in candidates) {
+          final url = c['url'] as String;
+          if (!candidateUrls.contains(url)) {
+            candidateUrls.add(url);
+          }
+        }
+        if (candidateUrls.isNotEmpty) break;
       } catch (error) {
         debugPrint('Audio source resolution failed for $instance: $error');
       }
     }
-    return null;
+
+    return candidateUrls;
+  }
+
+  Future<AudioSourceResolutionResult?> resolveAudioStream(SongItem song) async {
+    final urls = await resolveAudioStreamUrls(song);
+    if (urls.isEmpty) return null;
+    return AudioSourceResolutionResult(
+      streamUrl: urls.first,
+      format: urls.first.contains('m4a') ? 'm4a' : 'webm',
+    );
   }
 
   int _toInt(Object? value) {

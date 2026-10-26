@@ -175,23 +175,45 @@ class AudioPlayerService {
 
     try {
       await _database.addToHistory(song);
-      final String sourceUrl;
+
+      List<String> candidateUrls = [];
       if (song.id.startsWith('local:')) {
         final path = song.id.substring('local:'.length);
         if (path.isEmpty) throw StateError('Local audio file path is empty.');
-        sourceUrl = Uri.file(path).toString();
+        candidateUrls.add(path);
       } else {
-        final resolution = await _resolver.resolveAudioStream(song);
-        if (resolution == null || resolution.streamUrl.isEmpty) {
-          throw StateError('No playable audio source found for "${song.title}".');
-        }
-        sourceUrl = resolution.streamUrl;
+        candidateUrls = await _resolver.resolveAudioStreamUrls(song);
       }
 
-      _currentStreamUrl = sourceUrl;
-      await _player.setUrl(sourceUrl);
-      await _player.play();
-      return true;
+      if (candidateUrls.isEmpty) {
+        throw StateError('No playable audio source found for "${song.title}".');
+      }
+
+      Object? lastError;
+      for (final url in candidateUrls) {
+        try {
+          _currentStreamUrl = url;
+          if (song.id.startsWith('local:')) {
+            await _player.setFilePath(url);
+          } else {
+            await _player.setUrl(
+              url,
+              headers: const {
+                'User-Agent':
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Referer': 'https://music.youtube.com/',
+              },
+            );
+          }
+          await _player.play();
+          return true;
+        } catch (err) {
+          lastError = err;
+          debugPrint('Playback stream URL failed for "${song.title}": $err');
+        }
+      }
+
+      throw lastError ?? StateError('All playback stream sources failed.');
     } catch (error) {
       _currentStreamUrl = null;
       _playbackErrorSubject.add(error.toString());
