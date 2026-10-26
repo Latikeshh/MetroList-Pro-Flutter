@@ -35,6 +35,8 @@ class AudioSourceResolver {
     'https://pipedapi.kavin.rocks',
     'https://api.piped.privacydev.net',
     'https://pipedapi.lunar.icu',
+    'https://pipedapi.palvelu.org',
+    'https://piped-api.garudalinux.org',
   ];
 
   Future<AudioSourceResolutionResult?> resolveAudioStream(SongItem song) async {

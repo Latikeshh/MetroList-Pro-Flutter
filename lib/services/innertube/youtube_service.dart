@@ -157,8 +157,31 @@ class YouTubeService {
       final contents = data['contents']?['tabbedSearchResultsRenderer']?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
       if (contents is List) {
         for (var section in contents) {
+          // Top Result Card
+          final cardShelf = section['musicCardShelfRenderer'];
+          if (cardShelf is Map) {
+            final cardTitleRuns = cardShelf['title']?['runs'];
+            final cardTitle = (cardTitleRuns is List && cardTitleRuns.isNotEmpty)
+                ? cardTitleRuns[0]['text'] ?? ''
+                : '';
+            final cardVideoId = cardShelf['buttons']?[0]?['buttonRenderer']?['command']?['watchEndpoint']?['videoId'] ??
+                cardShelf['onTap']?['watchEndpoint']?['videoId'];
+            final thumbnails = cardShelf['thumbnail']?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'];
+            final cardThumb = (thumbnails is List && thumbnails.isNotEmpty) ? thumbnails.last['url'] : null;
+
+            if (cardVideoId is String && cardVideoId.isNotEmpty) {
+              items.add(SongItem(
+                id: cardVideoId,
+                title: cardTitle,
+                thumbnailUrl: cardThumb,
+                artists: const [],
+              ));
+            }
+          }
+
+          // Shelves (Songs, Videos, Artists, Albums)
           final shelf = section['musicShelfRenderer'];
-          if (shelf != null && shelf['contents'] is List) {
+          if (shelf is Map && shelf['contents'] is List) {
             for (var item in shelf['contents']) {
               final renderer = item['musicResponsiveListItemRenderer'];
               if (renderer != null) {
@@ -175,9 +198,9 @@ class YouTubeService {
 
   YTItem? _parseListItemRenderer(dynamic renderer) {
     try {
-      final String? videoId = renderer['playlistItemData']?['videoId'];
-      final String? browseId = renderer['navigationEndpoint']?['browseEndpoint']?['browseId'];
-      final String id = videoId ?? browseId ?? '';
+      final videoId = _extractVideoId(renderer);
+      final browseId = _extractBrowseId(renderer);
+      final id = videoId ?? browseId ?? '';
       if (id.isEmpty) return null;
 
       final runs = renderer['flexColumns']?[0]?['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
@@ -186,12 +209,13 @@ class YouTubeService {
       final thumbnails = renderer['thumbnail']?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'];
       final thumbnailUrl = (thumbnails is List && thumbnails.isNotEmpty) ? thumbnails.last['url'] : null;
 
-      if (videoId != null) {
+      if (videoId != null && videoId.isNotEmpty) {
+        final artists = _extractArtists(renderer);
         return SongItem(
           id: videoId,
           title: title,
           thumbnailUrl: thumbnailUrl,
-          artists: [],
+          artists: artists,
         );
       } else if (browseId != null && browseId.startsWith('UC')) {
         return ArtistItem(
@@ -202,5 +226,81 @@ class YouTubeService {
       }
     } catch (_) {}
     return null;
+  }
+
+  String? _extractVideoId(dynamic renderer) {
+    if (renderer == null || renderer is! Map) return null;
+
+    final direct = renderer['playlistItemData']?['videoId'];
+    if (direct is String && direct.isNotEmpty) return direct;
+
+    final overlayVideoId = renderer['overlay']?['musicItemThumbnailOverlayRenderer']
+        ?['content']?['musicPlayButtonRenderer']?['playNavigationEndpoint']
+        ?['watchEndpoint']?['videoId'];
+    if (overlayVideoId is String && overlayVideoId.isNotEmpty) return overlayVideoId;
+
+    final navVideoId = renderer['navigationEndpoint']?['watchEndpoint']?['videoId'];
+    if (navVideoId is String && navVideoId.isNotEmpty) return navVideoId;
+
+    final flexCols = renderer['flexColumns'];
+    if (flexCols is List) {
+      for (final col in flexCols) {
+        final runs = col['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
+        if (runs is List) {
+          for (final run in runs) {
+            final runVideoId = run['navigationEndpoint']?['watchEndpoint']?['videoId'];
+            if (runVideoId is String && runVideoId.isNotEmpty) return runVideoId;
+          }
+        }
+      }
+    }
+
+    final menuItems = renderer['menu']?['musicMenuRenderer']?['items'];
+    if (menuItems is List) {
+      for (final item in menuItems) {
+        final vId = item['menuNavigationItemRenderer']?['navigationEndpoint']?['watchEndpoint']?['videoId'] ??
+            item['menuServiceItemRenderer']?['serviceEndpoint']?['queueAddEndpoint']?['queueTarget']?['videoId'];
+        if (vId is String && vId.isNotEmpty) return vId;
+      }
+    }
+
+    return null;
+  }
+
+  String? _extractBrowseId(dynamic renderer) {
+    if (renderer == null || renderer is! Map) return null;
+    final direct = renderer['navigationEndpoint']?['browseEndpoint']?['browseId'];
+    if (direct is String && direct.isNotEmpty) return direct;
+
+    final flexCols = renderer['flexColumns'];
+    if (flexCols is List) {
+      for (final col in flexCols) {
+        final runs = col['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
+        if (runs is List) {
+          for (final run in runs) {
+            final bId = run['navigationEndpoint']?['browseEndpoint']?['browseId'];
+            if (bId is String && bId.isNotEmpty) return bId;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  List<String> _extractArtists(dynamic renderer) {
+    final List<String> artists = [];
+    final flexCols = renderer['flexColumns'];
+    if (flexCols is List && flexCols.length > 1) {
+      final runs = flexCols[1]['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
+      if (runs is List) {
+        for (final run in runs) {
+          final text = run['text']?.toString() ?? '';
+          if (text.isNotEmpty && text != ' • ' && text != 'Song' && text != 'Video' && text != 'Artist') {
+            artists.add(text);
+          }
+        }
+      }
+    }
+    return artists;
   }
 }

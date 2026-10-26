@@ -226,6 +226,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemBuilder: (context, index) {
                     final item = _searchResults[index];
                     return ListTile(
+                      onTap: () {
+                        if (item is SongItem) {
+                          _playSongItem(item);
+                        }
+                      },
                       leading: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: item.thumbnailUrl != null
@@ -255,7 +260,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       subtitle: Text(
-                        item is SongItem ? 'Song' : (item is ArtistItem ? 'Artist' : 'Media'),
+                        item is SongItem
+                            ? (item.artists.isNotEmpty ? item.artists.join(', ') : 'Song')
+                            : (item is ArtistItem ? (item.subscribers ?? 'Artist') : 'Media'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
