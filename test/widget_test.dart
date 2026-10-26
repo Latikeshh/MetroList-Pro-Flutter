@@ -5,5 +5,6 @@ void main() {
   testWidgets('Metrolist App smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const MetrolistApp());
     expect(find.text('Metrolist Pro'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 1));
   });
 }

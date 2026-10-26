@@ -7,6 +7,7 @@ import 'services/innertube/models/yt_item.dart';
 import 'services/player/audio_player_service.dart';
 import 'ui/player/mini_player.dart';
 import 'ui/player/expanded_player.dart';
+import 'ui/screens/explore/explore_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -266,22 +267,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class ExploreScreen extends StatelessWidget {
-  const ExploreScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Explore'),
-      ),
-      body: const Center(
-        child: Text('Explore New Releases & Charts'),
       ),
     );
   }

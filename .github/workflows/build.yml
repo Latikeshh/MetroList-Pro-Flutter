@@ -1,4 +1,4 @@
-name: Build & Release Metrolist Pro (Android, Windows, iOS, macOS)
+name: Build & Release Metrolist Pro (Android, Windows, iOS, macOS, Web)
 
 on:
   workflow_dispatch:
@@ -82,8 +82,6 @@ jobs:
       - name: Get Flutter Dependencies
         run: flutter pub get
 
-      # Keep Flutter 3.24.5 on the Windows Server 2022 image with Visual Studio 2022.
-      # Clear generated CMake state so the build cannot reuse a different generator.
       - name: Remove stale Windows CMake build state
         shell: pwsh
         run: |
@@ -104,6 +102,10 @@ jobs:
 
       - name: Build Windows Executable
         shell: pwsh
+        env:
+          FLUTTER_CMAKE_GENERATOR: "Visual Studio 17 2022"
+          CMAKE_GENERATOR: "Visual Studio 17 2022"
+          CMAKE_GENERATOR_PLATFORM: "x64"
         run: flutter build windows --release -v
 
       - name: Verify Windows Release Output
@@ -195,10 +197,50 @@ jobs:
           name: Metrolist-Pro-macOS
           path: Metrolist-Pro-macOS.zip
 
+  build_web:
+    name: Build Web App & Deploy GitHub Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: "stable"
+          cache: true
+
+      - name: Get Flutter Dependencies
+        run: flutter pub get
+
+      - name: Build Web App
+        run: flutter build web --release --base-href "/MetroList-Pro-Flutter/"
+
+      - name: Package Web Build into ZIP
+        run: |
+          cd build/web && zip -r ../../Metrolist-Pro-Web.zip *
+
+      - name: Upload Web ZIP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Metrolist-Pro-Web
+          path: Metrolist-Pro-Web.zip
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+
   publish_release:
     name: Publish GitHub Nightly Release
-    if: always() && (needs.build_android.result == 'success' || needs.build_windows.result == 'success' || needs.build_ios.result == 'success' || needs.build_macos.result == 'success')
-    needs: [build_android, build_windows, build_ios, build_macos]
+    if: always() && (needs.build_android.result == 'success' || needs.build_windows.result == 'success' || needs.build_ios.result == 'success' || needs.build_macos.result == 'success' || needs.build_web.result == 'success')
+    needs: [build_android, build_windows, build_ios, build_macos, build_web]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -236,6 +278,13 @@ jobs:
           name: Metrolist-Pro-macOS
           path: release_files
 
+      - name: Download Web Artifact
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: Metrolist-Pro-Web
+          path: release_files
+
       - name: Publish GitHub Nightly Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -254,10 +303,12 @@ jobs:
             echo "Automated cross-platform build from main at commit $GITHUB_SHA."
             echo ""
             echo "### Downloads for All Platforms"
+            echo "* **Live Web App:** https://latikeshh.github.io/MetroList-Pro-Flutter/"
             echo "* **Android:** Metrolist-Pro-Android.zip"
             echo "* **Windows:** Metrolist-Pro-Windows-x64.zip"
             echo "* **iOS:** Metrolist-Pro-iOS.zip"
             echo "* **macOS:** Metrolist-Pro-macOS.zip"
+            echo "* **Web Package:** Metrolist-Pro-Web.zip"
             if [ -n "$PREVIOUS_NIGHTLY_SHA" ] && [ "$PREVIOUS_NIGHTLY_SHA" != "$GITHUB_SHA" ]; then
               echo
               echo "## Changes since previous build"

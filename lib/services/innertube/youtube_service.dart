@@ -2,6 +2,7 @@ library;
 
 import 'package:dio/dio.dart';
 import 'models/yt_item.dart';
+import 'models/explore_models.dart';
 
 class YouTubeService {
   static final YouTubeService _instance = YouTubeService._internal();
@@ -51,6 +52,75 @@ class YouTubeService {
       // Fallback empty list on error
     }
     return [];
+  }
+
+  /// Fetches the Explore page containing New Releases and Moods & Genres
+  Future<ExplorePageData> getExplorePage() async {
+    try {
+      final body = _buildContext()..['browseId'] = 'FEmusic_explore';
+      final response = await _dio.post('/browse', data: body);
+      if (response.statusCode == 200) {
+        final parsedData = _parseExplorePage(response.data);
+        if (parsedData.moodsAndGenres.isNotEmpty) {
+          return parsedData;
+        }
+      }
+    } catch (_) {}
+
+    // Default fallback moods & genres matching Metrolist Android
+    return const ExplorePageData(
+      newReleaseAlbums: [],
+      moodsAndGenres: [
+        MoodAndGenreItem(title: 'Chill', stripeColor: 0xFF4E65FF, browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(title: 'Commute', stripeColor: 0xFFFF5722, browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(title: 'Energy Boost', stripeColor: 0xFFFFC107, browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(title: 'Focus', stripeColor: 0xFF00BCD4, browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(title: 'Party', stripeColor: 0xFFE91E63, browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(title: 'Romance', stripeColor: 0xFF9C27B0, browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(title: 'Sleep', stripeColor: 0xFF3F51B5, browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(title: 'Workout', stripeColor: 0xFF4CAF50, browseId: 'FEmusic_moods_and_genres_category'),
+      ],
+    );
+  }
+
+  ExplorePageData _parseExplorePage(dynamic data) {
+    final List<AlbumItem> albums = [];
+    final List<MoodAndGenreItem> moods = [];
+
+    try {
+      final contents = data['contents']?['singleColumnBrowseResultsRenderer']?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
+      if (contents is List) {
+        for (var section in contents) {
+          final carousel = section['musicCarouselShelfRenderer'];
+          if (carousel != null) {
+            if (carousel['contents'] is List) {
+              for (var item in carousel['contents']) {
+                final navBtn = item['musicNavigationButtonRenderer'];
+                if (navBtn != null) {
+                  final text = navBtn['buttonText']?['runs']?[0]?['text'];
+                  final color = navBtn['solid']?['leftStripeColor'] ?? 0xFF6750A4;
+                  final browseId = navBtn['clickCommand']?['browseEndpoint']?['browseId'] ?? '';
+                  if (text != null && browseId.isNotEmpty) {
+                    moods.add(
+                      MoodAndGenreItem(
+                        title: text,
+                        stripeColor: color is int ? color : 0xFF6750A4,
+                        browseId: browseId,
+                      ),
+                    );
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    return ExplorePageData(
+      newReleaseAlbums: albums,
+      moodsAndGenres: moods,
+    );
   }
 
   List<YTItem> _parseSearchResults(dynamic data) {

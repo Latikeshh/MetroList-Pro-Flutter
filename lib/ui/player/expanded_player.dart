@@ -2,6 +2,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../../services/player/audio_player_service.dart';
+import 'ab_looper_sheet.dart';
 
 class ExpandedPlayer extends StatelessWidget {
   const ExpandedPlayer({super.key});
@@ -32,6 +33,18 @@ class ExpandedPlayer extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.repeat_one_rounded),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => const AbLooperSheet(),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.more_vert_rounded),
             onPressed: () {},

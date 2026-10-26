@@ -19,10 +19,36 @@ class AudioPlayerService {
   final AudioPlayer _player = AudioPlayer();
   SongItem? _currentSong;
 
-  AudioPlayerService._internal();
+  Duration? _pointA;
+  Duration? _pointB;
+  bool _isAbLoopEnabled = false;
+
+  AudioPlayerService._internal() {
+    _player.positionStream.listen((pos) {
+      if (_isAbLoopEnabled && _pointB != null && pos >= _pointB!) {
+        _player.seek(_pointA ?? Duration.zero);
+      }
+    });
+  }
 
   AudioPlayer get player => _player;
   SongItem? get currentSong => _currentSong;
+
+  Duration? get pointA => _pointA;
+  Duration? get pointB => _pointB;
+  bool get isAbLoopEnabled => _isAbLoopEnabled;
+
+  void setPointA(Duration? pos) {
+    _pointA = pos;
+  }
+
+  void setPointB(Duration? pos) {
+    _pointB = pos;
+  }
+
+  void setAbLoopEnabled(bool enabled) {
+    _isAbLoopEnabled = enabled;
+  }
 
   Stream<bool> get isPlayingStream => _player.playingStream;
 
