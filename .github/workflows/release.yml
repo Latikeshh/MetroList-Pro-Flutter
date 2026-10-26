@@ -1,8 +1,6 @@
-name: Bump to new version
+name: Official Tagged Release
 on:
   push:
-    branches:
-      - "main"
     tags:
       - "v*"
   workflow_dispatch:
