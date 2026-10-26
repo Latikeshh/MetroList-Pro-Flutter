@@ -161,9 +161,108 @@ jobs:
           name: ${{ matrix.variant == 'gms' && 'Metrolist-Pro-with-Google-Cast' || matrix.variant == 'izzy' && 'Metrolist-Pro-izzy' || 'Metrolist-Pro' }}
           path: app/build/outputs/apk/${{ matrix.variant }}/release/out/*.apk
 
-  create-release:
-    needs: [check-version, build]
+  build_windows:
+    needs: check-version
     if: needs.check-version.outputs.version_changed == 'true' || github.event_name == 'workflow_dispatch'
+    name: Build Windows Desktop
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Visual Studio C++ Environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: stable
+          cache: true
+
+      - name: Build Windows release
+        shell: pwsh
+        run: |
+          flutter config --enable-windows-desktop
+          flutter pub get
+          Remove-Item -Recurse -Force build\windows -ErrorAction SilentlyContinue
+          Remove-Item -Recurse -Force windows\flutter\ephemeral -ErrorAction SilentlyContinue
+          Remove-Item Env:CMAKE_GENERATOR -ErrorAction SilentlyContinue
+          Remove-Item Env:CMAKE_GENERATOR_PLATFORM -ErrorAction SilentlyContinue
+          Remove-Item Env:FLUTTER_CMAKE_GENERATOR -ErrorAction SilentlyContinue
+          flutter build windows --release -v
+          $releaseDir = "build\windows\x64\runner\Release"
+          if (!(Test-Path $releaseDir) -or !(Get-ChildItem $releaseDir -Filter "*.exe")) {
+            throw "Windows release output is missing"
+          }
+          Compress-Archive -Path "$releaseDir\*" -DestinationPath "Metrolist-Pro-Windows-x64.zip" -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Metrolist-Pro-Windows-x64
+          path: Metrolist-Pro-Windows-x64.zip
+          if-no-files-found: error
+
+  build_ios:
+    needs: check-version
+    if: needs.check-version.outputs.version_changed == 'true' || github.event_name == 'workflow_dispatch'
+    name: Build iOS Desktop
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: stable
+          cache: true
+
+      - name: Build iOS release (unsigned)
+        run: |
+          flutter config --enable-ios
+          flutter pub get
+          flutter build ios --release --no-codesign
+          cd build/ios/iphoneos
+          zip -r ../../../Metrolist-Pro-iOS.zip Runner.app
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Metrolist-Pro-iOS
+          path: Metrolist-Pro-iOS.zip
+          if-no-files-found: error
+
+  build_macos:
+    needs: check-version
+    if: needs.check-version.outputs.version_changed == 'true' || github.event_name == 'workflow_dispatch'
+    name: Build macOS Desktop
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: stable
+          cache: true
+
+      - name: Build macOS release
+        run: |
+          flutter config --enable-macos-desktop
+          flutter pub get
+          flutter build macos --release
+          cd build/macos/Build/Products/Release
+          zip -r ../../../../../Metrolist-Pro-macOS.zip metrolist_pro.app
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Metrolist-Pro-macOS
+          path: Metrolist-Pro-macOS.zip
+          if-no-files-found: error
+
+  create-release:
+    needs: [check-version, build, build_windows, build_ios, build_macos]
+    if: always() && needs.check-version.outputs.version_changed == 'true' && needs.build.result == 'success' && needs.build_windows.result == 'success' && needs.build_ios.result == 'success' && needs.build_macos.result == 'success'
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -173,7 +272,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download all APKs
+      - name: Download all platform artifacts
         uses: actions/download-artifact@v4
         with:
           path: downloaded_artifacts/
@@ -235,5 +334,6 @@ jobs:
           echo "- **Version**: v${{ needs.check-version.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Version Code**: ${{ needs.check-version.outputs.version_code }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Released by**: @${{ github.triggering_actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **APKs Built**: $(ls release_files/*.apk | wc -l)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Android APKs**: $(find release_files -maxdepth 1 -name '*.apk' | wc -l)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Desktop/mobile platform ZIPs**: $(find release_files -maxdepth 1 -name '*.zip' | wc -l)" >> $GITHUB_STEP_SUMMARY
           echo "- **Release URL**: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.check-version.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
