@@ -8,6 +8,8 @@ import 'services/player/audio_player_service.dart';
 import 'ui/player/mini_player.dart';
 import 'ui/player/expanded_player.dart';
 import 'ui/screens/explore/explore_screen.dart';
+import 'ui/screens/library/library_screen.dart';
+import 'ui/component/latikesh_update_dialog.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -148,9 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _playSongItem(SongItem song) {
-    // Standard audio stream URL or test stream
-    const streamUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-    _playerService.playSong(song, streamUrl);
+    _playerService.playSong(song);
   }
 
   @override
@@ -279,24 +279,55 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class LibraryScreen extends StatelessWidget {
-  const LibraryScreen({super.key});
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Your Library'),
-      ),
-      body: const Center(
-        child: Text('Playlists & Downloads'),
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  String _exportFormat = 'M4A / AAC (Best Quality)';
+
+  void _showFormatDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Audio Export Format'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () {
+              setState(() {
+                _exportFormat = 'M4A / AAC (Best Quality)';
+              });
+              Navigator.pop(context);
+            },
+            child: const Text('M4A / AAC (Original Best Quality)'),
+          ),
+          SimpleDialogOption(
+            onPressed: () {
+              setState(() {
+                _exportFormat = 'MP3 (Maximum Compatibility)';
+              });
+              Navigator.pop(context);
+            },
+            child: const Text('MP3 (Maximum Compatibility)'),
+          ),
+        ],
       ),
     );
   }
-}
 
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+  void _showTestUpdateDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => LatikeshUpdateDialog(
+        newVersion: '2026.10.24.2',
+        changelog: '• Full Cross-Platform Flutter Release for Android, Windows Desktop, iOS, and macOS\n• A-B Section Looper and Audio Clip Export\n• Integrated YouTube Music Discovery & Local Library',
+        onDismiss: () => Navigator.pop(context),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -305,16 +336,23 @@ class SettingsScreen extends StatelessWidget {
         title: const Text('Settings'),
       ),
       body: ListView(
-        children: const [
-          ListTile(
+        children: [
+          const ListTile(
             leading: Icon(Icons.info_outline),
             title: Text('About Metrolist Pro'),
             subtitle: Text('v2026.10.24.1 (Cross-Platform Flutter)'),
           ),
           ListTile(
-            leading: Icon(Icons.download),
-            title: Text('Audio Export Format'),
-            subtitle: Text('M4A / AAC (Best Quality)'),
+            leading: const Icon(Icons.download),
+            title: const Text('Audio Export Format'),
+            subtitle: Text(_exportFormat),
+            onTap: _showFormatDialog,
+          ),
+          ListTile(
+            leading: const Icon(Icons.system_update_rounded),
+            title: const Text('Check for Updates'),
+            subtitle: const Text('Test in-app update prompt'),
+            onTap: _showTestUpdateDialog,
           ),
         ],
       ),

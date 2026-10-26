@@ -2,6 +2,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../../services/player/audio_player_service.dart';
+import '../../services/export/audio_exporter_service.dart';
 
 class AbLooperSheet extends StatefulWidget {
   const AbLooperSheet({super.key});
@@ -219,12 +220,32 @@ class _AbLooperSheetState extends State<AbLooperSheet> {
                         minimumSize: const Size.fromHeight(50),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
-                      onPressed: () {
+                      onPressed: () async {
+                        final song = _playerService.currentSong;
+                        if (song == null) return;
+
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Exported clip [${_formatPreciseTime(pointA)} - ${_formatPreciseTime(pointB)}] to Music/Metrolist'),
-                          ),
+                          const SnackBar(content: Text('Opening file save dialog...')),
                         );
+
+                        final success = await AudioExporterService().exportClip(
+                          title: song.title,
+                          artist: song.artists.isNotEmpty ? song.artists.first : 'Metrolist',
+                          start: pointA,
+                          end: pointB,
+                          streamUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+                          formatPref: 'm4a',
+                        );
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(success
+                                  ? 'Clip exported and saved successfully!'
+                                  : 'Clip export cancelled or failed.'),
+                            ),
+                          );
+                        }
                       },
                     ),
                   ),

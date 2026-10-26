@@ -4,9 +4,14 @@ import 'package:flutter/material.dart';
 import '../../services/player/audio_player_service.dart';
 import 'ab_looper_sheet.dart';
 
-class ExpandedPlayer extends StatelessWidget {
+class ExpandedPlayer extends StatefulWidget {
   const ExpandedPlayer({super.key});
 
+  @override
+  State<ExpandedPlayer> createState() => _ExpandedPlayerState();
+}
+
+class _ExpandedPlayerState extends State<ExpandedPlayer> {
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     final minutes = twoDigits(duration.inMinutes.remainder(60));
@@ -21,6 +26,8 @@ class ExpandedPlayer extends StatelessWidget {
 
     if (song == null) return const SizedBox.shrink();
 
+    final isFav = playerService.isFavorite(song.id);
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -28,7 +35,7 @@ class ExpandedPlayer extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'Playing from Search',
+          'Playing from Metrolist',
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
         centerTitle: true,
@@ -120,8 +127,16 @@ class ExpandedPlayer extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.favorite_border_rounded, size: 28),
-                  onPressed: () {},
+                  icon: Icon(
+                    isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    size: 28,
+                    color: isFav ? Colors.redAccent : null,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      playerService.toggleFavorite(song);
+                    });
+                  },
                 ),
               ],
             ),
@@ -186,13 +201,27 @@ class ExpandedPlayer extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.shuffle_rounded, size: 24),
-                  onPressed: () {},
+                StreamBuilder<bool>(
+                  stream: playerService.isShuffleStream,
+                  builder: (context, snapshot) {
+                    final isShuffle = snapshot.data ?? false;
+                    return IconButton(
+                      icon: Icon(
+                        Icons.shuffle_rounded,
+                        size: 24,
+                        color: isShuffle ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      onPressed: () {
+                        playerService.toggleShuffle();
+                      },
+                    );
+                  },
                 ),
                 IconButton(
                   icon: const Icon(Icons.skip_previous_rounded, size: 36),
-                  onPressed: () {},
+                  onPressed: () {
+                    playerService.skipToPrevious();
+                  },
                 ),
                 StreamBuilder<bool>(
                   stream: playerService.isPlayingStream,
@@ -212,11 +241,23 @@ class ExpandedPlayer extends StatelessWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.skip_next_rounded, size: 36),
-                  onPressed: () {},
+                  onPressed: () {
+                    playerService.skipToNext();
+                  },
                 ),
-                IconButton(
-                  icon: const Icon(Icons.repeat_rounded, size: 24),
-                  onPressed: () {},
+                StreamBuilder<AppRepeatMode>(
+                  stream: playerService.repeatModeStream,
+                  builder: (context, snapshot) {
+                    final mode = snapshot.data ?? AppRepeatMode.off;
+                    final icon = mode == AppRepeatMode.one ? Icons.repeat_one_rounded : Icons.repeat_rounded;
+                    final color = mode != AppRepeatMode.off ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant;
+                    return IconButton(
+                      icon: Icon(icon, size: 24, color: color),
+                      onPressed: () {
+                        playerService.toggleRepeatMode();
+                      },
+                    );
+                  },
                 ),
               ],
             ),
