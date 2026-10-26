@@ -1,10 +1,9 @@
----v2026.10.24.2
-# Metrolist Pro 2026.10.24.2 Release
-- Cross-Platform Flutter release for Android, Windows Desktop, iOS, and macOS
-- Configured MSVC CMake generators and JDK 17 for GitHub multi-platform build pipeline
-- Direct per-platform ZIP download bundles
-
 ---v2026.10.24.1
+# Metrolist Pro 2026.10.24.1 Release
+- Cross-Platform Flutter release for Android, Windows Desktop, iOS, and macOS
+- Added Explore tab with Moods & Genres categories and Top Charts
+- Added A-B Section Looper and Audio Export Format options
+- Configured MSVC CMake generators and JDK 17 for GitHub multi-platform build pipeline
 # Metrolist Pro 2026.10.24.1 Hotfix Release
 - Updated in-app automated release updater
 - Direct APK download and repository release navigation enabled

@@ -3,8 +3,8 @@ on:
   push:
     branches:
       - "main"
-    paths:
-      - "app/build.gradle.kts"
+    tags:
+      - "v*"
   workflow_dispatch:
 
 concurrency:
@@ -13,7 +13,6 @@ concurrency:
 
 jobs:
   check-version:
-    if: "!contains(github.ref, 'refs/tags')"
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
@@ -47,8 +46,8 @@ jobs:
 
           echo "Current version: $NEW_VERSION (code: $VERSION_CODE)"
 
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
-            echo "Manual release requested for version $NEW_VERSION"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] || [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "Release requested for version $NEW_VERSION"
             echo "version_changed=true" >> $GITHUB_OUTPUT
             echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
             echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
@@ -334,7 +333,13 @@ jobs:
             cat release_notes.md
           } > attributed_release_notes.md
 
-          gh release create "v${{ needs.check-version.outputs.new_version }}" \
+          TARGET_TAG="v${{ needs.check-version.outputs.new_version }}"
+          if gh release view "$TARGET_TAG" > /dev/null 2>&1; then
+            echo "Release $TARGET_TAG already exists. Deleting existing release to overwrite..."
+            gh release delete "$TARGET_TAG" --yes --cleanup-tag || true
+          fi
+
+          gh release create "$TARGET_TAG" \
             --title "${{ needs.check-version.outputs.new_version }}" \
             --notes-file attributed_release_notes.md \
             --latest \
