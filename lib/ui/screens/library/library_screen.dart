@@ -42,7 +42,7 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
           for (var file in result.files) {
             if (file.path != null) {
               final song = SongItem(
-                id: file.path!,
+                id: 'local:${file.path!}',
                 title: file.name.replaceAll(RegExp(r'\.[^.]+$'), ''),
                 artists: const ['Local File'],
               );
@@ -95,17 +95,51 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Tab 1: Favorites
-          const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.favorite_rounded, size: 64, color: Colors.redAccent),
-                SizedBox(height: 16),
-                Text('Your Favorite Songs will appear here'),
-              ],
-            ),
+          // Tab 1: Persisted Favorites
+          StreamBuilder<List<SongItem>>(
+            stream: _playerService.favoriteSongsStream,
+            builder: (context, snapshot) {
+              final songs = snapshot.data ?? const <SongItem>[];
+              if (songs.isEmpty) {
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.favorite_rounded, size: 64, color: Colors.redAccent),
+                      SizedBox(height: 16),
+                      Text('Your favorite songs will appear here'),
+                    ],
+                  ),
+                );
+              }
+              return ListView.builder(
+                itemCount: songs.length,
+                itemBuilder: (context, index) {
+                  final song = songs[index];
+                  return ListTile(
+                    leading: song.thumbnailUrl == null
+                        ? const Icon(Icons.music_note_rounded)
+                        : Image.network(
+                            song.thumbnailUrl!,
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.music_note_rounded),
+                          ),
+                    title: Text(song.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(song.artists.join(', '), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    onTap: () => _playerService.playSong(song),
+                    trailing: IconButton(
+                      tooltip: 'Remove from favorites',
+                      icon: const Icon(Icons.favorite_rounded, color: Colors.redAccent),
+                      onPressed: () => _playerService.toggleFavorite(song),
+                    ),
+                  );
+                },
+              );
+            },
           ),
+
 
           // Tab 2: Local Imported Songs
           _localSongs.isEmpty

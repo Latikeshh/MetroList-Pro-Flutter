@@ -233,7 +233,7 @@ class _AbLooperSheetState extends State<AbLooperSheet> {
                           artist: song.artists.isNotEmpty ? song.artists.first : 'Metrolist',
                           start: pointA,
                           end: pointB,
-                          streamUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+                          streamUrl: _playerService.currentStreamUrl ?? '',
                           formatPref: 'm4a',
                         );
 

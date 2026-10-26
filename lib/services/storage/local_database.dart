@@ -1,120 +1,100 @@
-library;
+import 'dart:convert';
 
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
-import '../../core/platform/platform_capability.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../innertube/models/yt_item.dart';
 
+/// Cross-platform persistent metadata storage. Audio files are never stored here.
 class LocalDatabaseService {
+  LocalDatabaseService._internal();
   static final LocalDatabaseService _instance = LocalDatabaseService._internal();
   factory LocalDatabaseService() => _instance;
 
-  Database? _db;
+  static const _likedSongsKey = 'metrolist.likedSongs.v1';
+  static const _historyKey = 'metrolist.history.v1';
+  static const _maxHistoryItems = 500;
 
-  LocalDatabaseService._internal();
-
-  Future<Database> get database async {
-    if (_db != null) return _db!;
-    _db = await _initDb();
-    return _db!;
-  }
-
-  Future<Database> _initDb() async {
-    if (PlatformCapability.isWeb) {
-      // In-memory or web storage fallback
-      return openDatabase(inMemoryDatabasePath, version: 1, onCreate: _onCreate);
-    }
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'metrolist_pro.db');
-
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _onCreate,
-    );
-  }
-
-  Future<void> _onCreate(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE liked_songs (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        artists TEXT,
-        thumbnailUrl TEXT
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE history (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        artists TEXT,
-        thumbnailUrl TEXT,
-        timestamp INTEGER
-      )
-    ''');
-  }
+  Future<List<SongItem>> getLikedSongs() => _readSongs(_likedSongsKey);
+  Future<List<SongItem>> getHistory() => _readSongs(_historyKey);
 
   Future<void> addLikedSong(SongItem song) async {
-    try {
-      final db = await database;
-      await db.insert(
-        'liked_songs',
-        {
-          'id': song.id,
-          'title': song.title,
-          'artists': song.artists.join(', '),
-          'thumbnailUrl': song.thumbnailUrl ?? '',
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    } catch (_) {}
+    final songs = await getLikedSongs();
+    await _writeSongs(_likedSongsKey, <SongItem>[
+      song,
+      ...songs.where((item) => item.id != song.id),
+    ]);
   }
 
   Future<void> removeLikedSong(String songId) async {
-    try {
-      final db = await database;
-      await db.delete('liked_songs', where: 'id = ?', whereArgs: [songId]);
-    } catch (_) {}
-  }
-
-  Future<List<SongItem>> getLikedSongs() async {
-    try {
-      final db = await database;
-      final maps = await db.query('liked_songs');
-      return maps.map((map) {
-        return SongItem(
-          id: map['id'] as String,
-          title: map['title'] as String,
-          artists: ((map['artists'] as String?) ?? '').split(', ').where((a) => a.isNotEmpty).toList(),
-          thumbnailUrl: (map['thumbnailUrl'] as String?)?.ifEmpty(() => null),
-        );
-      }).toList();
-    } catch (_) {
-      return [];
-    }
+    final songs = await getLikedSongs();
+    await _writeSongs(
+      _likedSongsKey,
+      songs.where((song) => song.id != songId).toList(),
+    );
   }
 
   Future<void> addToHistory(SongItem song) async {
-    try {
-      final db = await database;
-      await db.insert(
-        'history',
-        {
-          'id': song.id,
-          'title': song.title,
-          'artists': song.artists.join(', '),
-          'thumbnailUrl': song.thumbnailUrl ?? '',
-          'timestamp': DateTime.now().millisecondsSinceEpoch,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    } catch (_) {}
+    final songs = await getHistory();
+    await _writeSongs(_historyKey, <SongItem>[
+      song,
+      ...songs.where((item) => item.id != song.id),
+    ].take(_maxHistoryItems).toList());
   }
-}
 
-extension _StringExt on String {
-  String? ifEmpty(String? Function() fallback) {
-    return isEmpty ? fallback() : this;
+  Future<void> clearHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_historyKey);
+  }
+
+  Future<List<SongItem>> _readSongs(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(key);
+    if (raw == null || raw.isEmpty) return <SongItem>[];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return <SongItem>[];
+      return decoded
+          .whereType<Map>()
+          .map((entry) => _songFromJson(Map<String, dynamic>.from(entry)))
+          .where((song) => song.id.isNotEmpty && song.title.isNotEmpty)
+          .toList();
+    } on FormatException {
+      return <SongItem>[];
+    } on TypeError {
+      return <SongItem>[];
+    }
+  }
+
+  Future<void> _writeSongs(String key, List<SongItem> songs) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      key,
+      jsonEncode(songs.map(_songToJson).toList()),
+    );
+  }
+
+  Map<String, Object?> _songToJson(SongItem song) => <String, Object?>{
+        'id': song.id,
+        'title': song.title,
+        'artists': song.artists,
+        'thumbnailUrl': song.thumbnailUrl,
+        'album': song.album,
+        'durationSeconds': song.durationSeconds,
+      };
+
+  SongItem _songFromJson(Map<String, dynamic> json) {
+    final rawArtists = json['artists'];
+    final artists = rawArtists is List
+        ? rawArtists.whereType<String>().toList()
+        : <String>[];
+    final duration = json['durationSeconds'];
+    return SongItem(
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      artists: artists,
+      thumbnailUrl: json['thumbnailUrl'] as String?,
+      album: json['album'] as String?,
+      durationSeconds: duration is num ? duration.toInt() : null,
+    );
   }
 }

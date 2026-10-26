@@ -1,4 +1,4 @@
-library;
+import 'package:flutter/foundation.dart';
 
 Future<bool> exportClipPlatform({
   required String title,
@@ -8,6 +8,9 @@ Future<bool> exportClipPlatform({
   required String streamUrl,
   required String formatPref,
 }) async {
-  // Web export fallback
-  return true;
+  debugPrint(
+    'Web A/B export is not implemented: browser audio processing and source CORS '
+    'permissions are required. No fake success is reported.',
+  );
+  return false;
 }
