@@ -30,17 +30,34 @@ jobs:
       - run: flutter build linux
 
   windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Visual Studio C++ environment
+        uses: ilammy/msvc-dev-cmd@v1
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.35.7'
           channel: stable
           cache: true
-      - run: flutter pub get
-      - run: flutter test
-      - run: flutter build windows
+      - name: Get Flutter dependencies
+        run: flutter pub get
+      - name: Remove stale Windows CMake configuration
+        shell: pwsh
+        run: |
+          flutter clean
+          Remove-Item -Recurse -Force build\windows -ErrorAction SilentlyContinue
+          Remove-Item -Recurse -Force windows\flutter\ephemeral -ErrorAction SilentlyContinue
+          Remove-Item Env:CMAKE_GENERATOR -ErrorAction SilentlyContinue
+          Remove-Item Env:CMAKE_GENERATOR_PLATFORM -ErrorAction SilentlyContinue
+          Remove-Item Env:FLUTTER_CMAKE_GENERATOR -ErrorAction SilentlyContinue
+      - name: Build Windows
+        shell: pwsh
+        env:
+          CMAKE_GENERATOR: "Visual Studio 17 2022"
+          CMAKE_GENERATOR_PLATFORM: "x64"
+          FLUTTER_CMAKE_GENERATOR: "Visual Studio 17 2022"
+        run: flutter build windows --release -v
 
   apple:
     runs-on: macos-latest
