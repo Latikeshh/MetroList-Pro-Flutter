@@ -3,6 +3,8 @@ library;
 import 'package:flutter/material.dart';
 import '../../services/player/audio_player_service.dart';
 import 'ab_looper_sheet.dart';
+import 'lyrics_sheet.dart';
+import 'equalizer_sheet.dart';
 
 class ExpandedPlayer extends StatefulWidget {
   const ExpandedPlayer({super.key});
@@ -41,6 +43,30 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
         centerTitle: true,
         actions: [
           IconButton(
+            icon: const Icon(Icons.lyrics_outlined),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => const LyricsSheet(),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.tune_rounded),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => const EqualizerSheet(),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.repeat_one_rounded),
             onPressed: () {
               showModalBottomSheet(
@@ -51,10 +77,6 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                 builder: (context) => const AbLooperSheet(),
               );
             },
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert_rounded),
-            onPressed: () {},
           ),
         ],
       ),

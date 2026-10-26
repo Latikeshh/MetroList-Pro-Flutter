@@ -1,9 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:metrolist_pro/services/innertube/models/yt_item.dart';
 import 'package:metrolist_pro/services/player/audio_player_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
 
   group('AudioPlayerService Unit Tests', () {
     final playerService = AudioPlayerService();

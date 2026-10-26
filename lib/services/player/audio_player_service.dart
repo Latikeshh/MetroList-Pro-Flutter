@@ -264,6 +264,38 @@ class AudioPlayerService {
     await _player.setVolume(volume.clamp(0.0, 1.0).toDouble());
   }
 
+  Future<void> setSpeed(double speed) async {
+    await _player.setSpeed(speed.clamp(0.25, 3.0));
+  }
+
+  Timer? _sleepTimer;
+  final BehaviorSubject<Duration?> _sleepTimerRemainingSubject =
+      BehaviorSubject<Duration?>.seeded(null);
+
+  Stream<Duration?> get sleepTimerRemainingStream => _sleepTimerRemainingSubject.stream;
+
+  void startSleepTimer(Duration duration) {
+    _sleepTimer?.cancel();
+    _sleepTimerRemainingSubject.add(duration);
+
+    var remaining = duration;
+    _sleepTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      remaining -= const Duration(seconds: 1);
+      if (remaining <= Duration.zero) {
+        timer.cancel();
+        _sleepTimerRemainingSubject.add(null);
+        _player.pause();
+      } else {
+        _sleepTimerRemainingSubject.add(remaining);
+      }
+    });
+  }
+
+  void cancelSleepTimer() {
+    _sleepTimer?.cancel();
+    _sleepTimerRemainingSubject.add(null);
+  }
+
   Future<void> togglePlayPause() async {
     if (_player.playing) {
       await _player.pause();
