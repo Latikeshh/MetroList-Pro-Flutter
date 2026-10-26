@@ -338,6 +338,6 @@ All trademarks, service marks, and intellectual property rights referenced in th
 
 <br/>
 
-**Made with ❤️ by [Mo Agamy](https://github.com/mostafaalagamy)**
+**Made with ❤️ by [Mo Agamy](https://github.com/Latikeshh)**
 
 </div>
