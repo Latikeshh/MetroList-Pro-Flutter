@@ -324,20 +324,22 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     itemBuilder: (context, index) {
                       final song = _topChartSongs[index];
                       return ListTile(
-                        leading: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 28,
-                              child: Text(
-                                '#${index + 1}',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: colorScheme.primary,
+                        leading: SizedBox(
+                          width: 80,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 28,
+                                child: Text(
+                                  '#${index + 1}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: colorScheme.primary,
+                                  ),
                                 ),
                               ),
-                            ),
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: song.thumbnailUrl != null
@@ -356,6 +358,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             ),
                           ],
                         ),
+                      ),
                         title: Text(
                           song.title,
                           style: const TextStyle(fontWeight: FontWeight.bold),

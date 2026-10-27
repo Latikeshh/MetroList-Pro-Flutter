@@ -71,7 +71,7 @@ class MoodDetailScreen extends StatelessWidget {
                         const SizedBox(height: 16),
                         FilledButton.tonalIcon(
                           icon: const Icon(Icons.radio_rounded),
-                          label: const Text('Start $moodTitle Radio'),
+                          label: Text('Start $moodTitle Radio'),
                           onPressed: () {
                             playerService.playSong(sampleSongs.first, newQueue: sampleSongs);
                           },

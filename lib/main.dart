@@ -249,6 +249,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _isLoadingHome = true;
       _selectedChip = chip;
+      _homePageData = null;
     });
 
     try {
@@ -281,17 +282,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final nextData = await _ytService.getHomePage(continuation: _homePageData!.continuation);
-      if (mounted && nextData.sections.isNotEmpty) {
+      if (mounted) {
         setState(() {
-          _homePageData = HomePageData(
-            chips: _homePageData?.chips ?? nextData.chips,
-            sections: [...?_homePageData?.sections, ...nextData.sections],
-            continuation: nextData.continuation,
-          );
-          _isLoadingMore = false;
-        });
-      } else if (mounted) {
-        setState(() {
+          if (_homePageData != null) {
+            _homePageData = YouTubeService.mergeHomePages(_homePageData!, nextData);
+          } else {
+            _homePageData = nextData;
+          }
           _isLoadingMore = false;
         });
       }
@@ -686,6 +683,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: Center(child: CircularProgressIndicator()),
                   )
+                else if (_homePageData?.isError == true)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Column(
+                      children: [
+                        Icon(Icons.error_outline_rounded, size: 48, color: colorScheme.error),
+                        const SizedBox(height: 12),
+                        Text(
+                          _homePageData?.errorMessage ?? 'Failed to load Home feed from YouTube Music.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: colorScheme.error, fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('Retry'),
+                          onPressed: () => _loadHomePageData(chip: _selectedChip),
+                        ),
+                      ],
+                    ),
+                  )
                 else if (_homePageData?.sections.isNotEmpty == true)
                   ..._homePageData!.sections.map((section) {
                     return Column(
@@ -780,7 +798,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 else
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Center(child: Text('Unable to load home recommendations. Try refreshing.')),
+                    child: Center(child: Text('No recommendations available for this category.')),
                   ),
 
                 if (_isLoadingMore)

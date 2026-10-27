@@ -28,6 +28,11 @@ class YouTubeService {
     );
   }
 
+  /// Allows setting a mock adapter for widget tests
+  void setDioAdapter(HttpClientAdapter adapter) {
+    _dio.httpClientAdapter = adapter;
+  }
+
   Map<String, dynamic> _buildContext() {
     return {
       'context': {
@@ -46,6 +51,7 @@ class YouTubeService {
     try {
       final body = _buildContext();
       if (continuation != null && continuation.isNotEmpty) {
+        body['continuation'] = continuation;
         final response = await _dio.post(
           '/browse?continuation=$continuation&ctoken=$continuation',
           data: body,
@@ -60,15 +66,29 @@ class YouTubeService {
         }
         final response = await _dio.post('/browse', data: body);
         if (response.statusCode == 200) {
-          final pageData = _parseHomePage(response.data);
-          if (pageData.sections.isNotEmpty) {
-            return pageData;
-          }
+          return _parseHomePage(response.data);
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      return HomePageData(
+        chips: const [
+          HomeChip(title: 'All'),
+          HomeChip(title: 'Podcasts'),
+          HomeChip(title: 'Workout'),
+          HomeChip(title: 'Focus'),
+          HomeChip(title: 'Chill'),
+          HomeChip(title: 'Commute'),
+          HomeChip(title: 'Energy Boost'),
+          HomeChip(title: 'Party'),
+          HomeChip(title: 'Romance'),
+          HomeChip(title: 'Sleep'),
+        ],
+        sections: const [],
+        isError: true,
+        errorMessage: e.toString(),
+      );
+    }
 
-    // Fallback if network or parsing fails
     return const HomePageData(
       chips: [
         HomeChip(title: 'All'),
@@ -83,10 +103,60 @@ class YouTubeService {
         HomeChip(title: 'Sleep'),
       ],
       sections: [],
+      isError: true,
+      errorMessage: 'Invalid HTTP status response',
+    );
+  }
+
+  /// Exposes parser for deterministic unit testing with JSON fixtures
+  HomePageData parseHomePageData(dynamic data) => _parseHomePage(data);
+
+  static bool _areSectionsEqual(HomeSection a, HomeSection b) {
+    if (a.title != b.title) return false;
+    if (a.items.isEmpty && b.items.isEmpty) return true;
+    if (a.items.length != b.items.length) return false;
+    return a.items.first.id == b.items.first.id;
+  }
+
+  /// Safely merges continuation home page data into current home page data, preventing duplicate sections and tokens
+  static HomePageData mergeHomePages(HomePageData current, HomePageData next) {
+    final newSections = next.sections.where((nextSec) =>
+      !current.sections.any((currSec) => _areSectionsEqual(currSec, nextSec))
+    ).toList();
+
+    final newContinuation = (next.continuation != null && next.continuation != current.continuation)
+        ? next.continuation
+        : null;
+
+    return HomePageData(
+      chips: current.chips.isNotEmpty ? current.chips : next.chips,
+      sections: [...current.sections, ...newSections],
+      continuation: newContinuation,
+      isError: next.isError,
+      errorMessage: next.errorMessage,
     );
   }
 
   HomePageData _parseHomePage(dynamic data) {
+    if (data == null || data is! Map) {
+      return const HomePageData(
+        chips: [],
+        sections: [],
+        isError: true,
+        errorMessage: 'Invalid API response format',
+      );
+    }
+
+    if (data.containsKey('error')) {
+      final errorMsg = data['error']?['message']?.toString() ?? 'YouTube Music API error';
+      return HomePageData(
+        chips: const [],
+        sections: const [],
+        isError: true,
+        errorMessage: errorMsg,
+      );
+    }
+
     final List<HomeChip> chips = [];
     final List<HomeSection> sections = [];
     String? continuationToken;
@@ -125,7 +195,9 @@ class YouTubeService {
           final shelf = sec['musicShelfRenderer'];
 
           if (carousel != null) {
-            final titleRuns = carousel['header']?['musicCarouselShelfHeaderRenderer']?['title']?['runs'];
+            final header = carousel['header']?['musicCarouselShelfBasicHeaderRenderer'] ??
+                carousel['header']?['musicCarouselShelfHeaderRenderer'];
+            final titleRuns = header?['title']?['runs'];
             final title = (titleRuns is List && titleRuns.isNotEmpty) ? titleRuns[0]['text'] ?? '' : 'Recommended';
 
             final List<YTItem> items = [];
@@ -157,6 +229,15 @@ class YouTubeService {
           }
         }
       }
+
+      // Check for sectionList continuations
+      final sectionContinuations = sectionList?['continuations'];
+      if (sectionContinuations is List && sectionContinuations.isNotEmpty) {
+        final token = sectionContinuations[0]?['nextContinuationData']?['continuation'];
+        if (token is String && token.isNotEmpty) {
+          continuationToken = token;
+        }
+      }
     } catch (_) {}
 
     return HomePageData(
@@ -168,6 +249,24 @@ class YouTubeService {
 
   YTItem? _parseTwoRowOrListItem(dynamic rawItem) {
     if (rawItem == null || rawItem is! Map) return null;
+
+    final multiRow = rawItem['musicMultiRowListItemRenderer'];
+    if (multiRow != null) {
+      final titleRuns = multiRow['title']?['runs'];
+      final title = (titleRuns is List && titleRuns.isNotEmpty) ? titleRuns[0]['text'] ?? '' : '';
+      final videoId = multiRow['onTap']?['watchEndpoint']?['videoId'] ??
+          multiRow['navigationEndpoint']?['watchEndpoint']?['videoId'];
+      final thumbnails = multiRow['thumbnail']?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'];
+      final thumbUrl = (thumbnails is List && thumbnails.isNotEmpty) ? thumbnails.last['url'] : null;
+      if (videoId is String && videoId.isNotEmpty) {
+        return SongItem(
+          id: videoId,
+          title: title,
+          thumbnailUrl: thumbUrl,
+          artists: const ['Podcast Episode'],
+        );
+      }
+    }
 
     final twoRow = rawItem['musicTwoRowItemRenderer'];
     if (twoRow != null) {

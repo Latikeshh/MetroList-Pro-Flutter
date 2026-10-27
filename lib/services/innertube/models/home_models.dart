@@ -26,10 +26,14 @@ class HomePageData {
   final List<HomeChip> chips;
   final List<HomeSection> sections;
   final String? continuation;
+  final bool isError;
+  final String? errorMessage;
 
   const HomePageData({
     this.chips = const [],
     this.sections = const [],
     this.continuation,
+    this.isError = false,
+    this.errorMessage,
   });
 }
