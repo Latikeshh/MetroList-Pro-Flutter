@@ -128,7 +128,6 @@ jobs:
         with:
           name: Metrolist-Pro-Windows-x64
           path: Metrolist-Pro-Windows-x64.zip
-
   publish_release:
     name: Publish GitHub Nightly Release
     if: always() && (needs.build_android.result == 'success' || needs.build_windows.result == 'success')
