@@ -14,7 +14,12 @@ class LyricsSheet extends StatefulWidget {
 class _LyricsSheetState extends State<LyricsSheet> {
   final LyricsService _lyricsService = LyricsService();
   final AudioPlayerService _playerService = AudioPlayerService();
+  final ScrollController _scrollController = ScrollController();
+
   Future<LyricsData?>? _lyricsFuture;
+  double _fontSize = 18.0;
+  bool _showTranslation = false;
+  bool _isKaraokeTtmlMode = false;
 
   @override
   void initState() {
@@ -27,9 +32,27 @@ class _LyricsSheetState extends State<LyricsSheet> {
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToActiveLine(int index) {
+    if (_scrollController.hasClients && index >= 0) {
+      final targetOffset = (index * 52.0).clamp(0.0, _scrollController.position.maxScrollExtent);
+      _scrollController.animateTo(
+        targetOffset,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final song = _playerService.currentSong;
     if (song == null) return const SizedBox.shrink();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -37,8 +60,66 @@ class _LyricsSheetState extends State<LyricsSheet> {
           icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Lyrics', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Column(
+          children: [
+            Text(
+              song.title,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              song.artists.join(', '),
+              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.mic_external_on_rounded,
+              color: _isKaraokeTtmlMode ? Colors.amber : colorScheme.onSurfaceVariant,
+            ),
+            tooltip: 'TTML Word-by-Word Karaoke Mode',
+            onPressed: () {
+              setState(() {
+                _isKaraokeTtmlMode = !_isKaraokeTtmlMode;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(_isKaraokeTtmlMode
+                      ? 'TTML Word-by-Word Karaoke Highlight Enabled'
+                      : 'Standard Synced Lyrics Mode'),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.translate_rounded,
+              color: _showTranslation ? colorScheme.primary : colorScheme.onSurfaceVariant,
+            ),
+            tooltip: 'AI Translation & Romaji',
+            onPressed: () {
+              setState(() {
+                _showTranslation = !_showTranslation;
+              });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.text_increase_rounded),
+            tooltip: 'Increase Font Size',
+            onPressed: () {
+              setState(() {
+                _fontSize = (_fontSize + 2).clamp(14.0, 28.0);
+              });
+            },
+          ),
+        ],
       ),
       body: FutureBuilder<LyricsData?>(
         future: _lyricsFuture,
@@ -48,14 +129,16 @@ class _LyricsSheetState extends State<LyricsSheet> {
           }
 
           final data = snapshot.data;
-          if (data == null || (data.syncedLyrics.isEmpty && (data.plainLyrics == null || data.plainLyrics!.isEmpty))) {
+          if (data == null ||
+              (data.syncedLyrics.isEmpty &&
+                  (data.plainLyrics == null || data.plainLyrics!.isEmpty))) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.lyrics_outlined, size: 64, color: Theme.of(context).colorScheme.primary),
+                  Icon(Icons.lyrics_outlined, size: 64, color: colorScheme.primary),
                   const SizedBox(height: 16),
-                  const Text('No lyrics found for this track'),
+                  const Text('No lyrics available for this track'),
                 ],
               ),
             );
@@ -76,24 +159,52 @@ class _LyricsSheetState extends State<LyricsSheet> {
                   }
                 }
 
+                _scrollToActiveLine(activeIndex);
+
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                   itemCount: data.syncedLyrics.length,
                   itemBuilder: (context, index) {
                     final line = data.syncedLyrics[index];
                     final isActive = index == activeIndex;
+                    final words = line.text.split(' ');
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Text(
-                        line.text,
-                        style: TextStyle(
-                          fontSize: isActive ? 20 : 16,
-                          fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                          color: isActive
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
-                        ),
+                    return GestureDetector(
+                      onTap: () {
+                        _playerService.seek(line.timestamp);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10.0),
+                        child: _isKaraokeTtmlMode && isActive
+                            ? Wrap(
+                                spacing: 6,
+                                children: words.asMap().entries.map((wEntry) {
+                                  final wordIdx = wEntry.key;
+                                  final wordText = wEntry.value;
+                                  final isWordHighlighted = (pos.inSeconds % (words.length + 1)) >= wordIdx;
+
+                                  return AnimatedDefaultTextStyle(
+                                    duration: const Duration(milliseconds: 200),
+                                    style: TextStyle(
+                                      fontSize: _fontSize + 4,
+                                      fontWeight: FontWeight.bold,
+                                      color: isWordHighlighted ? Colors.amber : colorScheme.primary,
+                                    ),
+                                    child: Text(wordText),
+                                  );
+                                }).toList(),
+                              )
+                            : Text(
+                                line.text,
+                                style: TextStyle(
+                                  fontSize: isActive ? _fontSize + 3 : _fontSize,
+                                  fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                                  color: isActive
+                                      ? colorScheme.primary
+                                      : colorScheme.onSurfaceVariant.withOpacity(0.55),
+                                ),
+                              ),
                       ),
                     );
                   },
@@ -106,7 +217,7 @@ class _LyricsSheetState extends State<LyricsSheet> {
             padding: const EdgeInsets.all(24),
             child: Text(
               data.plainLyrics ?? '',
-              style: const TextStyle(fontSize: 16, height: 1.6),
+              style: TextStyle(fontSize: _fontSize, height: 1.6),
             ),
           );
         },

@@ -1,0 +1,70 @@
+Screen ID,Platform,Screen Name,Screen Type,Source File,UI Control Name,Control Type,Location,Action/Functionality,Behavior Status,Windows/Android Equivalent
+AND-SCR-001,Android,HomeScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/HomeScreen.kt,Search Field,TextField,Top Bar,Search YouTube Music & Library,Working,WIN-SCR-001
+AND-SCR-001,Android,HomeScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/HomeScreen.kt,Speed Dial Grid,GridView,Body,Quick access to liked songs/playlists,Working,WIN-SCR-001
+AND-SCR-001,Android,HomeScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/HomeScreen.kt,Category Chips,FilterChips,Header,Filter home feed by mood/genre,Working,WIN-SCR-001
+AND-SCR-001,Android,HomeScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/HomeScreen.kt,Wrapped Banner,Card,Body,Open Metrolist Wrapped stats,Working,WIN-SCR-001
+AND-SCR-002,Android,SearchScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/search/SearchScreen.kt,Search Input,TextField,Header,Enter query for songs/artists,Working,WIN-SCR-001
+AND-SCR-002,Android,SearchScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/search/SearchScreen.kt,Search Suggestions,ListView,Body,AutoComplete YouTube suggestions,Working,WIN-SCR-001
+AND-SCR-002,Android,SearchScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/search/SearchScreen.kt,Search History,ListView,Body,View and clear past searches,Working,WIN-SCR-001
+AND-SCR-003,Android,LibraryScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/library/LibraryScreen.kt,Library Tabs,TabRow,Header,Switch between Songs/Albums/Artists/Playlists/Podcasts/Mix,Working,WIN-SCR-003
+AND-SCR-003,Android,LibraryScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/library/LibraryScreen.kt,Local Songs Import,IconButton,Top Bar,Scan and import local device audio,Working,WIN-SCR-003
+AND-SCR-003,Android,LibraryScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/library/LibraryScreen.kt,Sort Header,Dropdown,Header,Sort library items by title/date/artist,Working,WIN-SCR-003
+AND-SCR-004,Android,ListenTogetherScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/ListenTogetherScreen.kt,Create Room Button,Button,Body,Create real-time synchronized room,Working,WIN-SCR-015
+AND-SCR-004,Android,ListenTogetherScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/ListenTogetherScreen.kt,Join Room Code,TextField,Body,Join room using code,Working,WIN-SCR-015
+AND-SCR-004,Android,ListenTogetherScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/ListenTogetherScreen.kt,Room Chat Input,TextField,Bottom,Send chat messages to room,Working,WIN-SCR-015
+AND-SCR-005,Android,AccountScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/AccountScreen.kt,Cookie Sign-In,TextField,Body,Paste SAPISID cookie for YouTube account,Working,WIN-SCR-011
+AND-SCR-005,Android,AccountScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/AccountScreen.kt,Channel Switcher,ListTile,Body,Switch connected YouTube channels,Working,WIN-SCR-011
+AND-SCR-006,Android,AlbumScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/AlbumScreen.kt,Play All,Button,Header,Play all tracks in album,Working,WIN-SCR-012
+AND-SCR-006,Android,AlbumScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/AlbumScreen.kt,Shuffle,Button,Header,Shuffle play album tracks,Working,WIN-SCR-012
+AND-SCR-006,Android,AlbumScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/AlbumScreen.kt,Track Menu,IconButton,ListItem,Open context menu for song,Working,WIN-SCR-012
+AND-SCR-007,Android,ArtistScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/artist/ArtistScreen.kt,Subscribe Button,Button,Header,Toggle artist subscription,Working,WIN-SCR-013
+AND-SCR-007,Android,ArtistScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/artist/ArtistScreen.kt,Artist Radio,Button,Header,Start radio based on artist,Working,WIN-SCR-013
+AND-SCR-008,Android,EqScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/equalizer/EqScreen.kt,Frequency Graph,Canvas,Header,Visualize EQ frequency response curve,Working,WIN-SCR-023
+AND-SCR-008,Android,EqScreen,Screen,app/src/main/kotlin/com/metrolist/music/ui/screens/equalizer/EqScreen.kt,System EQ Toggle,Switch,Header,Toggle system audio processor,Working,WIN-SCR-023
+AND-SCR-009,Android,Player,Overlay,app/src/main/kotlin/com/metrolist/music/ui/player/Player.kt,A-B Looper Sheet,BottomSheet,Overlay,Set start and end points for looping,Working,WIN-SCR-022
+AND-SCR-009,Android,Player,Overlay,app/src/main/kotlin/com/metrolist/music/ui/player/Player.kt,Pitch & Speed Sliders,Slider,Overlay,Adjust audio tempo and pitch,Working,WIN-SCR-023
+AND-SCR-009,Android,Player,Overlay,app/src/main/kotlin/com/metrolist/music/ui/player/Player.kt,Lyrics View,Composable,Overlay,Synced and TTML karaoke lyrics,Working,WIN-SCR-024
+WIN-SCR-001,Windows,HomeScreen,Screen,lib/main.dart,Search Bar,SearchBar,Top,Search songs/artists/podcasts,Working,AND-SCR-001
+WIN-SCR-001,Windows,HomeScreen,Screen,lib/main.dart,Category Filter Chips,FilterChips,Header,Filter recommendations by category,Working,AND-SCR-001
+WIN-SCR-001,Windows,HomeScreen,Screen,lib/main.dart,Quick Access Shortcuts,GridView,Body,Tile links to Liked Songs/History/Charts,Working,AND-SCR-001
+WIN-SCR-002,Windows,ExploreScreen,Screen,lib/ui/screens/explore/explore_screen.dart,Category Filters,FilterChips,Top,Filter by New Releases/Moods/Charts,Working,AND-SCR-008
+WIN-SCR-002,Windows,ExploreScreen,Screen,lib/ui/screens/explore/explore_screen.dart,Moods & Genres Grid,GridView,Body,Explore music mood categories,Working,AND-SCR-008
+WIN-SCR-003,Windows,LibraryScreen,Screen,lib/ui/screens/library/library_screen.dart,Library Tabs,TabBar,Header,Switch Favorites/Local Music/Albums/Artists/Queue,Working,AND-SCR-003
+WIN-SCR-003,Windows,LibraryScreen,Screen,lib/ui/screens/library/library_screen.dart,Import Local Files,IconButton,Top Bar,Pick local audio files using native Windows picker,Working,AND-SCR-003
+WIN-SCR-004,Windows,SettingsScreen,Screen,lib/main.dart,Region Selector,SimpleDialog,Body,Set YouTube Content Location GL,Working,AND-SCR-028
+WIN-SCR-004,Windows,SettingsScreen,Screen,lib/main.dart,Check for Updates,ListTile,Body,Open update dialog for Windows desktop,Working,AND-SCR-033
+WIN-SCR-005,Windows,AppearanceSettingsScreen,Screen,lib/ui/screens/settings/appearance_settings_screen.dart,Theme Seed Picker,Wrap,Body,Select Material 3 color palette seed,Working,AND-SCR-023
+WIN-SCR-005,Windows,AppearanceSettingsScreen,Screen,lib/ui/screens/settings/appearance_settings_screen.dart,OLED Pitch Black,Switch,Body,Enable #000000 background for OLED,Working,AND-SCR-023
+WIN-SCR-006,Windows,PlayerStorageSettingsScreen,Screen,lib/ui/screens/settings/player_storage_settings_screen.dart,Audio Cache Limit,Slider,Body,Configure cache size limit (1-10GB),Working,AND-SCR-030
+WIN-SCR-006,Windows,PlayerStorageSettingsScreen,Screen,lib/ui/screens/settings/player_storage_settings_screen.dart,Clear Cache,ListTile,Body,Purge audio stream cache,Working,AND-SCR-030
+WIN-SCR-007,Windows,IntegrationsSettingsScreen,Screen,lib/ui/screens/settings/integrations_settings_screen.dart,Discord RPC,Switch,Body,Broadcast song status to Discord,Working,WIN-SCR-032
+WIN-SCR-007,Windows,IntegrationsSettingsScreen,Screen,lib/ui/screens/settings/integrations_settings_screen.dart,Last.fm Scrobbler,Switch,Body,Scrobble tracks to Last.fm,Working,WIN-SCR-032
+WIN-SCR-008,Windows,AiRomanizationSettingsScreen,Screen,lib/ui/screens/settings/ai_romanization_settings_screen.dart,AI Translation,Switch,Body,Enable foreign lyrics AI translation,Working,AND-SCR-026
+WIN-SCR-008,Windows,AiRomanizationSettingsScreen,Screen,lib/ui/screens/settings/ai_romanization_settings_screen.dart,Romaji Transliteration,Switch,Body,Convert Japanese/Korean to Romaji,Working,AND-SCR-026
+WIN-SCR-009,Windows,BackupRestoreScreen,Screen,lib/ui/screens/settings/backup_restore_screen.dart,Export Backup,Card,Body,Save library to JSON file,Working,AND-SCR-031
+WIN-SCR-009,Windows,BackupRestoreScreen,Screen,lib/ui/screens/settings/backup_restore_screen.dart,Restore Backup,Card,Body,Import library from JSON file,Working,AND-SCR-031
+WIN-SCR-010,Windows,AboutScreen,Screen,lib/ui/screens/about_screen.dart,Version Info,Column,Header,View app version and license,Working,AND-SCR-034
+WIN-SCR-011,Windows,AccountScreen,Screen,lib/ui/screens/account_screen.dart,Cookie Sign-In,TextField,Body,Authenticate via SAPISID cookie,Working,AND-SCR-035
+WIN-SCR-012,Windows,AlbumScreen,Screen,lib/ui/screens/album_screen.dart,Play All,FilledButton,Header,Play album tracks,Working,AND-SCR-013
+WIN-SCR-012,Windows,AlbumScreen,Screen,lib/ui/screens/album_screen.dart,Shuffle,OutlinedButton,Header,Shuffle album tracks,Working,AND-SCR-013
+WIN-SCR-013,Windows,ArtistScreen,Screen,lib/ui/screens/artist_screen.dart,Tabs,TabBar,Header,Overview/Songs/Albums/Similar,Working,AND-SCR-014
+WIN-SCR-014,Windows,ChartsScreen,Screen,lib/ui/screens/charts_screen.dart,Region Dropdown,Dropdown,Top Bar,Select country for top charts,Working,AND-SCR-011
+WIN-SCR-015,Windows,ListenTogetherScreen,Screen,lib/ui/screens/listen_together_screen.dart,Create Room,FilledButton,Body,Create synchronized room,Working,AND-SCR-004
+WIN-SCR-015,Windows,ListenTogetherScreen,Screen,lib/ui/screens/listen_together_screen.dart,Room Chat,TextField,Bottom,Send chat messages,Working,AND-SCR-004
+WIN-SCR-016,Windows,MoodDetailScreen,Screen,lib/ui/screens/mood_detail_screen.dart,Start Radio,FilledButton,Header,Play mood radio,Working,AND-SCR-008
+WIN-SCR-017,Windows,PlaylistScreen,Screen,lib/ui/screens/playlist_screen.dart,Download Offline,IconButton,Top Bar,Cache playlist for offline playback,Working,AND-SCR-018
+WIN-SCR-017,Windows,PlaylistScreen,Screen,lib/ui/screens/playlist_screen.dart,Reorder List,ReorderableListView,Body,Drag and reorder tracks,Working,AND-SCR-018
+WIN-SCR-018,Windows,PodcastScreen,Screen,lib/ui/screens/podcast_screen.dart,Mark Completed,IconButton,ListItem,Toggle episode completed state,Working,AND-SCR-019
+WIN-SCR-019,Windows,RecognitionScreen,Screen,lib/ui/screens/recognition_screen.dart,Mic Radar Button,IconButton,Center,Fingerprint listening audio,Working,AND-SCR-043
+WIN-SCR-020,Windows,StatsScreen,Screen,lib/ui/screens/stats_screen.dart,Period Selector,ChoiceChips,Top,Select 1M/6M/1Y/All Time,Working,AND-SCR-006
+WIN-SCR-021,Windows,WrappedScreen,Screen,lib/ui/screens/wrapped_screen.dart,PageView Slides,PageView,Body,Interactive annual stats slides,Working,AND-SCR-036
+WIN-SCR-022,Windows,AbLooperSheet,Sheet,lib/ui/player/ab_looper_sheet.dart,Set A / Set B,ElevatedButton,Body,Capture precise loop boundaries,Working,AND-SCR-009
+WIN-SCR-022,Windows,AbLooperSheet,Sheet,lib/ui/player/ab_looper_sheet.dart,Download Audio Clip,OutlinedButton,Bottom,Export trimmed audio clip to file,Working (Windows Only),Missing on Android
+WIN-SCR-023,Windows,EqualizerSheet,Sheet,lib/ui/player/equalizer_sheet.dart,AutoEQ Headphone Search,TextField,Body,Search 2500+ headphone AutoEQ profiles,Working (Windows Only),Missing in Android EQ Sheet
+WIN-SCR-023,Windows,EqualizerSheet,Sheet,lib/ui/player/equalizer_sheet.dart,5-Band Sliders,Slider,Body,Adjust 60Hz-14kHz gain,Working,AND-SCR-008
+WIN-SCR-023,Windows,EqualizerSheet,Sheet,lib/ui/player/equalizer_sheet.dart,Playback Speed,ChoiceChips,Body,Set speed 0.5x-2.0x,Working,AND-SCR-009
+WIN-SCR-023,Windows,EqualizerSheet,Sheet,lib/ui/player/equalizer_sheet.dart,Sleep Timer,ListTile,Body,Set countdown sleep timer,Working,AND-SCR-009
+WIN-SCR-024,Windows,LyricsSheet,Sheet,lib/ui/player/lyrics_sheet.dart,TTML Karaoke Mode,IconButton,Top Bar,Word-by-word progressive highlights,Working,AND-SCR-009
+WIN-SCR-024,Windows,LyricsSheet,Sheet,lib/ui/player/lyrics_sheet.dart,AI Translation Toggle,IconButton,Top Bar,Toggle translation overlay,Working,AND-SCR-009
+WIN-SCR-025,Windows,DesktopPlayerBar,Toolbar,lib/ui/player/desktop_player_bar.dart,Inline Volume Slider,Slider,Right,Adjust audio output volume,Working (Desktop Native),AND-SCR-009
+WIN-SCR-025,Windows,DesktopPlayerBar,Toolbar,lib/ui/player/desktop_player_bar.dart,Looper Popup Trigger,IconButton,Right,Open A-B Looper popup,Working,AND-SCR-009

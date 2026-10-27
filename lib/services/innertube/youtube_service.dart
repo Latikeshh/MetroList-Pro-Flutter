@@ -3,6 +3,7 @@ library;
 import 'package:dio/dio.dart';
 import 'models/yt_item.dart';
 import 'models/explore_models.dart';
+import 'models/home_models.dart';
 
 class YouTubeService {
   static final YouTubeService _instance = YouTubeService._internal();
@@ -38,6 +39,191 @@ class YouTubeService {
         }
       }
     };
+  }
+
+  /// Fetches the YouTube Music Home page (FEmusic_home) with optional chip parameters or continuation token
+  Future<HomePageData> getHomePage({String? params, String? continuation}) async {
+    try {
+      final body = _buildContext();
+      if (continuation != null && continuation.isNotEmpty) {
+        final response = await _dio.post(
+          '/browse?continuation=$continuation&ctoken=$continuation',
+          data: body,
+        );
+        if (response.statusCode == 200) {
+          return _parseHomePage(response.data);
+        }
+      } else {
+        body['browseId'] = 'FEmusic_home';
+        if (params != null && params.isNotEmpty) {
+          body['params'] = params;
+        }
+        final response = await _dio.post('/browse', data: body);
+        if (response.statusCode == 200) {
+          final pageData = _parseHomePage(response.data);
+          if (pageData.sections.isNotEmpty) {
+            return pageData;
+          }
+        }
+      }
+    } catch (_) {}
+
+    // Fallback if network or parsing fails
+    return const HomePageData(
+      chips: [
+        HomeChip(title: 'All'),
+        HomeChip(title: 'Podcasts'),
+        HomeChip(title: 'Workout'),
+        HomeChip(title: 'Focus'),
+        HomeChip(title: 'Chill'),
+        HomeChip(title: 'Commute'),
+        HomeChip(title: 'Energy Boost'),
+        HomeChip(title: 'Party'),
+        HomeChip(title: 'Romance'),
+        HomeChip(title: 'Sleep'),
+      ],
+      sections: [],
+    );
+  }
+
+  HomePageData _parseHomePage(dynamic data) {
+    final List<HomeChip> chips = [];
+    final List<HomeSection> sections = [];
+    String? continuationToken;
+
+    try {
+      final sectionList = data['contents']?['singleColumnBrowseResultsRenderer']?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer'] ??
+          data['continuationContents']?['sectionListContinuation'];
+
+      // Parse Chips
+      final rawChips = sectionList?['header']?['chipCloudRenderer']?['chips'];
+      if (rawChips is List) {
+        for (var c in rawChips) {
+          final renderer = c['chipCloudChipRenderer'];
+          if (renderer != null) {
+            final title = renderer['text']?['runs']?[0]?['text'] ?? '';
+            final p = renderer['navigationEndpoint']?['browseEndpoint']?['params'];
+            if (title.isNotEmpty) {
+              chips.add(HomeChip(title: title, params: p is String ? p : null));
+            }
+          }
+        }
+      }
+
+      // Parse Sections
+      final rawContents = sectionList?['contents'];
+      if (rawContents is List) {
+        for (var sec in rawContents) {
+          // Check for continuation
+          final cont = sec['continuationItemRenderer']?['continuationEndpoint']?['continuationCommand']?['token'];
+          if (cont is String && cont.isNotEmpty) {
+            continuationToken = cont;
+            continue;
+          }
+
+          final carousel = sec['musicCarouselShelfRenderer'];
+          final shelf = sec['musicShelfRenderer'];
+
+          if (carousel != null) {
+            final titleRuns = carousel['header']?['musicCarouselShelfHeaderRenderer']?['title']?['runs'];
+            final title = (titleRuns is List && titleRuns.isNotEmpty) ? titleRuns[0]['text'] ?? '' : 'Recommended';
+
+            final List<YTItem> items = [];
+            final rawItems = carousel['contents'];
+            if (rawItems is List) {
+              for (var rawItem in rawItems) {
+                final item = _parseTwoRowOrListItem(rawItem);
+                if (item != null) items.add(item);
+              }
+            }
+            if (items.isNotEmpty) {
+              sections.add(HomeSection(title: title, items: items));
+            }
+          } else if (shelf != null) {
+            final titleRuns = shelf['title']?['runs'];
+            final title = (titleRuns is List && titleRuns.isNotEmpty) ? titleRuns[0]['text'] ?? '' : 'Quick Picks';
+
+            final List<YTItem> items = [];
+            final rawItems = shelf['contents'];
+            if (rawItems is List) {
+              for (var rawItem in rawItems) {
+                final item = _parseTwoRowOrListItem(rawItem);
+                if (item != null) items.add(item);
+              }
+            }
+            if (items.isNotEmpty) {
+              sections.add(HomeSection(title: title, items: items));
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    return HomePageData(
+      chips: chips,
+      sections: sections,
+      continuation: continuationToken,
+    );
+  }
+
+  YTItem? _parseTwoRowOrListItem(dynamic rawItem) {
+    if (rawItem == null || rawItem is! Map) return null;
+
+    final twoRow = rawItem['musicTwoRowItemRenderer'];
+    if (twoRow != null) {
+      final titleRuns = twoRow['title']?['runs'];
+      final title = (titleRuns is List && titleRuns.isNotEmpty) ? titleRuns[0]['text'] ?? '' : '';
+
+      final thumbnails = twoRow['thumbnailRenderer']?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'];
+      final thumbUrl = (thumbnails is List && thumbnails.isNotEmpty) ? thumbnails.last['url'] : null;
+
+      final watchVideoId = twoRow['navigationEndpoint']?['watchEndpoint']?['videoId'];
+      final browseId = twoRow['navigationEndpoint']?['browseEndpoint']?['browseId'];
+
+      final subtitleRuns = twoRow['subtitle']?['runs'];
+      final subtitle = (subtitleRuns is List)
+          ? subtitleRuns.map((r) => r['text']?.toString() ?? '').where((t) => t.isNotEmpty && t != ' • ').join(' ')
+          : '';
+
+      if (watchVideoId is String && watchVideoId.isNotEmpty) {
+        return SongItem(
+          id: watchVideoId,
+          title: title,
+          thumbnailUrl: thumbUrl,
+          artists: subtitle.isNotEmpty ? [subtitle] : const ['YouTube Music'],
+        );
+      } else if (browseId is String && browseId.isNotEmpty) {
+        if (browseId.startsWith('UC')) {
+          return ArtistItem(
+            id: browseId,
+            title: title,
+            thumbnailUrl: thumbUrl,
+            subscribers: subtitle,
+          );
+        } else if (browseId.startsWith('MPRE') || browseId.contains('album')) {
+          return AlbumItem(
+            id: browseId,
+            title: title,
+            thumbnailUrl: thumbUrl,
+            artist: subtitle,
+          );
+        } else {
+          return PlaylistItem(
+            id: browseId,
+            title: title,
+            thumbnailUrl: thumbUrl,
+            author: subtitle,
+          );
+        }
+      }
+    }
+
+    final listItem = rawItem['musicResponsiveListItemRenderer'];
+    if (listItem != null) {
+      return _parseListItemRenderer(listItem);
+    }
+
+    return null;
   }
 
   /// Searches YouTube Music for songs, artists, albums, or playlists

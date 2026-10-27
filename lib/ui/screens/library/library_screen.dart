@@ -17,10 +17,24 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
   final AudioPlayerService _playerService = AudioPlayerService();
   final List<SongItem> _localSongs = [];
 
+  final List<Map<String, String>> _sampleAlbums = [
+    {'title': 'Midnight Frequency', 'subtitle': 'Album • 12 Tracks', 'type': 'Album'},
+    {'title': 'Chill Lofi Beats', 'subtitle': 'Playlist • 45 Tracks', 'type': 'Playlist'},
+    {'title': 'Workout Euphoria', 'subtitle': 'Playlist • 30 Tracks', 'type': 'Playlist'},
+    {'title': 'Velvet Horizon', 'subtitle': 'Album • 9 Tracks', 'type': 'Album'},
+  ];
+
+  final List<Map<String, String>> _sampleArtists = [
+    {'name': 'The Metrolist Band', 'subscribers': '2.4M Listeners'},
+    {'name': 'Lofi Collective', 'subscribers': '1.8M Listeners'},
+    {'name': 'Synthwave Express', 'subscribers': '950K Listeners'},
+    {'name': 'Unplugged Voices', 'subscribers': '520K Listeners'},
+  ];
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -70,6 +84,9 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 720;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -85,9 +102,12 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
         ],
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: true,
           tabs: const [
             Tab(text: 'Favorites'),
             Tab(text: 'Local Music'),
+            Tab(text: 'Albums & Playlists'),
+            Tab(text: 'Artists'),
             Tab(text: 'Queue'),
           ],
         ),
@@ -113,19 +133,23 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                 );
               }
               return ListView.builder(
+                padding: const EdgeInsets.all(12),
                 itemCount: songs.length,
                 itemBuilder: (context, index) {
                   final song = songs[index];
                   return ListTile(
-                    leading: song.thumbnailUrl == null
-                        ? const Icon(Icons.music_note_rounded)
-                        : Image.network(
-                            song.thumbnailUrl!,
-                            width: 48,
-                            height: 48,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.music_note_rounded),
-                          ),
+                    leading: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: song.thumbnailUrl == null
+                          ? const Icon(Icons.music_note_rounded)
+                          : Image.network(
+                              song.thumbnailUrl!,
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.music_note_rounded),
+                            ),
+                    ),
                     title: Text(song.title, maxLines: 1, overflow: TextOverflow.ellipsis),
                     subtitle: Text(song.artists.join(', '), maxLines: 1, overflow: TextOverflow.ellipsis),
                     onTap: () => _playerService.playSong(song),
@@ -140,7 +164,6 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
             },
           ),
 
-
           // Tab 2: Local Imported Songs
           _localSongs.isEmpty
               ? Center(
@@ -150,7 +173,7 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                       Icon(
                         Icons.folder_open_rounded,
                         size: 64,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: colorScheme.primary,
                       ),
                       const SizedBox(height: 16),
                       const Text('No local music imported yet'),
@@ -164,12 +187,13 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                   ),
                 )
               : ListView.builder(
+                  padding: const EdgeInsets.all(12),
                   itemCount: _localSongs.length,
                   itemBuilder: (context, index) {
                     final song = _localSongs[index];
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                        backgroundColor: colorScheme.primaryContainer,
                         child: const Icon(Icons.audio_file_rounded),
                       ),
                       title: Text(
@@ -178,7 +202,8 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: const Text('Local Storage'),
+                      subtitle: const Text('Local Storage File'),
+                      onTap: () => _playerService.playSong(song),
                       trailing: IconButton(
                         icon: const Icon(Icons.play_arrow_rounded),
                         onPressed: () {
@@ -189,7 +214,115 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                   },
                 ),
 
-          // Tab 3: Current Queue
+          // Tab 3: Albums & Playlists Grid/List
+          isDesktop
+              ? GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 220,
+                    childAspectRatio: 0.85,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: _sampleAlbums.length,
+                  itemBuilder: (context, index) {
+                    final item = _sampleAlbums[index];
+                    return Card(
+                      clipBehavior: Clip.antiAlias,
+                      color: colorScheme.surfaceContainerHigh,
+                      child: InkWell(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Opening ${item['title']}')),
+                          );
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Container(
+                                color: colorScheme.primaryContainer,
+                                child: Center(
+                                  child: Icon(
+                                    item['type'] == 'Album' ? Icons.album_rounded : Icons.queue_music_rounded,
+                                    size: 48,
+                                    color: colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item['title']!,
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    item['subtitle']!,
+                                    style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: _sampleAlbums.length,
+                  itemBuilder: (context, index) {
+                    final item = _sampleAlbums[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: colorScheme.primaryContainer,
+                        child: Icon(
+                          item['type'] == 'Album' ? Icons.album_rounded : Icons.queue_music_rounded,
+                        ),
+                      ),
+                      title: Text(item['title']!, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(item['subtitle']!),
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Opening ${item['title']}')),
+                        );
+                      },
+                    );
+                  },
+                ),
+
+          // Tab 4: Artists List
+          ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: _sampleArtists.length,
+            itemBuilder: (context, index) {
+              final artist = _sampleArtists[index];
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: colorScheme.secondaryContainer,
+                  child: const Icon(Icons.person_rounded),
+                ),
+                title: Text(artist['name']!, style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(artist['subscribers']!),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Opening artist ${artist['name']}')),
+                  );
+                },
+              );
+            },
+          ),
+
+          // Tab 5: Current Playback Queue
           StreamBuilder<List<SongItem>>(
             stream: _playerService.queueStream,
             builder: (context, snapshot) {
@@ -200,6 +333,7 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                 );
               }
               return ListView.builder(
+                padding: const EdgeInsets.all(12),
                 itemCount: queue.length,
                 itemBuilder: (context, index) {
                   final song = queue[index];
@@ -207,10 +341,10 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                   return ListTile(
                     selected: isCurrent,
                     leading: CircleAvatar(
-                      backgroundColor: isCurrent ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surfaceContainerHighest,
+                      backgroundColor: isCurrent ? colorScheme.primary : colorScheme.surfaceContainerHighest,
                       child: Icon(
                         isCurrent ? Icons.graphic_eq_rounded : Icons.music_note_rounded,
-                        color: isCurrent ? Theme.of(context).colorScheme.onPrimary : null,
+                        color: isCurrent ? colorScheme.onPrimary : null,
                       ),
                     ),
                     title: Text(

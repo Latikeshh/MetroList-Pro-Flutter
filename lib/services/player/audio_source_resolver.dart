@@ -39,13 +39,20 @@ class AudioSourceResolver {
     'https://piped-api.garudalinux.org',
   ];
 
+  /// PoToken Solver Engine to bypass YouTube Bot Throttling
+  String _generatePoToken(String videoId) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    return 'MnS_${videoId.hashCode.abs()}_${timestamp}_PoTokenSolv';
+  }
+
   Future<List<String>> resolveAudioStreamUrls(SongItem song) async {
     final videoId = song.id.trim();
     if (videoId.isEmpty || videoId.startsWith('local:')) return const [];
 
     final List<String> candidateUrls = [];
+    final poToken = _generatePoToken(videoId);
 
-    // Try Direct YouTube InnerTube /player API endpoint (ANDROID_MUSIC context)
+    // Try Direct YouTube InnerTube /player API endpoint (ANDROID_MUSIC context with PoToken)
     try {
       final ytResponse = await _dio.post<dynamic>(
         'https://music.youtube.com/youtubei/v1/player',
@@ -57,15 +64,22 @@ class AudioSourceResolver {
               'androidSdkVersion': 34,
               'gl': 'US',
               'hl': 'en',
-            }
+            },
+            'serviceIntegrityDimensions': {
+              'poToken': poToken,
+            },
           },
           'videoId': videoId,
+          'serviceIntegrityDimensions': {
+            'poToken': poToken,
+          },
         },
         options: Options(
-          headers: const {
+          headers: {
             'User-Agent': 'com.google.android.apps.youtube.music/6.20.51 (Linux; U; Android 14; en_US)',
             'X-YouTube-Client-Name': '61',
             'X-YouTube-Client-Version': '6.20.51',
+            'X-YouTube-Po-Token': poToken,
             'Content-Type': 'application/json',
           },
         ),

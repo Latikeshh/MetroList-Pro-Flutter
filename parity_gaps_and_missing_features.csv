@@ -1,0 +1,9 @@
+Gap ID,Category,Missing Platform,Target Screen,Feature / Option Description,Windows Equivalent File,Android Equivalent File,Impact Level,Remediation Complexity
+GAP-001,Feature,Android,AbLooperSheet,Direct Audio Clip Exporter (Trim & Save loop segment to file),lib/services/export/io_exporter.dart,app/src/main/kotlin/com/metrolist/music/ui/component/ABLoopBottomSheet.kt,High,Medium
+GAP-002,Feature,Android,EqualizerSheet,Instant Searchable AutoEQ Headphone Profiles directly in EQ Player Sheet,lib/ui/player/equalizer_sheet.dart,app/src/main/kotlin/com/metrolist/music/ui/screens/equalizer/wizard/WizardScreen.kt,Medium,Medium
+GAP-003,UI/UX,Android,DesktopPlayerBar,Persistent Desktop Player Toolbar with Inline Volume & Seekbar,lib/ui/player/desktop_player_bar.dart,app/src/main/kotlin/com/metrolist/music/ui/player/MiniPlayer.kt,High,Medium
+GAP-004,Feature,Windows,ArtistScreen,Dedicated Artist Sub-Pages (Artist Songs / Artist Albums / Artist Items Grid),lib/ui/screens/artist_screen.dart,app/src/main/kotlin/com/metrolist/music/ui/screens/artist/ArtistSongsScreen.kt,Medium,Small
+GAP-005,Feature,Windows,LibraryScreen,Dedicated Auto / Cache / Top Playlists Sub-Pages,lib/ui/screens/library/library_screen.dart,app/src/main/kotlin/com/metrolist/music/ui/screens/playlist/AutoPlaylistScreen.kt,Medium,Small
+GAP-006,Feature,Windows,SettingsScreen,Android Auto Media Service & Preferences,N/A,app/src/main/kotlin/com/metrolist/music/ui/screens/settings/AndroidAutoSettings.kt,Low (Platform Specific),Excluded
+GAP-007,UI/UX,Windows,SongMenu,Multi-Selection Songs Context Menu & CSV Column Mapping Importer,N/A,app/src/main/kotlin/com/metrolist/music/ui/menu/SelectionSongsMenu.kt,Medium,Medium
+GAP-008,Feature,Windows,AlarmSettings,Music Sleep Alarm Clock Configuration,N/A,app/src/main/kotlin/com/metrolist/music/ui/screens/settings/AlarmSettings.kt,Low,Small
