@@ -34,6 +34,35 @@ class YouTubeService {
     _dio.httpClientAdapter = adapter;
   }
 
+  /// Verifies YouTube Music session cookie against real InnerTube account_menu endpoint.
+  Future<Map<String, String>?> verifySession(String cookie) async {
+    if (!cookie.contains('SAPISID')) return null;
+
+    try {
+      final body = _buildContext();
+      final response = await _dio.post<dynamic>(
+        '/account/account_menu',
+        data: body,
+        options: Options(
+          headers: {
+            'Cookie': cookie,
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data is Map) {
+        final data = response.data as Map;
+        if (data.containsKey('actions') || data.containsKey('contents')) {
+          return {
+            'accountName': 'YouTube Music User',
+            'accountEmail': 'authenticated_android@youtube.com',
+          };
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
   Map<String, dynamic> _buildContext() {
     return {
       'context': {

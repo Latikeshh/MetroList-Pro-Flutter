@@ -311,6 +311,17 @@ fun AccountSettings(
                         },
                     )
                 } else null,
+                if (isLoggedIn) {
+                    Material3SettingsItem(
+                        title = { Text("Connect Windows App (QR Pairing)") },
+                        description = { Text("Transfer your YouTube Music session to MetroList Pro Windows") },
+                        icon = painterResource(R.drawable.login),
+                        onClick = {
+                            onClose()
+                            navController.navigate("qr_pairing_scanner")
+                        },
+                    )
+                } else null,
             ),
             useLowContrast = true
         )

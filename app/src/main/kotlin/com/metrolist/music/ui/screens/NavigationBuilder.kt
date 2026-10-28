@@ -419,6 +419,10 @@ fun NavGraphBuilder.navigationBuilder(
         )
     }
 
+    composable("qr_pairing_scanner") {
+        com.metrolist.music.ui.screens.settings.QrPairingScanner(navController)
+    }
+
     composable("wrapped") {
         WrappedScreen()
     }

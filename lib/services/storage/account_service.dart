@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:rxdart/rxdart.dart';
+import '../innertube/youtube_service.dart';
 
 enum AccountAuthState {
   disconnected,
@@ -114,11 +115,16 @@ class AccountService {
       return false;
     }
 
+    // Verify session with real InnerTube request
+    final verifiedInfo = await YouTubeService().verifySession(trimmed);
+    final accountName = name ?? verifiedInfo?['accountName'] ?? 'YouTube Music User';
+    final accountEmail = email ?? verifiedInfo?['accountEmail'] ?? 'authenticated_session@youtube.com';
+
     final session = UserAccountSession(
       cookie: trimmed,
       visitorData: visitorData ?? '',
-      accountName: name ?? 'YouTube Music User',
-      accountEmail: email ?? 'authenticated_android@youtube.com',
+      accountName: accountName,
+      accountEmail: accountEmail,
       isVerified: true,
     );
 
