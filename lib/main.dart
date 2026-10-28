@@ -502,6 +502,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: EdgeInsets.symmetric(vertical: 24),
                       child: Center(child: Text('No results found.')),
                     )
+                  else if (isDesktop)
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 420,
+                        mainAxisExtent: 72,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 8,
+                      ),
+                      itemCount: _searchResults.length,
+                      itemBuilder: (context, index) {
+                        final item = _searchResults[index];
+                        return _buildItemTile(context, item);
+                      },
+                    )
                   else
                     ListView.builder(
                       shrinkWrap: true,
@@ -965,89 +981,109 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        children: [
-          // Appearance & Theme
-          ListTile(
-            leading: const Icon(Icons.palette_rounded),
-            title: const Text('Appearance & Theme'),
-            subtitle: const Text('Color palette, dynamic themes, OLED black, and fonts'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const AppearanceSettingsScreen()));
-            },
-          ),
-          const Divider(),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            children: [
+              // Account & Channel
+              ListTile(
+                leading: const Icon(Icons.account_circle_rounded),
+                title: const Text('Account & Channel Settings'),
+                subtitle: const Text('YouTube Music SAPISID login, profile, and library sync'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountScreen()));
+                },
+              ),
+              const Divider(),
 
-          // Audio & Storage
-          ListTile(
-            leading: const Icon(Icons.tune_rounded),
-            title: const Text('Audio Player & Storage Settings'),
-            subtitle: const Text('Export format, cache limiters, gapless, and loudness'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const PlayerStorageSettingsScreen()));
-            },
-          ),
-          const Divider(),
+              // Appearance & Theme
+              ListTile(
+                leading: const Icon(Icons.palette_rounded),
+                title: const Text('Appearance & Theme'),
+                subtitle: const Text('Color palette, dynamic themes, OLED black, and fonts'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AppearanceSettingsScreen()));
+                },
+              ),
+              const Divider(),
 
-          // Content & Location
-          ListTile(
-            leading: const Icon(Icons.public_rounded),
-            title: const Text('Content Location (GL)'),
-            subtitle: Text(_region),
-            onTap: _showRegionDialog,
-          ),
-          const Divider(),
+              // Audio & Storage
+              ListTile(
+                leading: const Icon(Icons.tune_rounded),
+                title: const Text('Audio Player & Storage Settings'),
+                subtitle: const Text('Export format, cache limiters, gapless, and loudness'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PlayerStorageSettingsScreen()));
+                },
+              ),
+              const Divider(),
 
-          // Social & Integrations
-          ListTile(
-            leading: const Icon(Icons.hub_rounded),
-            title: const Text('Integrations & Social'),
-            subtitle: const Text('Discord RPC status, Last.fm scrobbling'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const IntegrationsSettingsScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.translate_rounded),
-            title: const Text('AI Translation & Romanization'),
-            subtitle: const Text('OpenRouter API key, Romaji / Furigana transliteration'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const AiRomanizationSettingsScreen()));
-            },
-          ),
-          const Divider(),
+              // Content & Location
+              ListTile(
+                leading: const Icon(Icons.public_rounded),
+                title: const Text('Content Location (GL)'),
+                subtitle: Text(_region),
+                onTap: _showRegionDialog,
+              ),
+              const Divider(),
 
-          // Backup & System
-          ListTile(
-            leading: const Icon(Icons.backup_rounded),
-            title: const Text('Backup & Restore'),
-            subtitle: const Text('Export or restore library data from JSON backup'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupRestoreScreen()));
-            },
+              // Social & Integrations
+              ListTile(
+                leading: const Icon(Icons.hub_rounded),
+                title: const Text('Integrations & Social'),
+                subtitle: const Text('Discord RPC status, Last.fm scrobbling'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const IntegrationsSettingsScreen()));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.translate_rounded),
+                title: const Text('AI Translation & Romanization'),
+                subtitle: const Text('OpenRouter API key, Romaji / Furigana transliteration'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AiRomanizationSettingsScreen()));
+                },
+              ),
+              const Divider(),
+
+              // Backup & System
+              ListTile(
+                leading: const Icon(Icons.backup_rounded),
+                title: const Text('Backup & Restore'),
+                subtitle: const Text('Export or restore library data from JSON backup'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupRestoreScreen()));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.system_update_rounded),
+                title: const Text('Check for Updates'),
+                subtitle: const Text('Check latest desktop release from GitHub'),
+                onTap: _showTestUpdateDialog,
+              ),
+              const Divider(),
+
+              // About Metrolist Pro
+              ListTile(
+                leading: const Icon(Icons.info_outline_rounded),
+                title: const Text('About Metrolist Pro'),
+                subtitle: const Text('App version, lead developer, collaborators, GPL-3.0 license'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
+                },
+              ),
+            ],
           ),
-          ListTile(
-            leading: const Icon(Icons.system_update_rounded),
-            title: const Text('Check for Updates'),
-            subtitle: const Text('Check latest desktop release from GitHub'),
-            onTap: _showTestUpdateDialog,
-          ),
-          ListTile(
-            leading: const Icon(Icons.info_outline_rounded),
-            title: const Text('About Metrolist Pro'),
-            subtitle: const Text('v2026.10.24.1 (Windows Desktop & Android)'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
-            },
-          ),
-        ],
+        ),
       ),
     );
   }

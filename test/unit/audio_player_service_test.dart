@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:metrolist_pro/services/innertube/models/yt_item.dart';
 import 'package:metrolist_pro/services/player/audio_player_service.dart';
+import 'package:metrolist_pro/services/player/audio_source_resolver.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +41,65 @@ void main() {
 
     test('Repeat mode cycles through off, all, one', () {
       expect(playerService.player.playing, isFalse);
+    });
+  });
+
+  group('AudioSourceResolver Deterministic Format Parsing Tests', () {
+    late AudioSourceResolver resolver;
+
+    setUp(() {
+      resolver = AudioSourceResolver();
+    });
+
+    test('Extracts direct URLs and sorts by bitrate highest to lowest', () {
+      final streamingData = {
+        'adaptiveFormats': [
+          {
+            'mimeType': 'audio/webm; codecs="opus"',
+            'bitrate': 128000,
+            'url': 'https://googlevideo.com/stream_low_128k',
+          },
+          {
+            'mimeType': 'audio/mp4; codecs="mp4a.40.2"',
+            'bitrate': 256000,
+            'url': 'https://googlevideo.com/stream_high_256k',
+          },
+        ]
+      };
+
+      final urls = resolver.parseFormatsFromStreamingData(streamingData);
+
+      expect(urls.length, 2);
+      expect(urls.first, 'https://googlevideo.com/stream_high_256k');
+      expect(urls.last, 'https://googlevideo.com/stream_low_128k');
+    });
+
+    test('Ignores formats requiring signatureCipher when undeciphered', () {
+      final streamingData = {
+        'adaptiveFormats': [
+          {
+            'mimeType': 'audio/webm',
+            'bitrate': 160000,
+            'signatureCipher': 's=ENC_SIG_123&sp=sig&url=https%3A%2F%2Fgooglevideo.com%2Fstream',
+          },
+        ]
+      };
+
+      final urls = resolver.parseFormatsFromStreamingData(streamingData);
+
+      expect(urls, isEmpty);
+    });
+
+    test('Local file path resolution bypasses network resolver', () async {
+      const localSong = SongItem(
+        id: 'local:C:/Music/test_track.mp3',
+        title: 'Local Test Track',
+        artists: ['Local Artist'],
+      );
+
+      final urls = await resolver.resolveAudioStreamUrls(localSong);
+
+      expect(urls, isEmpty);
     });
   });
 }

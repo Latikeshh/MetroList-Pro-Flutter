@@ -1,7 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 
 import '../innertube/models/yt_item.dart';
+import 'youtube_stream_extractor_adapter.dart';
 
 class AudioSourceResolutionResult {
   final String streamUrl;
@@ -15,19 +16,30 @@ class AudioSourceResolutionResult {
   });
 }
 
-/// Resolves remote audio sources. Failed lookup returns null; it never
-/// substitutes unrelated sample audio for the selected song.
+/// Resolves remote audio sources using YouTube InnerTube player requests,
+/// fallback stream extractor adapters, and public endpoint fallbacks.
 class AudioSourceResolver {
-  AudioSourceResolver._internal();
+  AudioSourceResolver._internal([YouTubeStreamExtractorAdapter? adapter])
+      : _adapter = adapter;
+
   static final AudioSourceResolver _instance = AudioSourceResolver._internal();
-  factory AudioSourceResolver() => _instance;
+  factory AudioSourceResolver({YouTubeStreamExtractorAdapter? adapter}) {
+    if (adapter != null) {
+      return AudioSourceResolver._internal(adapter);
+    }
+    return _instance;
+  }
+
+  YouTubeStreamExtractorAdapter? _adapter;
+  YouTubeStreamExtractorAdapter get adapter =>
+      _adapter ??= ExplodeStreamExtractorAdapter();
 
   final Dio _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 8),
-    receiveTimeout: const Duration(seconds: 12),
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 15),
     headers: const {
       'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     },
   ));
 
@@ -37,12 +49,53 @@ class AudioSourceResolver {
     'https://pipedapi.lunar.icu',
     'https://pipedapi.palvelu.org',
     'https://piped-api.garudalinux.org',
+    'https://pipedapi.mha.fi',
+    'https://pipedapi.adminforge.de',
   ];
 
-  /// PoToken Solver Engine to bypass YouTube Bot Throttling
-  String _generatePoToken(String videoId) {
-    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    return 'MnS_${videoId.hashCode.abs()}_${timestamp}_PoTokenSolv';
+  @visibleForTesting
+  String? extractUrlFromFormat(Map f) {
+    final directUrl = f['url']?.toString();
+    if (directUrl != null && directUrl.isNotEmpty && (Uri.tryParse(directUrl)?.hasScheme ?? false)) {
+      return directUrl;
+    }
+    // Note: signatureCipher requires JS cipher deciphering. Raw cipher URLs are not valid stream URLs.
+    return null;
+  }
+
+  @visibleForTesting
+  List<String> parseFormatsFromStreamingData(Map streamingData) {
+    final List<String> candidateUrls = [];
+    final adaptiveFormats = streamingData['adaptiveFormats'];
+    final formats = streamingData['formats'];
+    final List<Map> allFormats = [];
+
+    if (adaptiveFormats is List) {
+      allFormats.addAll(adaptiveFormats.whereType<Map>());
+    }
+    if (formats is List) {
+      allFormats.addAll(formats.whereType<Map>());
+    }
+
+    final audioFormats = allFormats.where((f) {
+      final String mime = f['mimeType']?.toString().toLowerCase() ?? '';
+      final url = extractUrlFromFormat(f);
+      return (mime.contains('audio') || mime.contains('mp4') || mime.contains('webm')) &&
+          url != null &&
+          url.isNotEmpty;
+    }).toList();
+
+    if (audioFormats.isNotEmpty) {
+      audioFormats.sort((a, b) => _toInt(b['bitrate']).compareTo(_toInt(a['bitrate'])));
+      for (final f in audioFormats) {
+        final url = extractUrlFromFormat(f);
+        if (url != null && !candidateUrls.contains(url)) {
+          candidateUrls.add(url);
+        }
+      }
+    }
+
+    return candidateUrls;
   }
 
   Future<List<String>> resolveAudioStreamUrls(SongItem song) async {
@@ -50,94 +103,111 @@ class AudioSourceResolver {
     if (videoId.isEmpty || videoId.startsWith('local:')) return const [];
 
     final List<String> candidateUrls = [];
-    final poToken = _generatePoToken(videoId);
 
-    // Try Direct YouTube InnerTube /player API endpoint (ANDROID_MUSIC context with PoToken)
-    try {
-      final ytResponse = await _dio.post<dynamic>(
-        'https://music.youtube.com/youtubei/v1/player',
-        data: {
-          'context': {
-            'client': {
-              'clientName': 'ANDROID_MUSIC',
-              'clientVersion': '6.20.51',
-              'androidSdkVersion': 34,
-              'gl': 'US',
-              'hl': 'en',
+    // 1. Primary: Direct InnerTube /player client endpoint attempts
+    final clients = [
+      {
+        'name': 'WEB_REMIX',
+        'version': '1.20241021.01.00',
+        'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'clientNameHeader': '67',
+        'endpoint': 'https://music.youtube.com/youtubei/v1/player',
+      },
+      {
+        'name': 'ANDROID_MUSIC',
+        'version': '6.20.51',
+        'ua': 'com.google.android.apps.youtube.music/6.20.51 (Linux; U; Android 14; en_US)',
+        'clientNameHeader': '61',
+        'endpoint': 'https://music.youtube.com/youtubei/v1/player',
+      },
+    ];
+
+    for (final client in clients) {
+      try {
+        final ytResponse = await _dio.post<dynamic>(
+          client['endpoint'] as String,
+          data: {
+            'context': {
+              'client': {
+                'clientName': client['name'],
+                'clientVersion': client['version'],
+                'gl': 'US',
+                'hl': 'en',
+              },
             },
-            'serviceIntegrityDimensions': {
-              'poToken': poToken,
+            'videoId': videoId,
+            'contentCheckOk': true,
+            'racyCheckOk': true,
+          },
+          options: Options(
+            headers: {
+              'User-Agent': client['ua'],
+              'X-YouTube-Client-Name': client['clientNameHeader'],
+              'X-YouTube-Client-Version': client['version'],
+              'Content-Type': 'application/json',
             },
-          },
-          'videoId': videoId,
-          'serviceIntegrityDimensions': {
-            'poToken': poToken,
-          },
-        },
-        options: Options(
-          headers: {
-            'User-Agent': 'com.google.android.apps.youtube.music/6.20.51 (Linux; U; Android 14; en_US)',
-            'X-YouTube-Client-Name': '61',
-            'X-YouTube-Client-Version': '6.20.51',
-            'X-YouTube-Po-Token': poToken,
-            'Content-Type': 'application/json',
-          },
-        ),
-      );
+          ),
+        );
 
-      if (ytResponse.statusCode == 200 && ytResponse.data is Map) {
-        final streamingData = ytResponse.data['streamingData'];
-        if (streamingData is Map) {
-          final adaptiveFormats = streamingData['adaptiveFormats'];
-          if (adaptiveFormats is List) {
-            final audioFormats = adaptiveFormats.whereType<Map>().where((f) {
-              final String mime = f['mimeType']?.toString().toLowerCase() ?? '';
-              final String? url = f['url']?.toString();
-              return mime.contains('audio') && url != null && url.isNotEmpty && (Uri.tryParse(url)?.hasScheme ?? false);
-            }).toList();
-
-            if (audioFormats.isNotEmpty) {
-              audioFormats.sort((a, b) => _toInt(b['bitrate']).compareTo(_toInt(a['bitrate'])));
-              for (final f in audioFormats) {
-                if (f['url'] is String) {
-                  candidateUrls.add(f['url'] as String);
-                }
-              }
+        if (ytResponse.statusCode == 200 && ytResponse.data is Map) {
+          final data = ytResponse.data as Map;
+          final streamingData = data['streamingData'];
+          if (streamingData is Map) {
+            final parsedUrls = parseFormatsFromStreamingData(streamingData);
+            if (parsedUrls.isNotEmpty) {
+              candidateUrls.addAll(parsedUrls);
+              break;
             }
+          } else {
+            final playability = data['playabilityStatus']?['status']?.toString();
+            final reason = data['playabilityStatus']?['reason']?.toString();
+            debugPrint('InnerTube client ${client['name']} playabilityStatus: $playability, reason: $reason');
           }
         }
+      } catch (e) {
+        debugPrint('InnerTube stream resolve error for client ${client['name']}: $e');
       }
-    } catch (e) {
-      debugPrint('InnerTube direct player stream error: $e');
     }
 
-    // Secondary fallback: Piped / Invidious stream endpoints
-    for (final instance in _pipedInstances) {
+    // 2. Secondary: Injectable Stream Extractor Adapter
+    if (candidateUrls.isEmpty) {
       try {
-        final response = await _dio.get<dynamic>('$instance/streams/$videoId');
-        final data = response.data;
-        if (response.statusCode != 200 || data is! Map) continue;
-        final rawStreams = data['audioStreams'];
-        if (rawStreams is! List) continue;
-
-        final candidates = rawStreams.whereType<Map>().where((stream) {
-          final url = stream['url'];
-          return url is String &&
-              url.isNotEmpty &&
-              (Uri.tryParse(url)?.hasScheme ?? false);
-        }).toList();
-        if (candidates.isEmpty) continue;
-
-        candidates.sort((a, b) => _toInt(b['bitrate']).compareTo(_toInt(a['bitrate'])));
-        for (final c in candidates) {
-          final url = c['url'] as String;
-          if (!candidateUrls.contains(url)) {
-            candidateUrls.add(url);
-          }
+        final adapterUrls = await adapter.extractAudioStreamUrls(videoId);
+        if (adapterUrls.isNotEmpty) {
+          candidateUrls.addAll(adapterUrls);
         }
-        if (candidateUrls.isNotEmpty) break;
-      } catch (error) {
-        debugPrint('Audio source resolution failed for $instance: $error');
+      } catch (e) {
+        debugPrint('Stream extractor adapter resolution failed: $e');
+      }
+    }
+
+    // 3. Tertiary: Public Piped instances fallback
+    if (candidateUrls.isEmpty) {
+      for (final instance in _pipedInstances) {
+        try {
+          final response = await _dio.get<dynamic>('$instance/streams/$videoId');
+          final data = response.data;
+          if (response.statusCode != 200 || data is! Map) continue;
+          final rawStreams = data['audioStreams'];
+          if (rawStreams is! List) continue;
+
+          final candidates = rawStreams.whereType<Map>().where((stream) {
+            final url = stream['url'];
+            return url is String && url.isNotEmpty && (Uri.tryParse(url)?.hasScheme ?? false);
+          }).toList();
+          if (candidates.isEmpty) continue;
+
+          candidates.sort((a, b) => _toInt(b['bitrate']).compareTo(_toInt(a['bitrate'])));
+          for (final c in candidates) {
+            final url = c['url'] as String;
+            if (!candidateUrls.contains(url)) {
+              candidateUrls.add(url);
+            }
+          }
+          if (candidateUrls.isNotEmpty) break;
+        } catch (error) {
+          debugPrint('Audio source resolution failed for $instance: $error');
+        }
       }
     }
 
