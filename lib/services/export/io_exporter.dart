@@ -20,7 +20,8 @@ Future<bool> exportClipPlatform({
   if (!PlatformCapability.supportsExternalProcesses ||
       Platform.isAndroid ||
       Platform.isIOS) {
-    debugPrint('A/B clip export needs a native media-processing backend on this platform.');
+    debugPrint(
+        'A/B clip export needs a native media-processing backend on this platform.');
     return false;
   }
   if (start < Duration.zero || end <= start || streamUrl.trim().isEmpty) {
@@ -31,8 +32,7 @@ Future<bool> exportClipPlatform({
   final extension = '.$format';
   final safeTitle = title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
   final safeArtist = artist.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
-  final defaultFileName =
-      '${safeTitle.isEmpty ? 'Track' : safeTitle} - '
+  final defaultFileName = '${safeTitle.isEmpty ? 'Track' : safeTitle} - '
       '${safeArtist.isEmpty ? 'Artist' : safeArtist} Clip$extension';
 
   Directory? tempDirectory;
@@ -46,7 +46,8 @@ Future<bool> exportClipPlatform({
     if (outputPath == null || outputPath.isEmpty) return false;
 
     tempDirectory = await Directory.systemTemp.createTemp('metrolist_clip_');
-    final inputPath = '${tempDirectory.path}${Platform.pathSeparator}source.bin';
+    final inputPath =
+        '${tempDirectory.path}${Platform.pathSeparator}source.bin';
 
     if (streamUrl.startsWith('file:')) {
       final sourceFile = File.fromUri(Uri.parse(streamUrl));

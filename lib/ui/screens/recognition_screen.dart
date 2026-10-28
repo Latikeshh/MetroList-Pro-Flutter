@@ -11,7 +11,8 @@ class RecognitionScreen extends StatefulWidget {
   State<RecognitionScreen> createState() => _RecognitionScreenState();
 }
 
-class _RecognitionScreenState extends State<RecognitionScreen> with SingleTickerProviderStateMixin {
+class _RecognitionScreenState extends State<RecognitionScreen>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _animController;
   final AudioPlayerService _playerService = AudioPlayerService();
   bool _isListening = false;
@@ -22,13 +23,15 @@ class _RecognitionScreenState extends State<RecognitionScreen> with SingleTicker
       id: 'rec_1',
       title: 'Midnight Frequency',
       artists: const ['The Metrolist Band'],
-      thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
+      thumbnailUrl:
+          'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
     ),
     SongItem(
       id: 'rec_2',
       title: 'Starlight Memories',
       artists: const ['Lofi Collective'],
-      thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500',
+      thumbnailUrl:
+          'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500',
     ),
   ];
 
@@ -64,7 +67,8 @@ class _RecognitionScreenState extends State<RecognitionScreen> with SingleTicker
           id: 'rec_result_0',
           title: 'Velvet Horizon (Identified)',
           artists: const ['Synthwave Express'],
-          thumbnailUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500',
+          thumbnailUrl:
+              'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500',
         );
         _history.insert(0, _identifiedSong!);
       });
@@ -77,7 +81,8 @@ class _RecognitionScreenState extends State<RecognitionScreen> with SingleTicker
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Song Recognition', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Song Recognition',
+            style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: ListView(
         padding: const EdgeInsets.all(24),
@@ -88,17 +93,23 @@ class _RecognitionScreenState extends State<RecognitionScreen> with SingleTicker
               children: [
                 ScaleTransition(
                   scale: Tween<double>(begin: 0.95, end: 1.15).animate(
-                    CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
+                    CurvedAnimation(
+                        parent: _animController, curve: Curves.easeInOut),
                   ),
                   child: Container(
                     width: 140,
                     height: 140,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: _isListening ? Colors.redAccent : colorScheme.primaryContainer,
+                      color: _isListening
+                          ? Colors.redAccent
+                          : colorScheme.primaryContainer,
                       boxShadow: [
                         BoxShadow(
-                          color: (_isListening ? Colors.redAccent : colorScheme.primary).withOpacity(0.4),
+                          color: (_isListening
+                                  ? Colors.redAccent
+                                  : colorScheme.primary)
+                              .withOpacity(0.4),
                           blurRadius: 30,
                           spreadRadius: 10,
                         )
@@ -106,9 +117,13 @@ class _RecognitionScreenState extends State<RecognitionScreen> with SingleTicker
                     ),
                     child: IconButton(
                       icon: Icon(
-                        _isListening ? Icons.graphic_eq_rounded : Icons.mic_rounded,
+                        _isListening
+                            ? Icons.graphic_eq_rounded
+                            : Icons.mic_rounded,
                         size: 64,
-                        color: _isListening ? Colors.white : colorScheme.onPrimaryContainer,
+                        color: _isListening
+                            ? Colors.white
+                            : colorScheme.onPrimaryContainer,
                       ),
                       onPressed: _isListening ? null : _startRecognition,
                     ),
@@ -116,8 +131,13 @@ class _RecognitionScreenState extends State<RecognitionScreen> with SingleTicker
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  _isListening ? 'Listening & Fingerprinting Audio...' : 'Tap Mic to Identify Song',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  _isListening
+                      ? 'Listening & Fingerprinting Audio...'
+                      : 'Tap Mic to Identify Song',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -132,9 +152,11 @@ class _RecognitionScreenState extends State<RecognitionScreen> with SingleTicker
               child: ListTile(
                 leading: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.network(_identifiedSong!.thumbnailUrl!, width: 48, height: 48, fit: BoxFit.cover),
+                  child: Image.network(_identifiedSong!.thumbnailUrl!,
+                      width: 48, height: 48, fit: BoxFit.cover),
                 ),
-                title: Text(_identifiedSong!.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                title: Text(_identifiedSong!.title,
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text(_identifiedSong!.artists.join(', ')),
                 trailing: IconButton(
                   icon: const Icon(Icons.play_arrow_rounded),
@@ -148,15 +170,21 @@ class _RecognitionScreenState extends State<RecognitionScreen> with SingleTicker
           const Divider(),
           const SizedBox(height: 12),
 
-          Text('Recognition History', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text('Recognition History',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
 
           ..._history.map((song) => ListTile(
                 leading: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.network(song.thumbnailUrl!, width: 44, height: 44, fit: BoxFit.cover),
+                  child: Image.network(song.thumbnailUrl!,
+                      width: 44, height: 44, fit: BoxFit.cover),
                 ),
-                title: Text(song.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                title: Text(song.title,
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text(song.artists.join(', ')),
                 trailing: IconButton(
                   icon: const Icon(Icons.play_arrow_rounded),

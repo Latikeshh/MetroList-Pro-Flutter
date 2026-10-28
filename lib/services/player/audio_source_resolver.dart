@@ -2,6 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 
 import '../innertube/models/yt_item.dart';
+import '../storage/account_service.dart';
+import 'player_config.dart';
+import 'youtube_cipher.dart';
 import 'youtube_stream_extractor_adapter.dart';
 
 class AudioSourceResolutionResult {
@@ -17,15 +20,28 @@ class AudioSourceResolutionResult {
 }
 
 /// Resolves remote audio sources using YouTube InnerTube player requests,
-/// fallback stream extractor adapters, and public endpoint fallbacks.
+/// player configuration ciphers, and fallback stream extractor adapters.
 class AudioSourceResolver {
-  AudioSourceResolver._internal([YouTubeStreamExtractorAdapter? adapter])
-      : _adapter = adapter;
+  AudioSourceResolver._internal({
+    YouTubeStreamExtractorAdapter? adapter,
+    PlayerConfig? playerConfig,
+    YouTubeCipher? cipherEngine,
+  })  : _adapter = adapter,
+        _playerConfig = playerConfig ?? PlayerConfig.defaultFallback,
+        _cipherEngine = cipherEngine ?? const YouTubeCipher();
 
   static final AudioSourceResolver _instance = AudioSourceResolver._internal();
-  factory AudioSourceResolver({YouTubeStreamExtractorAdapter? adapter}) {
-    if (adapter != null) {
-      return AudioSourceResolver._internal(adapter);
+  factory AudioSourceResolver({
+    YouTubeStreamExtractorAdapter? adapter,
+    PlayerConfig? playerConfig,
+    YouTubeCipher? cipherEngine,
+  }) {
+    if (adapter != null || playerConfig != null || cipherEngine != null) {
+      return AudioSourceResolver._internal(
+        adapter: adapter,
+        playerConfig: playerConfig,
+        cipherEngine: cipherEngine,
+      );
     }
     return _instance;
   }
@@ -33,6 +49,12 @@ class AudioSourceResolver {
   YouTubeStreamExtractorAdapter? _adapter;
   YouTubeStreamExtractorAdapter get adapter =>
       _adapter ??= ExplodeStreamExtractorAdapter();
+
+  final PlayerConfig _playerConfig;
+  final YouTubeCipher _cipherEngine;
+  final AccountService _accountService = AccountService();
+
+  PlayerConfig get activePlayerConfig => _playerConfig;
 
   final Dio _dio = Dio(BaseOptions(
     connectTimeout: const Duration(seconds: 10),
@@ -54,17 +76,32 @@ class AudioSourceResolver {
   ];
 
   @visibleForTesting
-  String? extractUrlFromFormat(Map f) {
+  String? extractUrlFromFormat(Map f, [PlayerConfig? config]) {
+    final cfg = config ?? _playerConfig;
+
     final directUrl = f['url']?.toString();
-    if (directUrl != null && directUrl.isNotEmpty && (Uri.tryParse(directUrl)?.hasScheme ?? false)) {
-      return directUrl;
+    if (directUrl != null &&
+        directUrl.isNotEmpty &&
+        (Uri.tryParse(directUrl)?.hasScheme ?? false)) {
+      return _cipherEngine.transformNParameter(directUrl, cfg);
     }
-    // Note: signatureCipher requires JS cipher deciphering. Raw cipher URLs are not valid stream URLs.
+
+    final cipherStr =
+        f['signatureCipher']?.toString() ?? f['cipher']?.toString();
+    if (cipherStr != null && cipherStr.isNotEmpty) {
+      final deciphered = _cipherEngine.decipherSignature(cipherStr, cfg);
+      if (deciphered != null && deciphered.isNotEmpty) {
+        return _cipherEngine.transformNParameter(deciphered, cfg);
+      }
+    }
+
     return null;
   }
 
   @visibleForTesting
-  List<String> parseFormatsFromStreamingData(Map streamingData) {
+  List<String> parseFormatsFromStreamingData(Map streamingData,
+      [PlayerConfig? config]) {
+    final cfg = config ?? _playerConfig;
     final List<String> candidateUrls = [];
     final adaptiveFormats = streamingData['adaptiveFormats'];
     final formats = streamingData['formats'];
@@ -79,16 +116,19 @@ class AudioSourceResolver {
 
     final audioFormats = allFormats.where((f) {
       final String mime = f['mimeType']?.toString().toLowerCase() ?? '';
-      final url = extractUrlFromFormat(f);
-      return (mime.contains('audio') || mime.contains('mp4') || mime.contains('webm')) &&
+      final url = extractUrlFromFormat(f, cfg);
+      return (mime.contains('audio') ||
+              mime.contains('mp4') ||
+              mime.contains('webm')) &&
           url != null &&
           url.isNotEmpty;
     }).toList();
 
     if (audioFormats.isNotEmpty) {
-      audioFormats.sort((a, b) => _toInt(b['bitrate']).compareTo(_toInt(a['bitrate'])));
+      audioFormats
+          .sort((a, b) => _toInt(b['bitrate']).compareTo(_toInt(a['bitrate'])));
       for (final f in audioFormats) {
-        final url = extractUrlFromFormat(f);
+        final url = extractUrlFromFormat(f, cfg);
         if (url != null && !candidateUrls.contains(url)) {
           candidateUrls.add(url);
         }
@@ -103,20 +143,24 @@ class AudioSourceResolver {
     if (videoId.isEmpty || videoId.startsWith('local:')) return const [];
 
     final List<String> candidateUrls = [];
+    final session = _accountService.currentSession;
+    final cookieHeader = session?.cookie ?? '';
 
-    // 1. Primary: Direct InnerTube /player client endpoint attempts
+    // 1. Primary: Direct InnerTube /player client endpoint attempts with sts (signatureTimestamp)
     final clients = [
       {
         'name': 'WEB_REMIX',
         'version': '1.20241021.01.00',
-        'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'ua':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'clientNameHeader': '67',
         'endpoint': 'https://music.youtube.com/youtubei/v1/player',
       },
       {
         'name': 'ANDROID_MUSIC',
         'version': '6.20.51',
-        'ua': 'com.google.android.apps.youtube.music/6.20.51 (Linux; U; Android 14; en_US)',
+        'ua':
+            'com.google.android.apps.youtube.music/6.20.51 (Linux; U; Android 14; en_US)',
         'clientNameHeader': '61',
         'endpoint': 'https://music.youtube.com/youtubei/v1/player',
       },
@@ -124,6 +168,16 @@ class AudioSourceResolver {
 
     for (final client in clients) {
       try {
+        final reqHeaders = <String, String>{
+          'User-Agent': client['ua'] as String,
+          'X-YouTube-Client-Name': client['clientNameHeader'] as String,
+          'X-YouTube-Client-Version': client['version'] as String,
+          'Content-Type': 'application/json',
+        };
+        if (cookieHeader.isNotEmpty) {
+          reqHeaders['Cookie'] = cookieHeader;
+        }
+
         final ytResponse = await _dio.post<dynamic>(
           client['endpoint'] as String,
           data: {
@@ -136,36 +190,39 @@ class AudioSourceResolver {
               },
             },
             'videoId': videoId,
+            'playbackContext': {
+              'contentPlaybackContext': {
+                'html5Preference': 'HTML5_PREFER_SERVER_CONFIG',
+                'signatureTimestamp': _playerConfig.sts,
+              }
+            },
             'contentCheckOk': true,
             'racyCheckOk': true,
           },
-          options: Options(
-            headers: {
-              'User-Agent': client['ua'],
-              'X-YouTube-Client-Name': client['clientNameHeader'],
-              'X-YouTube-Client-Version': client['version'],
-              'Content-Type': 'application/json',
-            },
-          ),
+          options: Options(headers: reqHeaders),
         );
 
         if (ytResponse.statusCode == 200 && ytResponse.data is Map) {
           final data = ytResponse.data as Map;
           final streamingData = data['streamingData'];
           if (streamingData is Map) {
-            final parsedUrls = parseFormatsFromStreamingData(streamingData);
+            final parsedUrls =
+                parseFormatsFromStreamingData(streamingData, _playerConfig);
             if (parsedUrls.isNotEmpty) {
               candidateUrls.addAll(parsedUrls);
               break;
             }
           } else {
-            final playability = data['playabilityStatus']?['status']?.toString();
+            final playability =
+                data['playabilityStatus']?['status']?.toString();
             final reason = data['playabilityStatus']?['reason']?.toString();
-            debugPrint('InnerTube client ${client['name']} playabilityStatus: $playability, reason: $reason');
+            debugPrint(
+                'InnerTube client ${client['name']} playabilityStatus: $playability, reason: $reason');
           }
         }
       } catch (e) {
-        debugPrint('InnerTube stream resolve error for client ${client['name']}: $e');
+        debugPrint(
+            'InnerTube stream resolve error for client ${client['name']}: $e');
       }
     }
 
@@ -185,7 +242,8 @@ class AudioSourceResolver {
     if (candidateUrls.isEmpty) {
       for (final instance in _pipedInstances) {
         try {
-          final response = await _dio.get<dynamic>('$instance/streams/$videoId');
+          final response =
+              await _dio.get<dynamic>('$instance/streams/$videoId');
           final data = response.data;
           if (response.statusCode != 200 || data is! Map) continue;
           final rawStreams = data['audioStreams'];
@@ -193,11 +251,14 @@ class AudioSourceResolver {
 
           final candidates = rawStreams.whereType<Map>().where((stream) {
             final url = stream['url'];
-            return url is String && url.isNotEmpty && (Uri.tryParse(url)?.hasScheme ?? false);
+            return url is String &&
+                url.isNotEmpty &&
+                (Uri.tryParse(url)?.hasScheme ?? false);
           }).toList();
           if (candidates.isEmpty) continue;
 
-          candidates.sort((a, b) => _toInt(b['bitrate']).compareTo(_toInt(a['bitrate'])));
+          candidates.sort(
+              (a, b) => _toInt(b['bitrate']).compareTo(_toInt(a['bitrate'])));
           for (final c in candidates) {
             final url = c['url'] as String;
             if (!candidateUrls.contains(url)) {

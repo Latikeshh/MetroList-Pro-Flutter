@@ -15,7 +15,14 @@ class _ChartsScreenState extends State<ChartsScreen> {
   final AudioPlayerService _playerService = AudioPlayerService();
   String _selectedRegion = 'Global';
 
-  final List<String> _regions = ['Global', 'United States', 'United Kingdom', 'Japan', 'India', 'Germany'];
+  final List<String> _regions = [
+    'Global',
+    'United States',
+    'United Kingdom',
+    'Japan',
+    'India',
+    'Germany'
+  ];
 
   late List<SongItem> _chartTracks;
 
@@ -32,7 +39,8 @@ class _ChartsScreenState extends State<ChartsScreen> {
         id: 'chart_${_selectedRegion}_$index',
         title: 'Top 100 Track #${index + 1} ($_selectedRegion)',
         artists: [index == 0 ? 'Top Chart Leader' : 'Popular Hitmaker'],
-        thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
+        thumbnailUrl:
+            'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
       ),
     );
   }
@@ -43,7 +51,8 @@ class _ChartsScreenState extends State<ChartsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Top Charts & Trending', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Top Charts & Trending',
+            style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: Column(
         children: [
@@ -54,16 +63,21 @@ class _ChartsScreenState extends State<ChartsScreen> {
               children: [
                 const Icon(Icons.public_rounded),
                 const SizedBox(width: 12),
-                const Text('Select Region:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text('Select Region:',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _selectedRegion,
                     decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
-                    items: _regions.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                    items: _regions
+                        .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                        .toList(),
                     onChanged: (val) {
                       if (val != null) {
                         setState(() {
@@ -101,7 +115,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: isTop3 ? Colors.amber : colorScheme.onSurfaceVariant,
+                            color: isTop3
+                                ? Colors.amber
+                                : colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -122,13 +138,16 @@ class _ChartsScreenState extends State<ChartsScreen> {
                       ),
                     ],
                   ),
-                  title: Text(song.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(song.title,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text(song.artists.join(', ')),
                   trailing: IconButton(
                     icon: const Icon(Icons.play_arrow_rounded),
-                    onPressed: () => _playerService.playSong(song, newQueue: _chartTracks),
+                    onPressed: () =>
+                        _playerService.playSong(song, newQueue: _chartTracks),
                   ),
-                  onTap: () => _playerService.playSong(song, newQueue: _chartTracks),
+                  onTap: () =>
+                      _playerService.playSong(song, newQueue: _chartTracks),
                 );
               },
             ),

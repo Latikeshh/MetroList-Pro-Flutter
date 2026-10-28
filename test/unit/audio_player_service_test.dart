@@ -74,20 +74,23 @@ void main() {
       expect(urls.last, 'https://googlevideo.com/stream_low_128k');
     });
 
-    test('Ignores formats requiring signatureCipher when undeciphered', () {
+    test('Deciphers signatureCipher formats using active YouTubeCipher engine',
+        () {
       final streamingData = {
         'adaptiveFormats': [
           {
             'mimeType': 'audio/webm',
             'bitrate': 160000,
-            'signatureCipher': 's=ENC_SIG_123&sp=sig&url=https%3A%2F%2Fgooglevideo.com%2Fstream',
+            'signatureCipher':
+                's=ENC_SIG_123&sp=sig&url=https%3A%2F%2Fgooglevideo.com%2Fstream',
           },
         ]
       };
 
       final urls = resolver.parseFormatsFromStreamingData(streamingData);
 
-      expect(urls, isEmpty);
+      expect(urls, isNotEmpty);
+      expect(urls.first, contains('https://googlevideo.com/stream'));
     });
 
     test('Local file path resolution bypasses network resolver', () async {

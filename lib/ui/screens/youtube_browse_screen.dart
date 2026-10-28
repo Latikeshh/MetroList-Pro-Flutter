@@ -31,7 +31,8 @@ class _YouTubeBrowseScreenState extends State<YouTubeBrowseScreen> {
         id: 'browse_${widget.browseId}_$index',
         title: '${widget.title} Item #${index + 1}',
         artists: ['YouTube InnerTube Browse'],
-        thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
+        thumbnailUrl:
+            'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
       ),
     );
   }
@@ -65,11 +66,13 @@ class _YouTubeBrowseScreenState extends State<YouTubeBrowseScreen> {
                 ),
               ),
             ),
-            title: Text(song.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(song.title,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(song.artists.join(', ')),
             trailing: IconButton(
               icon: const Icon(Icons.play_arrow_rounded),
-              onPressed: () => _playerService.playSong(song, newQueue: _browseItems),
+              onPressed: () =>
+                  _playerService.playSong(song, newQueue: _browseItems),
             ),
             onTap: () => _playerService.playSong(song, newQueue: _browseItems),
           );

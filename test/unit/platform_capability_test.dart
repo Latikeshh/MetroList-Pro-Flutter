@@ -20,7 +20,8 @@ void main() {
     });
 
     test('local file path capability matches web support', () {
-      expect(PlatformCapability.supportsLocalFilePaths, isNot(PlatformCapability.isWeb));
+      expect(PlatformCapability.supportsLocalFilePaths,
+          isNot(PlatformCapability.isWeb));
     });
   });
 }

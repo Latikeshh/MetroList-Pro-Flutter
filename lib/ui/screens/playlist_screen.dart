@@ -61,14 +61,19 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
         title: Text(widget.title),
         actions: [
           IconButton(
-            icon: Icon(_isDownloaded ? Icons.download_done_rounded : Icons.download_for_offline_outlined),
+            icon: Icon(_isDownloaded
+                ? Icons.download_done_rounded
+                : Icons.download_for_offline_outlined),
             tooltip: _isDownloaded ? 'Downloaded Offline' : 'Download Playlist',
             onPressed: () {
               setState(() {
                 _isDownloaded = !_isDownloaded;
               });
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(_isDownloaded ? 'Playlist downloaded for offline playback' : 'Offline cache cleared')),
+                SnackBar(
+                    content: Text(_isDownloaded
+                        ? 'Playlist downloaded for offline playback'
+                        : 'Offline cache cleared')),
               );
             },
           ),
@@ -85,12 +90,14 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: widget.thumbnailUrl != null
-                      ? Image.network(widget.thumbnailUrl!, width: 100, height: 100, fit: BoxFit.cover)
+                      ? Image.network(widget.thumbnailUrl!,
+                          width: 100, height: 100, fit: BoxFit.cover)
                       : Container(
                           width: 100,
                           height: 100,
                           color: colorScheme.primaryContainer,
-                          child: const Icon(Icons.queue_music_rounded, size: 48),
+                          child:
+                              const Icon(Icons.queue_music_rounded, size: 48),
                         ),
                 ),
                 const SizedBox(width: 16),
@@ -100,12 +107,16 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                     children: [
                       Text(
                         widget.title,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(fontWeight: FontWeight.bold),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      Text('${widget.author ?? 'Metrolist'} • ${_tracks.length} Songs'),
+                      Text(
+                          '${widget.author ?? 'Metrolist'} • ${_tracks.length} Songs'),
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -114,7 +125,8 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                             label: const Text('Play All'),
                             onPressed: () {
                               if (_tracks.isNotEmpty) {
-                                _playerService.playSong(_tracks.first, newQueue: _tracks);
+                                _playerService.playSong(_tracks.first,
+                                    newQueue: _tracks);
                               }
                             },
                           ),
@@ -124,7 +136,8 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                             onPressed: () {
                               if (_tracks.isNotEmpty) {
                                 _playerService.toggleShuffle();
-                                _playerService.playSong(_tracks.first, newQueue: _tracks);
+                                _playerService.playSong(_tracks.first,
+                                    newQueue: _tracks);
                               }
                             },
                           ),
@@ -157,11 +170,18 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                         key: ValueKey(song.id),
                         leading: CircleAvatar(
                           backgroundColor: colorScheme.surfaceContainerHighest,
-                          child: Text('${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          child: Text('${index + 1}',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
                         ),
-                        title: Text(song.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        title: Text(song.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text(song.artists.join(', ')),
-                        onTap: () => _playerService.playSong(song, newQueue: _tracks),
+                        onTap: () =>
+                            _playerService.playSong(song, newQueue: _tracks),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete_outline_rounded),
                           onPressed: () => _removeTrack(index),

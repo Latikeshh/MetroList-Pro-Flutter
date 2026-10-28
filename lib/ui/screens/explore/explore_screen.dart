@@ -20,32 +20,41 @@ class _ExploreScreenState extends State<ExploreScreen> {
   late Future<ExplorePageData> _exploreFuture;
   int _selectedFilterIndex = 0;
 
-  final List<String> _filters = ['All', 'New Releases', 'Moods & Genres', 'Top Charts'];
+  final List<String> _filters = [
+    'All',
+    'New Releases',
+    'Moods & Genres',
+    'Top Charts'
+  ];
 
   final List<SongItem> _topChartSongs = const [
     SongItem(
       id: 'dQw4w9WgXcQ',
       title: 'Global Top Track #1',
       artists: ['Metrolist Trending'],
-      thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
+      thumbnailUrl:
+          'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
     ),
     SongItem(
       id: '3JZ_D3ELwOQ',
       title: 'Global Top Track #2',
       artists: ['Worldwide Artist'],
-      thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500',
+      thumbnailUrl:
+          'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500',
     ),
     SongItem(
       id: 'L_jWHffIx5E',
       title: 'Global Top Track #3',
       artists: ['Chart Dominator'],
-      thumbnailUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500',
+      thumbnailUrl:
+          'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500',
     ),
     SongItem(
       id: 'fJ9rUzIMcZQ',
       title: 'Global Top Track #4',
       artists: ['Popular Hitmakers'],
-      thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500',
+      thumbnailUrl:
+          'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500',
     ),
   ];
 
@@ -95,7 +104,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -113,8 +123,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         label: Text(_filters[index]),
                         selectedColor: colorScheme.primaryContainer,
                         labelStyle: TextStyle(
-                          color: isSelected ? colorScheme.onPrimaryContainer : colorScheme.onSurface,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected
+                              ? colorScheme.onPrimaryContainer
+                              : colorScheme.onSurface,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                         onSelected: (selected) {
                           setState(() {
@@ -171,7 +184,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             ),
                             child: InkWell(
                               onTap: () {
-                                _playerService.playSong(_topChartSongs[index % _topChartSongs.length]);
+                                _playerService.playSong(_topChartSongs[
+                                    index % _topChartSongs.length]);
                               },
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,7 +196,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                       child: Stack(
                                         children: [
                                           const Center(
-                                            child: Icon(Icons.album_rounded, size: 54, color: Colors.white70),
+                                            child: Icon(Icons.album_rounded,
+                                                size: 54,
+                                                color: Colors.white70),
                                           ),
                                           Positioned(
                                             right: 6,
@@ -194,7 +210,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                               ),
                                               child: const Padding(
                                                 padding: EdgeInsets.all(6.0),
-                                                child: Icon(Icons.play_arrow_rounded, size: 20, color: Colors.white),
+                                                child: Icon(
+                                                    Icons.play_arrow_rounded,
+                                                    size: 20,
+                                                    color: Colors.white),
                                               ),
                                             ),
                                           )
@@ -205,20 +224,27 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          albumTitles[index % albumTitles.length],
+                                          albumTitles[
+                                              index % albumTitles.length],
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13),
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
                                           artists[index % artists.length],
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                                          style: TextStyle(
+                                              fontSize: 11,
+                                              color:
+                                                  colorScheme.onSurfaceVariant),
                                         ),
                                       ],
                                     ),
@@ -266,7 +292,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         child: InkWell(
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Exploring ${mood.title} mood category')),
+                              SnackBar(
+                                  content: Text(
+                                      'Exploring ${mood.title} mood category')),
                             );
                           },
                           child: Container(
@@ -280,7 +308,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                 end: Alignment.bottomRight,
                               ),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
                             alignment: Alignment.centerLeft,
                             child: Row(
                               children: [
@@ -296,7 +325,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                     ),
                                   ),
                                 ),
-                                const Icon(Icons.music_note_rounded, color: Colors.white54, size: 28),
+                                const Icon(Icons.music_note_rounded,
+                                    color: Colors.white54, size: 28),
                               ],
                             ),
                           ),
@@ -340,25 +370,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                   ),
                                 ),
                               ),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: song.thumbnailUrl != null
-                                  ? Image.network(
-                                      song.thumbnailUrl!,
-                                      width: 48,
-                                      height: 48,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Container(
-                                      width: 48,
-                                      height: 48,
-                                      color: colorScheme.surfaceContainerHighest,
-                                      child: const Icon(Icons.music_note),
-                                    ),
-                            ),
-                          ],
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: song.thumbnailUrl != null
+                                    ? Image.network(
+                                        song.thumbnailUrl!,
+                                        width: 48,
+                                        height: 48,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Container(
+                                        width: 48,
+                                        height: 48,
+                                        color:
+                                            colorScheme.surfaceContainerHighest,
+                                        child: const Icon(Icons.music_note),
+                                      ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
                         title: Text(
                           song.title,
                           style: const TextStyle(fontWeight: FontWeight.bold),

@@ -22,7 +22,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
 
       final result = await FilePicker.platform.saveFile(
         dialogTitle: 'Export Metrolist Backup',
-        fileName: 'metrolist_backup_${DateTime.now().millisecondsSinceEpoch}.json',
+        fileName:
+            'metrolist_backup_${DateTime.now().millisecondsSinceEpoch}.json',
         type: FileType.custom,
         allowedExtensions: ['json'],
         bytes: bytes,
@@ -53,20 +54,21 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
 
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
-        final jsonString = file.bytes != null
-            ? utf8.decode(file.bytes!)
-            : '';
+        final jsonString = file.bytes != null ? utf8.decode(file.bytes!) : '';
 
         if (jsonString.isNotEmpty) {
           final success = await _db.importBackupJson(jsonString);
           if (mounted) {
             if (success) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Library restored successfully from backup!')),
+                const SnackBar(
+                    content:
+                        Text('Library restored successfully from backup!')),
               );
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Invalid backup JSON file format.')),
+                const SnackBar(
+                    content: Text('Invalid backup JSON file format.')),
               );
             }
           }
@@ -85,7 +87,8 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Backup & Restore', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Backup & Restore',
+            style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: Center(
         child: ConstrainedBox(
@@ -95,9 +98,11 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
             children: [
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.download_rounded, color: Colors.blueAccent),
+                  leading: const Icon(Icons.download_rounded,
+                      color: Colors.blueAccent),
                   title: const Text('Export Library Backup'),
-                  subtitle: const Text('Save your liked songs, playlists, and history to a JSON backup file'),
+                  subtitle: const Text(
+                      'Save your liked songs, playlists, and history to a JSON backup file'),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: _exportBackup,
                 ),
@@ -105,9 +110,11 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
               const SizedBox(height: 12),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.upload_rounded, color: Colors.green),
+                  leading:
+                      const Icon(Icons.upload_rounded, color: Colors.green),
                   title: const Text('Restore Library Backup'),
-                  subtitle: const Text('Import library data from a previously saved JSON backup file'),
+                  subtitle: const Text(
+                      'Import library data from a previously saved JSON backup file'),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: _restoreBackup,
                 ),

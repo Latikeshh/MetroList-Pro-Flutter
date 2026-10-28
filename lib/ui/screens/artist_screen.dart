@@ -22,7 +22,8 @@ class ArtistScreen extends StatefulWidget {
   State<ArtistScreen> createState() => _ArtistScreenState();
 }
 
-class _ArtistScreenState extends State<ArtistScreen> with SingleTickerProviderStateMixin {
+class _ArtistScreenState extends State<ArtistScreen>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   final AudioPlayerService _playerService = AudioPlayerService();
 
@@ -76,8 +77,12 @@ class _ArtistScreenState extends State<ArtistScreen> with SingleTickerProviderSt
               children: [
                 CircleAvatar(
                   radius: 44,
-                  backgroundImage: widget.thumbnailUrl != null ? NetworkImage(widget.thumbnailUrl!) : null,
-                  child: widget.thumbnailUrl == null ? const Icon(Icons.person_rounded, size: 44) : null,
+                  backgroundImage: widget.thumbnailUrl != null
+                      ? NetworkImage(widget.thumbnailUrl!)
+                      : null,
+                  child: widget.thumbnailUrl == null
+                      ? const Icon(Icons.person_rounded, size: 44)
+                      : null,
                 ),
                 const SizedBox(width: 20),
                 Expanded(
@@ -86,7 +91,10 @@ class _ArtistScreenState extends State<ArtistScreen> with SingleTickerProviderSt
                     children: [
                       Text(
                         widget.name,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                       ),
@@ -102,7 +110,8 @@ class _ArtistScreenState extends State<ArtistScreen> with SingleTickerProviderSt
                             icon: const Icon(Icons.play_arrow_rounded),
                             label: const Text('Radio'),
                             onPressed: () {
-                              _playerService.playSong(_topSongs.first, newQueue: _topSongs);
+                              _playerService.playSong(_topSongs.first,
+                                  newQueue: _topSongs);
                             },
                           ),
                           const SizedBox(width: 8),
@@ -111,7 +120,9 @@ class _ArtistScreenState extends State<ArtistScreen> with SingleTickerProviderSt
                             label: const Text('Subscribe'),
                             onPressed: () {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Subscribed to ${widget.name}')),
+                                SnackBar(
+                                    content:
+                                        Text('Subscribed to ${widget.name}')),
                               );
                             },
                           ),
@@ -138,15 +149,23 @@ class _ArtistScreenState extends State<ArtistScreen> with SingleTickerProviderSt
                     return ListTile(
                       leading: SizedBox(
                         width: 24,
-                        child: Text('#${index + 1}', style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary)),
+                        child: Text('#${index + 1}',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.primary)),
                       ),
-                      title: Text(song.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(song.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
                       subtitle: Text(song.artists.join(', ')),
                       trailing: IconButton(
                         icon: const Icon(Icons.play_arrow_rounded),
-                        onPressed: () => _playerService.playSong(song, newQueue: _topSongs),
+                        onPressed: () =>
+                            _playerService.playSong(song, newQueue: _topSongs),
                       ),
-                      onTap: () => _playerService.playSong(song, newQueue: _topSongs),
+                      onTap: () =>
+                          _playerService.playSong(song, newQueue: _topSongs),
                     );
                   },
                 ),
@@ -162,7 +181,12 @@ class _ArtistScreenState extends State<ArtistScreen> with SingleTickerProviderSt
                   ),
                   itemCount: 4,
                   itemBuilder: (context, index) {
-                    final titles = ['Album Collection Vol. $index', 'Live Sessions 2026', 'Acoustic Edition', 'Remix Anthology'];
+                    final titles = [
+                      'Album Collection Vol. $index',
+                      'Live Sessions 2026',
+                      'Acoustic Edition',
+                      'Remix Anthology'
+                    ];
                     return Card(
                       color: colorScheme.surfaceContainer,
                       clipBehavior: Clip.antiAlias,
@@ -174,12 +198,16 @@ class _ArtistScreenState extends State<ArtistScreen> with SingleTickerProviderSt
                             Expanded(
                               child: Container(
                                 color: colorScheme.primaryContainer,
-                                child: const Center(child: Icon(Icons.album_rounded, size: 48)),
+                                child: const Center(
+                                    child: Icon(Icons.album_rounded, size: 48)),
                               ),
                             ),
                             Padding(
                               padding: const EdgeInsets.all(12.0),
-                              child: Text(titles[index], style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1),
+                              child: Text(titles[index],
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                  maxLines: 1),
                             ),
                           ],
                         ),
@@ -193,10 +221,17 @@ class _ArtistScreenState extends State<ArtistScreen> with SingleTickerProviderSt
                   padding: const EdgeInsets.all(12),
                   itemCount: 4,
                   itemBuilder: (context, index) {
-                    final names = ['Lofi Collective', 'Synthwave Express', 'The Metrolist Band', 'Unplugged Voices'];
+                    final names = [
+                      'Lofi Collective',
+                      'Synthwave Express',
+                      'The Metrolist Band',
+                      'Unplugged Voices'
+                    ];
                     return ListTile(
-                      leading: const CircleAvatar(child: Icon(Icons.person_rounded)),
-                      title: Text(names[index], style: const TextStyle(fontWeight: FontWeight.bold)),
+                      leading:
+                          const CircleAvatar(child: Icon(Icons.person_rounded)),
+                      title: Text(names[index],
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
                       subtitle: const Text('Similar Musical Style'),
                       trailing: const Icon(Icons.chevron_right_rounded),
                     );

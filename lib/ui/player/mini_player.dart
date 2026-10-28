@@ -42,7 +42,8 @@ class MiniPlayer extends StatelessWidget {
                 onTap: onTap,
                 borderRadius: BorderRadius.circular(16.0),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12.0, vertical: 8.0),
                   child: Row(
                     children: [
                       // Thumbnail
@@ -57,14 +58,18 @@ class MiniPlayer extends StatelessWidget {
                                 errorBuilder: (_, __, ___) => Container(
                                   width: 44,
                                   height: 44,
-                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
                                   child: const Icon(Icons.music_note, size: 24),
                                 ),
                               )
                             : Container(
                                 width: 44,
                                 height: 44,
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
                                 child: const Icon(Icons.music_note, size: 24),
                               ),
                       ),
@@ -87,12 +92,16 @@ class MiniPlayer extends StatelessWidget {
                             ),
                             const SizedBox(height: 2.0),
                             Text(
-                              song.artists.isNotEmpty ? song.artists.join(', ') : 'Metrolist Pro',
+                              song.artists.isNotEmpty
+                                  ? song.artists.join(', ')
+                                  : 'Metrolist Pro',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 12.0,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -106,7 +115,9 @@ class MiniPlayer extends StatelessWidget {
                           final isPlaying = playingSnapshot.data ?? false;
                           return IconButton(
                             icon: Icon(
-                              isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                              isPlaying
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded,
                               size: 32.0,
                             ),
                             color: Theme.of(context).colorScheme.primary,
@@ -129,7 +140,8 @@ class MiniPlayer extends StatelessWidget {
                   final position = positionData?.position ?? Duration.zero;
                   final duration = positionData?.duration ?? Duration.zero;
                   final progress = (duration.inMilliseconds > 0)
-                      ? (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
+                      ? (position.inMilliseconds / duration.inMilliseconds)
+                          .clamp(0.0, 1.0)
                       : 0.0;
 
                   return LinearProgressIndicator(

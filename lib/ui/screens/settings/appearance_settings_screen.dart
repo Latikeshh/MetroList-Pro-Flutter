@@ -6,7 +6,8 @@ class AppearanceSettingsScreen extends StatefulWidget {
   const AppearanceSettingsScreen({super.key});
 
   @override
-  State<AppearanceSettingsScreen> createState() => _AppearanceSettingsScreenState();
+  State<AppearanceSettingsScreen> createState() =>
+      _AppearanceSettingsScreenState();
 }
 
 class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
@@ -28,7 +29,8 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Appearance & Theme', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Appearance & Theme',
+            style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: Center(
         child: ConstrainedBox(
@@ -36,7 +38,11 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              Text('Theme Seed Color', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text('Theme Seed Color',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 12,
@@ -51,18 +57,19 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                     child: CircleAvatar(
                       radius: 20,
                       backgroundColor: color,
-                      child: isSelected ? const Icon(Icons.check, color: Colors.white) : null,
+                      child: isSelected
+                          ? const Icon(Icons.check, color: Colors.white)
+                          : null,
                     ),
                   );
                 }).toList(),
               ),
-
               const SizedBox(height: 24),
               const Divider(),
-
               SwitchListTile(
                 title: const Text('Dynamic Material You Colors'),
-                subtitle: const Text('Extract accent colors dynamically from album covers'),
+                subtitle: const Text(
+                    'Extract accent colors dynamically from album covers'),
                 value: _useMaterialYou,
                 onChanged: (val) {
                   setState(() {
@@ -70,10 +77,10 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                   });
                 },
               ),
-
               SwitchListTile(
                 title: const Text('Pitch Black OLED Theme'),
-                subtitle: const Text('Use pure black background (#000000) for OLED panels'),
+                subtitle: const Text(
+                    'Use pure black background (#000000) for OLED panels'),
                 value: _isOledBlack,
                 onChanged: (val) {
                   setState(() {
@@ -81,19 +88,24 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
                   });
                 },
               ),
-
               const Divider(),
               const SizedBox(height: 12),
-
-              Text('Font Family', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text('Font Family',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: _fontFamily,
                 decoration: InputDecoration(
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 items: const [
-                  DropdownMenuItem(value: 'Outfit', child: Text('Outfit (Default Metrolist)')),
+                  DropdownMenuItem(
+                      value: 'Outfit',
+                      child: Text('Outfit (Default Metrolist)')),
                   DropdownMenuItem(value: 'Roboto', child: Text('Roboto')),
                   DropdownMenuItem(value: 'System', child: Text('System Font')),
                 ],

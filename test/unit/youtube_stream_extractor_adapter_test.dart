@@ -24,7 +24,8 @@ class MockStreamExtractorAdapter implements YouTubeStreamExtractorAdapter {
 
 void main() {
   group('YouTubeStreamExtractorAdapter Deterministic Unit Tests', () {
-    test('Mock adapter returns candidate stream URLs sorted by bitrate', () async {
+    test('Mock adapter returns candidate stream URLs sorted by bitrate',
+        () async {
       final adapter = MockStreamExtractorAdapter();
       final urls = await adapter.extractAudioStreamUrls('test_video_123');
 

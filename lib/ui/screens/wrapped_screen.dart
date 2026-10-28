@@ -15,11 +15,31 @@ class _WrappedScreenState extends State<WrappedScreen> {
   int _currentPage = 0;
 
   final List<Map<String, dynamic>> _topSongs = [
-    {'title': 'Midnight Frequency', 'artist': 'The Metrolist Band', 'plays': '342 plays'},
-    {'title': 'Starlight Memories', 'artist': 'Lofi Collective', 'plays': '289 plays'},
-    {'title': 'Velvet Horizon', 'artist': 'Synthwave Express', 'plays': '215 plays'},
-    {'title': 'Echoes of Today', 'artist': 'Global Hitmakers', 'plays': '184 plays'},
-    {'title': 'Neon Drive 2026', 'artist': 'Electra Crew', 'plays': '150 plays'},
+    {
+      'title': 'Midnight Frequency',
+      'artist': 'The Metrolist Band',
+      'plays': '342 plays'
+    },
+    {
+      'title': 'Starlight Memories',
+      'artist': 'Lofi Collective',
+      'plays': '289 plays'
+    },
+    {
+      'title': 'Velvet Horizon',
+      'artist': 'Synthwave Express',
+      'plays': '215 plays'
+    },
+    {
+      'title': 'Echoes of Today',
+      'artist': 'Global Hitmakers',
+      'plays': '184 plays'
+    },
+    {
+      'title': 'Neon Drive 2026',
+      'artist': 'Electra Crew',
+      'plays': '150 plays'
+    },
   ];
 
   final List<Map<String, dynamic>> _topArtists = [
@@ -40,7 +60,8 @@ class _WrappedScreenState extends State<WrappedScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Metrolist Wrapped 2026', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Metrolist Wrapped 2026',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: Column(
@@ -55,7 +76,8 @@ class _WrappedScreenState extends State<WrappedScreen> {
                     height: 4,
                     margin: const EdgeInsets.symmetric(horizontal: 3),
                     decoration: BoxDecoration(
-                      color: index <= _currentPage ? Colors.white : Colors.white24,
+                      color:
+                          index <= _currentPage ? Colors.white : Colors.white24,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -80,11 +102,13 @@ class _WrappedScreenState extends State<WrappedScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.timer_rounded, size: 72, color: Colors.white),
+                      const Icon(Icons.timer_rounded,
+                          size: 72, color: Colors.white),
                       const SizedBox(height: 24),
                       Text(
                         'You Listened For',
-                        style: GoogleFonts.outfit(fontSize: 22, color: Colors.white70),
+                        style: GoogleFonts.outfit(
+                            fontSize: 22, color: Colors.white70),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -97,12 +121,17 @@ class _WrappedScreenState extends State<WrappedScreen> {
                       ),
                       Text(
                         'MINUTES',
-                        style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.amberAccent),
+                        style: GoogleFonts.outfit(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amberAccent),
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'That is 242 hours of pure musical enjoyment!',
-                        style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 15),
+                        style: TextStyle(
+                            color: Colors.white.withOpacity(0.85),
+                            fontSize: 15),
                       ),
                     ],
                   ),
@@ -116,14 +145,18 @@ class _WrappedScreenState extends State<WrappedScreen> {
                     children: [
                       Text(
                         'Your Top 5 Tracks',
-                        style: GoogleFonts.outfit(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: GoogleFonts.outfit(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white),
                       ),
                       const SizedBox(height: 20),
                       Expanded(
                         child: ListView.separated(
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _topSongs.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final song = _topSongs[index];
                             return Card(
@@ -134,12 +167,22 @@ class _WrappedScreenState extends State<WrappedScreen> {
                                   backgroundColor: Colors.white24,
                                   child: Text(
                                     '#${index + 1}',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white),
                                   ),
                                 ),
-                                title: Text(song['title'], style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                                subtitle: Text(song['artist'], style: const TextStyle(color: Colors.white70)),
-                                trailing: Text(song['plays'], style: const TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.bold)),
+                                title: Text(song['title'],
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white)),
+                                subtitle: Text(song['artist'],
+                                    style:
+                                        const TextStyle(color: Colors.white70)),
+                                trailing: Text(song['plays'],
+                                    style: const TextStyle(
+                                        color: Colors.amberAccent,
+                                        fontWeight: FontWeight.bold)),
                               ),
                             );
                           },
@@ -157,14 +200,18 @@ class _WrappedScreenState extends State<WrappedScreen> {
                     children: [
                       Text(
                         'Your Top 5 Artists',
-                        style: GoogleFonts.outfit(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: GoogleFonts.outfit(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white),
                       ),
                       const SizedBox(height: 20),
                       Expanded(
                         child: ListView.separated(
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _topArtists.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final artist = _topArtists[index];
                             return Card(
@@ -173,11 +220,21 @@ class _WrappedScreenState extends State<WrappedScreen> {
                               child: ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: Colors.white24,
-                                  child: const Icon(Icons.person_rounded, color: Colors.white),
+                                  child: const Icon(Icons.person_rounded,
+                                      color: Colors.white),
                                 ),
-                                title: Text(artist['name'], style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                                subtitle: Text(artist['time'], style: const TextStyle(color: Colors.white70)),
-                                trailing: Text('#${index + 1}', style: const TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.bold, fontSize: 16)),
+                                title: Text(artist['name'],
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white)),
+                                subtitle: Text(artist['time'],
+                                    style:
+                                        const TextStyle(color: Colors.white70)),
+                                trailing: Text('#${index + 1}',
+                                    style: const TextStyle(
+                                        color: Colors.amberAccent,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16)),
                               ),
                             );
                           },
@@ -193,11 +250,15 @@ class _WrappedScreenState extends State<WrappedScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.stars_rounded, size: 80, color: Colors.amber),
+                      const Icon(Icons.stars_rounded,
+                          size: 80, color: Colors.amber),
                       const SizedBox(height: 20),
                       Text(
                         'Thank You for Listening!',
-                        style: GoogleFonts.outfit(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: GoogleFonts.outfit(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white),
                       ),
                       const SizedBox(height: 12),
                       const Text(
@@ -209,11 +270,13 @@ class _WrappedScreenState extends State<WrappedScreen> {
                         icon: const Icon(Icons.share_rounded),
                         label: const Text('Share Your Summary'),
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
                         ),
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Summary copied to clipboard!')),
+                            const SnackBar(
+                                content: Text('Summary copied to clipboard!')),
                           );
                         },
                       ),
@@ -228,7 +291,8 @@ class _WrappedScreenState extends State<WrappedScreen> {
     );
   }
 
-  Widget _buildSlideContainer({required List<Color> colors, required Widget child}) {
+  Widget _buildSlideContainer(
+      {required List<Color> colors, required Widget child}) {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(24),

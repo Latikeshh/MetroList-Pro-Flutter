@@ -6,10 +6,12 @@ class PlayerStorageSettingsScreen extends StatefulWidget {
   const PlayerStorageSettingsScreen({super.key});
 
   @override
-  State<PlayerStorageSettingsScreen> createState() => _PlayerStorageSettingsScreenState();
+  State<PlayerStorageSettingsScreen> createState() =>
+      _PlayerStorageSettingsScreenState();
 }
 
-class _PlayerStorageSettingsScreenState extends State<PlayerStorageSettingsScreen> {
+class _PlayerStorageSettingsScreenState
+    extends State<PlayerStorageSettingsScreen> {
   double _cacheLimitGb = 2.0;
   bool _gaplessPlayback = true;
   bool _normalizeLoudness = true;
@@ -18,7 +20,8 @@ class _PlayerStorageSettingsScreenState extends State<PlayerStorageSettingsScree
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Player & Storage Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Player & Storage Settings',
+            style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: Center(
         child: ConstrainedBox(
@@ -26,11 +29,16 @@ class _PlayerStorageSettingsScreenState extends State<PlayerStorageSettingsScree
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              Text('Playback Options', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text('Playback Options',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               SwitchListTile(
                 title: const Text('Gapless Playback'),
-                subtitle: const Text('Seamless transitions between album tracks'),
+                subtitle:
+                    const Text('Seamless transitions between album tracks'),
                 value: _gaplessPlayback,
                 onChanged: (val) {
                   setState(() {
@@ -48,11 +56,13 @@ class _PlayerStorageSettingsScreenState extends State<PlayerStorageSettingsScree
                   });
                 },
               ),
-
               const SizedBox(height: 24),
               const Divider(),
-
-              Text('Audio Cache Limit (${_cacheLimitGb.toInt()} GB)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text('Audio Cache Limit (${_cacheLimitGb.toInt()} GB)',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold)),
               Slider(
                 value: _cacheLimitGb,
                 min: 1.0,
@@ -65,7 +75,6 @@ class _PlayerStorageSettingsScreenState extends State<PlayerStorageSettingsScree
                   });
                 },
               ),
-
               ListTile(
                 leading: const Icon(Icons.cleaning_services_rounded),
                 title: const Text('Clear Audio Stream Cache'),

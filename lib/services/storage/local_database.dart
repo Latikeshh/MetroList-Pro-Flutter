@@ -7,7 +7,8 @@ import '../innertube/models/yt_item.dart';
 /// Cross-platform persistent metadata storage. Audio files are never stored here.
 class LocalDatabaseService {
   LocalDatabaseService._internal();
-  static final LocalDatabaseService _instance = LocalDatabaseService._internal();
+  static final LocalDatabaseService _instance =
+      LocalDatabaseService._internal();
   factory LocalDatabaseService() => _instance;
 
   static const _likedSongsKey = 'metrolist.likedSongs.v1';
@@ -35,10 +36,12 @@ class LocalDatabaseService {
 
   Future<void> addToHistory(SongItem song) async {
     final songs = await getHistory();
-    await _writeSongs(_historyKey, <SongItem>[
-      song,
-      ...songs.where((item) => item.id != song.id),
-    ].take(_maxHistoryItems).toList());
+    await _writeSongs(
+        _historyKey,
+        <SongItem>[
+          song,
+          ...songs.where((item) => item.id != song.id),
+        ].take(_maxHistoryItems).toList());
   }
 
   Future<void> clearHistory() async {

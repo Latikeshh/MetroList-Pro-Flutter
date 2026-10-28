@@ -49,7 +49,9 @@ class _AbLooperSheetState extends State<AbLooperSheet> {
               Text(
                 isEnabled ? 'Active' : 'Off',
                 style: TextStyle(
-                  color: isEnabled ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: isEnabled
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -89,7 +91,9 @@ class _AbLooperSheetState extends State<AbLooperSheet> {
                           builder: (context, snapshot) {
                             final isPlaying = snapshot.data ?? false;
                             return IconButton.filled(
-                              icon: Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded),
+                              icon: Icon(isPlaying
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded),
                               onPressed: () {
                                 _playerService.togglePlayPause();
                               },
@@ -99,21 +103,31 @@ class _AbLooperSheetState extends State<AbLooperSheet> {
                         StreamBuilder<PositionData>(
                           stream: _playerService.positionDataStream,
                           builder: (context, snapshot) {
-                            final position = snapshot.data?.position ?? Duration.zero;
-                            final duration = snapshot.data?.duration ?? Duration.zero;
+                            final position =
+                                snapshot.data?.position ?? Duration.zero;
+                            final duration =
+                                snapshot.data?.duration ?? Duration.zero;
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
                                   '${_formatPreciseTime(position)} / ${_formatPreciseTime(duration)}',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
                                         fontWeight: FontWeight.bold,
                                       ),
                                 ),
                                 Text(
                                   'Playback Position',
-                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
                                       ),
                                 ),
                               ],
@@ -137,19 +151,33 @@ class _AbLooperSheetState extends State<AbLooperSheet> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    color: pointA != null ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: pointA != null
+                        ? Theme.of(context).colorScheme.primaryContainer
+                        : Theme.of(context).colorScheme.surfaceContainerHighest,
                     child: Padding(
                       padding: const EdgeInsets.all(12.0),
                       child: Column(
                         children: [
-                          Text('Point A', style: TextStyle(fontWeight: FontWeight.bold, color: pointA != null ? Theme.of(context).colorScheme.onPrimaryContainer : null)),
+                          Text('Point A',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: pointA != null
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .onPrimaryContainer
+                                      : null)),
                           const SizedBox(height: 4),
-                          Text(pointA != null ? _formatPreciseTime(pointA) : 'Not Set', style: const TextStyle(fontSize: 12)),
+                          Text(
+                              pointA != null
+                                  ? _formatPreciseTime(pointA)
+                                  : 'Not Set',
+                              style: const TextStyle(fontSize: 12)),
                           const SizedBox(height: 8),
                           ElevatedButton(
                             onPressed: () {
                               setState(() {
-                                _playerService.setPointA(_playerService.player.position);
+                                _playerService
+                                    .setPointA(_playerService.player.position);
                               });
                             },
                             child: const Text('Set A'),
@@ -165,19 +193,33 @@ class _AbLooperSheetState extends State<AbLooperSheet> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    color: pointB != null ? Theme.of(context).colorScheme.secondaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: pointB != null
+                        ? Theme.of(context).colorScheme.secondaryContainer
+                        : Theme.of(context).colorScheme.surfaceContainerHighest,
                     child: Padding(
                       padding: const EdgeInsets.all(12.0),
                       child: Column(
                         children: [
-                          Text('Point B', style: TextStyle(fontWeight: FontWeight.bold, color: pointB != null ? Theme.of(context).colorScheme.onSecondaryContainer : null)),
+                          Text('Point B',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: pointB != null
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .onSecondaryContainer
+                                      : null)),
                           const SizedBox(height: 4),
-                          Text(pointB != null ? _formatPreciseTime(pointB) : 'Not Set', style: const TextStyle(fontSize: 12)),
+                          Text(
+                              pointB != null
+                                  ? _formatPreciseTime(pointB)
+                                  : 'Not Set',
+                              style: const TextStyle(fontSize: 12)),
                           const SizedBox(height: 8),
                           ElevatedButton(
                             onPressed: () {
                               setState(() {
-                                _playerService.setPointB(_playerService.player.position);
+                                _playerService
+                                    .setPointB(_playerService.player.position);
                               });
                             },
                             child: const Text('Set B'),
@@ -199,10 +241,12 @@ class _AbLooperSheetState extends State<AbLooperSheet> {
                   Expanded(
                     child: FilledButton.icon(
                       icon: const Icon(Icons.play_arrow_rounded),
-                      label: const Text('Play', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: const Text('Play',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
                       ),
                       onPressed: () {
                         _playerService.seek(pointA);
@@ -215,22 +259,27 @@ class _AbLooperSheetState extends State<AbLooperSheet> {
                   Expanded(
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.download_rounded),
-                      label: const Text('Download Clip', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: const Text('Download Clip',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
                       ),
                       onPressed: () async {
                         final song = _playerService.currentSong;
                         if (song == null) return;
 
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Opening file save dialog...')),
+                          const SnackBar(
+                              content: Text('Opening file save dialog...')),
                         );
 
                         final success = await AudioExporterService().exportClip(
                           title: song.title,
-                          artist: song.artists.isNotEmpty ? song.artists.first : 'Metrolist',
+                          artist: song.artists.isNotEmpty
+                              ? song.artists.first
+                              : 'Metrolist',
                           start: pointA,
                           end: pointB,
                           streamUrl: _playerService.currentStreamUrl ?? '',

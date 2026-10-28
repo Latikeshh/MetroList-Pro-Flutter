@@ -91,7 +91,8 @@ class AlbumScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '${artist ?? 'Metrolist Artist'} • ${year ?? '2026'} • 10 Tracks',
-                    style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
+                    style: TextStyle(
+                        color: colorScheme.onSurfaceVariant, fontSize: 14),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
@@ -102,7 +103,8 @@ class AlbumScreen extends StatelessWidget {
                         icon: const Icon(Icons.play_arrow_rounded),
                         label: const Text('Play All'),
                         onPressed: () {
-                          playerService.playSong(sampleTracks.first, newQueue: sampleTracks);
+                          playerService.playSong(sampleTracks.first,
+                              newQueue: sampleTracks);
                         },
                       ),
                       const SizedBox(width: 12),
@@ -111,7 +113,8 @@ class AlbumScreen extends StatelessWidget {
                         label: const Text('Shuffle'),
                         onPressed: () {
                           playerService.toggleShuffle();
-                          playerService.playSong(sampleTracks.first, newQueue: sampleTracks);
+                          playerService.playSong(sampleTracks.first,
+                              newQueue: sampleTracks);
                         },
                       ),
                     ],

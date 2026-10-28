@@ -26,7 +26,8 @@ class MoodDetailScreen extends StatelessWidget {
         id: 'mood_${moodTitle}_$index',
         title: '$moodTitle Essential Track #${index + 1}',
         artists: [moodTitle, 'Metrolist Radio'],
-        thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
+        thumbnailUrl:
+            'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
       ),
     );
 
@@ -58,7 +59,10 @@ class MoodDetailScreen extends StatelessWidget {
                       children: [
                         Text(
                           '$moodTitle Mix & Stations',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
@@ -73,13 +77,15 @@ class MoodDetailScreen extends StatelessWidget {
                           icon: const Icon(Icons.radio_rounded),
                           label: Text('Start $moodTitle Radio'),
                           onPressed: () {
-                            playerService.playSong(sampleSongs.first, newQueue: sampleSongs);
+                            playerService.playSong(sampleSongs.first,
+                                newQueue: sampleSongs);
                           },
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.music_note_rounded, size: 72, color: Colors.white30),
+                  const Icon(Icons.music_note_rounded,
+                      size: 72, color: Colors.white30),
                 ],
               ),
             ),
@@ -90,7 +96,8 @@ class MoodDetailScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             sliver: isDesktop
                 ? SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
                       maxCrossAxisExtent: 220,
                       childAspectRatio: 0.78,
                       crossAxisSpacing: 16,
@@ -103,19 +110,25 @@ class MoodDetailScreen extends StatelessWidget {
                           clipBehavior: Clip.antiAlias,
                           color: colorScheme.surfaceContainer,
                           child: InkWell(
-                            onTap: () => playerService.playSong(song, newQueue: sampleSongs),
+                            onTap: () => playerService.playSong(song,
+                                newQueue: sampleSongs),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
                                   child: Container(
                                     color: stripeColor.withOpacity(0.3),
-                                    child: const Center(child: Icon(Icons.music_note, size: 48)),
+                                    child: const Center(
+                                        child:
+                                            Icon(Icons.music_note, size: 48)),
                                   ),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.all(12.0),
-                                  child: Text(song.title, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1),
+                                  child: Text(song.title,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                      maxLines: 1),
                                 ),
                               ],
                             ),
@@ -132,15 +145,20 @@ class MoodDetailScreen extends StatelessWidget {
                         return ListTile(
                           leading: CircleAvatar(
                             backgroundColor: stripeColor.withOpacity(0.2),
-                            child: Icon(Icons.music_note_rounded, color: stripeColor),
+                            child: Icon(Icons.music_note_rounded,
+                                color: stripeColor),
                           ),
-                          title: Text(song.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          title: Text(song.title,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Text(song.artists.join(', ')),
                           trailing: IconButton(
                             icon: const Icon(Icons.play_arrow_rounded),
-                            onPressed: () => playerService.playSong(song, newQueue: sampleSongs),
+                            onPressed: () => playerService.playSong(song,
+                                newQueue: sampleSongs),
                           ),
-                          onTap: () => playerService.playSong(song, newQueue: sampleSongs),
+                          onTap: () => playerService.playSong(song,
+                              newQueue: sampleSongs),
                         );
                       },
                       childCount: sampleSongs.length,

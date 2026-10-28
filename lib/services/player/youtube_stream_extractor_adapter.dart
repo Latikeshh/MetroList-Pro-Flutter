@@ -10,7 +10,8 @@ abstract class YouTubeStreamExtractorAdapter {
 class ExplodeStreamExtractorAdapter implements YouTubeStreamExtractorAdapter {
   final YoutubeExplode _yt;
 
-  ExplodeStreamExtractorAdapter({YoutubeExplode? yt}) : _yt = yt ?? YoutubeExplode();
+  ExplodeStreamExtractorAdapter({YoutubeExplode? yt})
+      : _yt = yt ?? YoutubeExplode();
 
   @override
   Future<List<String>> extractAudioStreamUrls(String videoId) async {
@@ -19,7 +20,8 @@ class ExplodeStreamExtractorAdapter implements YouTubeStreamExtractorAdapter {
       final audioStreams = manifest.audioOnly.sortByBitrate().toList();
       return audioStreams.map((s) => s.url.toString()).toList();
     } catch (e) {
-      debugPrint('ExplodeStreamExtractorAdapter error for videoId $videoId: $e');
+      debugPrint(
+          'ExplodeStreamExtractorAdapter error for videoId $videoId: $e');
       rethrow;
     }
   }

@@ -42,7 +42,9 @@ void main() {
       service = YouTubeService();
     });
 
-    test('Parses musicCarouselShelfBasicHeaderRenderer section titles and two-row items', () {
+    test(
+        'Parses musicCarouselShelfBasicHeaderRenderer section titles and two-row items',
+        () {
       final jsonFixture = {
         'contents': {
           'singleColumnBrowseResultsRenderer': {
@@ -56,7 +58,11 @@ void main() {
                           'chips': [
                             {
                               'chipCloudChipRenderer': {
-                                'text': {'runs': [{'text': 'Podcasts'}]},
+                                'text': {
+                                  'runs': [
+                                    {'text': 'Podcasts'}
+                                  ]
+                                },
                                 'navigationEndpoint': {
                                   'browseEndpoint': {'params': 'g_podcast'}
                                 }
@@ -71,7 +77,9 @@ void main() {
                             'header': {
                               'musicCarouselShelfBasicHeaderRenderer': {
                                 'title': {
-                                  'runs': [{'text': 'Forgotten Favorites'}]
+                                  'runs': [
+                                    {'text': 'Forgotten Favorites'}
+                                  ]
                                 }
                               }
                             },
@@ -79,10 +87,14 @@ void main() {
                               {
                                 'musicTwoRowItemRenderer': {
                                   'title': {
-                                    'runs': [{'text': 'Blinding Lights'}]
+                                    'runs': [
+                                      {'text': 'Blinding Lights'}
+                                    ]
                                   },
                                   'subtitle': {
-                                    'runs': [{'text': 'The Weeknd'}]
+                                    'runs': [
+                                      {'text': 'The Weeknd'}
+                                    ]
                                   },
                                   'navigationEndpoint': {
                                     'watchEndpoint': {'videoId': '4NRXx6U8ABQ'}
@@ -91,7 +103,10 @@ void main() {
                                     'musicThumbnailRenderer': {
                                       'thumbnail': {
                                         'thumbnails': [
-                                          {'url': 'https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg'}
+                                          {
+                                            'url':
+                                                'https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg'
+                                          }
                                         ]
                                       }
                                     }
@@ -143,7 +158,9 @@ void main() {
                             'header': {
                               'musicCarouselShelfBasicHeaderRenderer': {
                                 'title': {
-                                  'runs': [{'text': 'Episodes for you'}]
+                                  'runs': [
+                                    {'text': 'Episodes for you'}
+                                  ]
                                 }
                               }
                             },
@@ -151,7 +168,9 @@ void main() {
                               {
                                 'musicMultiRowListItemRenderer': {
                                   'title': {
-                                    'runs': [{'text': 'Tech News Episode 101'}]
+                                    'runs': [
+                                      {'text': 'Tech News Episode 101'}
+                                    ]
                                   },
                                   'onTap': {
                                     'watchEndpoint': {'videoId': 'pod_ep_999'}
@@ -160,7 +179,10 @@ void main() {
                                     'musicThumbnailRenderer': {
                                       'thumbnail': {
                                         'thumbnails': [
-                                          {'url': 'https://i.ytimg.com/vi/pod_ep_999/hqdefault.jpg'}
+                                          {
+                                            'url':
+                                                'https://i.ytimg.com/vi/pod_ep_999/hqdefault.jpg'
+                                          }
                                         ]
                                       }
                                     }
@@ -234,7 +256,9 @@ void main() {
                   'header': {
                     'musicCarouselShelfBasicHeaderRenderer': {
                       'title': {
-                        'runs': [{'text': 'More Recommendations'}]
+                        'runs': [
+                          {'text': 'More Recommendations'}
+                        ]
                       }
                     }
                   },
@@ -242,7 +266,9 @@ void main() {
                     {
                       'musicTwoRowItemRenderer': {
                         'title': {
-                          'runs': [{'text': 'Continuation Song'}]
+                          'runs': [
+                            {'text': 'Continuation Song'}
+                          ]
                         },
                         'navigationEndpoint': {
                           'watchEndpoint': {'videoId': 'cont_123'}
@@ -255,9 +281,7 @@ void main() {
             ],
             'continuations': [
               {
-                'nextContinuationData': {
-                  'continuation': 'next_page_token_456'
-                }
+                'nextContinuationData': {'continuation': 'next_page_token_456'}
               }
             ]
           }
@@ -272,7 +296,8 @@ void main() {
       expect(parsed.continuation, 'next_page_token_456');
     });
 
-    test('Handles empty, malformed, or null JSON gracefully without throwing', () {
+    test('Handles empty, malformed, or null JSON gracefully without throwing',
+        () {
       final nullParsed = service.parseHomePageData(null);
       expect(nullParsed.chips, isEmpty);
       expect(nullParsed.sections, isEmpty);
@@ -297,7 +322,9 @@ void main() {
       const current = HomePageData(
         chips: [HomeChip(title: 'All')],
         sections: [
-          HomeSection(title: 'Quick Picks', items: [SongItem(id: 's1', title: 'S1', artists: [])])
+          HomeSection(
+              title: 'Quick Picks',
+              items: [SongItem(id: 's1', title: 'S1', artists: [])])
         ],
         continuation: 'token_1',
       );
@@ -305,7 +332,9 @@ void main() {
       const next = HomePageData(
         chips: [],
         sections: [
-          HomeSection(title: 'Recommended', items: [SongItem(id: 's2', title: 'S2', artists: [])])
+          HomeSection(
+              title: 'Recommended',
+              items: [SongItem(id: 's2', title: 'S2', artists: [])])
         ],
         continuation: 'token_2',
       );
@@ -319,11 +348,15 @@ void main() {
       expect(merged.chips.length, 1);
     });
 
-    test('mergeHomePages filters out exact duplicate sections with matching title and items', () {
+    test(
+        'mergeHomePages filters out exact duplicate sections with matching title and items',
+        () {
       const current = HomePageData(
         chips: [],
         sections: [
-          HomeSection(title: 'Quick Picks', items: [SongItem(id: 's1', title: 'S1', artists: [])])
+          HomeSection(
+              title: 'Quick Picks',
+              items: [SongItem(id: 's1', title: 'S1', artists: [])])
         ],
         continuation: 'token_1',
       );
@@ -331,8 +364,12 @@ void main() {
       const next = HomePageData(
         chips: [],
         sections: [
-          HomeSection(title: 'Quick Picks', items: [SongItem(id: 's1', title: 'S1', artists: [])]),
-          HomeSection(title: 'Forgotten Favorites', items: [SongItem(id: 's3', title: 'S3', artists: [])])
+          HomeSection(
+              title: 'Quick Picks',
+              items: [SongItem(id: 's1', title: 'S1', artists: [])]),
+          HomeSection(
+              title: 'Forgotten Favorites',
+              items: [SongItem(id: 's3', title: 'S3', artists: [])])
         ],
         continuation: 'token_2',
       );
@@ -344,11 +381,15 @@ void main() {
       expect(merged.sections[1].title, 'Forgotten Favorites');
     });
 
-    test('mergeHomePages preserves sections with same title if items are different', () {
+    test(
+        'mergeHomePages preserves sections with same title if items are different',
+        () {
       const current = HomePageData(
         chips: [],
         sections: [
-          HomeSection(title: 'Recommended', items: [SongItem(id: 's1', title: 'S1', artists: [])])
+          HomeSection(
+              title: 'Recommended',
+              items: [SongItem(id: 's1', title: 'S1', artists: [])])
         ],
         continuation: 'token_1',
       );
@@ -356,7 +397,9 @@ void main() {
       const next = HomePageData(
         chips: [],
         sections: [
-          HomeSection(title: 'Recommended', items: [SongItem(id: 's99', title: 'S99', artists: [])]),
+          HomeSection(
+              title: 'Recommended',
+              items: [SongItem(id: 's99', title: 'S99', artists: [])]),
         ],
         continuation: 'token_2',
       );
@@ -368,7 +411,9 @@ void main() {
       expect(merged.sections[1].items.first.id, 's99');
     });
 
-    test('mergeHomePages sets continuation to null if next token is identical or null', () {
+    test(
+        'mergeHomePages sets continuation to null if next token is identical or null',
+        () {
       const current = HomePageData(
         chips: [],
         sections: [HomeSection(title: 'S1', items: [])],

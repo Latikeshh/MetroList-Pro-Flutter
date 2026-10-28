@@ -16,7 +16,8 @@ class LatikeshUpdateDialog extends StatelessWidget {
   });
 
   void _openRepoReleases() async {
-    final url = Uri.parse('https://github.com/Latikeshh/MetroList-Pro-Flutter/releases');
+    final url = Uri.parse(
+        'https://github.com/Latikeshh/MetroList-Pro-Flutter/releases');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }
@@ -107,7 +108,8 @@ class LatikeshUpdateDialog extends StatelessWidget {
                   height: 48,
                   child: FilledButton.icon(
                     icon: const Icon(Icons.download_rounded),
-                    label: const Text('Download Update', style: TextStyle(fontWeight: FontWeight.bold)),
+                    label: const Text('Download Update',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                     onPressed: () {
                       onDismiss();
                       _openRepoReleases();

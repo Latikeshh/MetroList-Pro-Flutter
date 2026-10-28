@@ -39,7 +39,8 @@ class _LyricsSheetState extends State<LyricsSheet> {
 
   void _scrollToActiveLine(int index) {
     if (_scrollController.hasClients && index >= 0) {
-      final targetOffset = (index * 52.0).clamp(0.0, _scrollController.position.maxScrollExtent);
+      final targetOffset =
+          (index * 52.0).clamp(0.0, _scrollController.position.maxScrollExtent);
       _scrollController.animateTo(
         targetOffset,
         duration: const Duration(milliseconds: 300),
@@ -70,7 +71,8 @@ class _LyricsSheetState extends State<LyricsSheet> {
             ),
             Text(
               song.artists.join(', '),
-              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+              style:
+                  TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -81,7 +83,9 @@ class _LyricsSheetState extends State<LyricsSheet> {
           IconButton(
             icon: Icon(
               Icons.mic_external_on_rounded,
-              color: _isKaraokeTtmlMode ? Colors.amber : colorScheme.onSurfaceVariant,
+              color: _isKaraokeTtmlMode
+                  ? Colors.amber
+                  : colorScheme.onSurfaceVariant,
             ),
             tooltip: 'TTML Word-by-Word Karaoke Mode',
             onPressed: () {
@@ -101,7 +105,9 @@ class _LyricsSheetState extends State<LyricsSheet> {
           IconButton(
             icon: Icon(
               Icons.translate_rounded,
-              color: _showTranslation ? colorScheme.primary : colorScheme.onSurfaceVariant,
+              color: _showTranslation
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
             ),
             tooltip: 'AI Translation & Romaji',
             onPressed: () {
@@ -136,7 +142,8 @@ class _LyricsSheetState extends State<LyricsSheet> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.lyrics_outlined, size: 64, color: colorScheme.primary),
+                  Icon(Icons.lyrics_outlined,
+                      size: 64, color: colorScheme.primary),
                   const SizedBox(height: 16),
                   const Text('No lyrics available for this track'),
                 ],
@@ -163,7 +170,8 @@ class _LyricsSheetState extends State<LyricsSheet> {
 
                 return ListView.builder(
                   controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                   itemCount: data.syncedLyrics.length,
                   itemBuilder: (context, index) {
                     final line = data.syncedLyrics[index];
@@ -182,14 +190,18 @@ class _LyricsSheetState extends State<LyricsSheet> {
                                 children: words.asMap().entries.map((wEntry) {
                                   final wordIdx = wEntry.key;
                                   final wordText = wEntry.value;
-                                  final isWordHighlighted = (pos.inSeconds % (words.length + 1)) >= wordIdx;
+                                  final isWordHighlighted =
+                                      (pos.inSeconds % (words.length + 1)) >=
+                                          wordIdx;
 
                                   return AnimatedDefaultTextStyle(
                                     duration: const Duration(milliseconds: 200),
                                     style: TextStyle(
                                       fontSize: _fontSize + 4,
                                       fontWeight: FontWeight.bold,
-                                      color: isWordHighlighted ? Colors.amber : colorScheme.primary,
+                                      color: isWordHighlighted
+                                          ? Colors.amber
+                                          : colorScheme.primary,
                                     ),
                                     child: Text(wordText),
                                   );
@@ -198,11 +210,15 @@ class _LyricsSheetState extends State<LyricsSheet> {
                             : Text(
                                 line.text,
                                 style: TextStyle(
-                                  fontSize: isActive ? _fontSize + 3 : _fontSize,
-                                  fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                                  fontSize:
+                                      isActive ? _fontSize + 3 : _fontSize,
+                                  fontWeight: isActive
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
                                   color: isActive
                                       ? colorScheme.primary
-                                      : colorScheme.onSurfaceVariant.withOpacity(0.55),
+                                      : colorScheme.onSurfaceVariant
+                                          .withOpacity(0.55),
                                 ),
                               ),
                       ),

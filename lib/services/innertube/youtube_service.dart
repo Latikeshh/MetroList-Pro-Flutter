@@ -17,7 +17,8 @@ class YouTubeService {
       BaseOptions(
         baseUrl: _baseUrl,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': '*/*',
           'Accept-Language': 'en-US,en;q=0.9',
           'Content-Type': 'application/json',
@@ -47,7 +48,8 @@ class YouTubeService {
   }
 
   /// Fetches the YouTube Music Home page (FEmusic_home) with optional chip parameters or continuation token
-  Future<HomePageData> getHomePage({String? params, String? continuation}) async {
+  Future<HomePageData> getHomePage(
+      {String? params, String? continuation}) async {
     try {
       final body = _buildContext();
       if (continuation != null && continuation.isNotEmpty) {
@@ -120,13 +122,15 @@ class YouTubeService {
 
   /// Safely merges continuation home page data into current home page data, preventing duplicate sections and tokens
   static HomePageData mergeHomePages(HomePageData current, HomePageData next) {
-    final newSections = next.sections.where((nextSec) =>
-      !current.sections.any((currSec) => _areSectionsEqual(currSec, nextSec))
-    ).toList();
+    final newSections = next.sections
+        .where((nextSec) => !current.sections
+            .any((currSec) => _areSectionsEqual(currSec, nextSec)))
+        .toList();
 
-    final newContinuation = (next.continuation != null && next.continuation != current.continuation)
-        ? next.continuation
-        : null;
+    final newContinuation =
+        (next.continuation != null && next.continuation != current.continuation)
+            ? next.continuation
+            : null;
 
     return HomePageData(
       chips: current.chips.isNotEmpty ? current.chips : next.chips,
@@ -148,7 +152,8 @@ class YouTubeService {
     }
 
     if (data.containsKey('error')) {
-      final errorMsg = data['error']?['message']?.toString() ?? 'YouTube Music API error';
+      final errorMsg =
+          data['error']?['message']?.toString() ?? 'YouTube Music API error';
       return HomePageData(
         chips: const [],
         sections: const [],
@@ -162,7 +167,9 @@ class YouTubeService {
     String? continuationToken;
 
     try {
-      final sectionList = data['contents']?['singleColumnBrowseResultsRenderer']?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer'] ??
+      final sectionList = data['contents']?['singleColumnBrowseResultsRenderer']
+                  ?['tabs']?[0]?['tabRenderer']?['content']
+              ?['sectionListRenderer'] ??
           data['continuationContents']?['sectionListContinuation'];
 
       // Parse Chips
@@ -172,7 +179,8 @@ class YouTubeService {
           final renderer = c['chipCloudChipRenderer'];
           if (renderer != null) {
             final title = renderer['text']?['runs']?[0]?['text'] ?? '';
-            final p = renderer['navigationEndpoint']?['browseEndpoint']?['params'];
+            final p =
+                renderer['navigationEndpoint']?['browseEndpoint']?['params'];
             if (title.isNotEmpty) {
               chips.add(HomeChip(title: title, params: p is String ? p : null));
             }
@@ -185,7 +193,8 @@ class YouTubeService {
       if (rawContents is List) {
         for (var sec in rawContents) {
           // Check for continuation
-          final cont = sec['continuationItemRenderer']?['continuationEndpoint']?['continuationCommand']?['token'];
+          final cont = sec['continuationItemRenderer']?['continuationEndpoint']
+              ?['continuationCommand']?['token'];
           if (cont is String && cont.isNotEmpty) {
             continuationToken = cont;
             continue;
@@ -195,10 +204,13 @@ class YouTubeService {
           final shelf = sec['musicShelfRenderer'];
 
           if (carousel != null) {
-            final header = carousel['header']?['musicCarouselShelfBasicHeaderRenderer'] ??
+            final header = carousel['header']
+                    ?['musicCarouselShelfBasicHeaderRenderer'] ??
                 carousel['header']?['musicCarouselShelfHeaderRenderer'];
             final titleRuns = header?['title']?['runs'];
-            final title = (titleRuns is List && titleRuns.isNotEmpty) ? titleRuns[0]['text'] ?? '' : 'Recommended';
+            final title = (titleRuns is List && titleRuns.isNotEmpty)
+                ? titleRuns[0]['text'] ?? ''
+                : 'Recommended';
 
             final List<YTItem> items = [];
             final rawItems = carousel['contents'];
@@ -213,7 +225,9 @@ class YouTubeService {
             }
           } else if (shelf != null) {
             final titleRuns = shelf['title']?['runs'];
-            final title = (titleRuns is List && titleRuns.isNotEmpty) ? titleRuns[0]['text'] ?? '' : 'Quick Picks';
+            final title = (titleRuns is List && titleRuns.isNotEmpty)
+                ? titleRuns[0]['text'] ?? ''
+                : 'Quick Picks';
 
             final List<YTItem> items = [];
             final rawItems = shelf['contents'];
@@ -233,7 +247,8 @@ class YouTubeService {
       // Check for sectionList continuations
       final sectionContinuations = sectionList?['continuations'];
       if (sectionContinuations is List && sectionContinuations.isNotEmpty) {
-        final token = sectionContinuations[0]?['nextContinuationData']?['continuation'];
+        final token =
+            sectionContinuations[0]?['nextContinuationData']?['continuation'];
         if (token is String && token.isNotEmpty) {
           continuationToken = token;
         }
@@ -253,11 +268,16 @@ class YouTubeService {
     final multiRow = rawItem['musicMultiRowListItemRenderer'];
     if (multiRow != null) {
       final titleRuns = multiRow['title']?['runs'];
-      final title = (titleRuns is List && titleRuns.isNotEmpty) ? titleRuns[0]['text'] ?? '' : '';
+      final title = (titleRuns is List && titleRuns.isNotEmpty)
+          ? titleRuns[0]['text'] ?? ''
+          : '';
       final videoId = multiRow['onTap']?['watchEndpoint']?['videoId'] ??
           multiRow['navigationEndpoint']?['watchEndpoint']?['videoId'];
-      final thumbnails = multiRow['thumbnail']?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'];
-      final thumbUrl = (thumbnails is List && thumbnails.isNotEmpty) ? thumbnails.last['url'] : null;
+      final thumbnails = multiRow['thumbnail']?['musicThumbnailRenderer']
+          ?['thumbnail']?['thumbnails'];
+      final thumbUrl = (thumbnails is List && thumbnails.isNotEmpty)
+          ? thumbnails.last['url']
+          : null;
       if (videoId is String && videoId.isNotEmpty) {
         return SongItem(
           id: videoId,
@@ -271,17 +291,27 @@ class YouTubeService {
     final twoRow = rawItem['musicTwoRowItemRenderer'];
     if (twoRow != null) {
       final titleRuns = twoRow['title']?['runs'];
-      final title = (titleRuns is List && titleRuns.isNotEmpty) ? titleRuns[0]['text'] ?? '' : '';
+      final title = (titleRuns is List && titleRuns.isNotEmpty)
+          ? titleRuns[0]['text'] ?? ''
+          : '';
 
-      final thumbnails = twoRow['thumbnailRenderer']?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'];
-      final thumbUrl = (thumbnails is List && thumbnails.isNotEmpty) ? thumbnails.last['url'] : null;
+      final thumbnails = twoRow['thumbnailRenderer']?['musicThumbnailRenderer']
+          ?['thumbnail']?['thumbnails'];
+      final thumbUrl = (thumbnails is List && thumbnails.isNotEmpty)
+          ? thumbnails.last['url']
+          : null;
 
-      final watchVideoId = twoRow['navigationEndpoint']?['watchEndpoint']?['videoId'];
-      final browseId = twoRow['navigationEndpoint']?['browseEndpoint']?['browseId'];
+      final watchVideoId =
+          twoRow['navigationEndpoint']?['watchEndpoint']?['videoId'];
+      final browseId =
+          twoRow['navigationEndpoint']?['browseEndpoint']?['browseId'];
 
       final subtitleRuns = twoRow['subtitle']?['runs'];
       final subtitle = (subtitleRuns is List)
-          ? subtitleRuns.map((r) => r['text']?.toString() ?? '').where((t) => t.isNotEmpty && t != ' • ').join(' ')
+          ? subtitleRuns
+              .map((r) => r['text']?.toString() ?? '')
+              .where((t) => t.isNotEmpty && t != ' • ')
+              .join(' ')
           : '';
 
       if (watchVideoId is String && watchVideoId.isNotEmpty) {
@@ -344,25 +374,29 @@ class YouTubeService {
         id: 'dQw4w9WgXcQ',
         title: '$q (Popular Track)',
         artists: const ['Metrolist Featured Artist'],
-        thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
+        thumbnailUrl:
+            'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
       ),
       SongItem(
         id: '3JZ_D3ELwOQ',
         title: '$q - Remix Edition',
         artists: const ['Top Global Producer'],
-        thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500',
+        thumbnailUrl:
+            'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500',
       ),
       SongItem(
         id: 'L_jWHffIx5E',
         title: '$q Chill Vibes',
         artists: const ['Metrolist Radio'],
-        thumbnailUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500',
+        thumbnailUrl:
+            'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500',
       ),
       ArtistItem(
         id: 'UC3IZKseVzc01iBr797FQqVA',
         title: q,
         subscribers: '12.5M Subscribers',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500',
+        thumbnailUrl:
+            'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500',
       ),
     ];
   }
@@ -384,14 +418,38 @@ class YouTubeService {
     return const ExplorePageData(
       newReleaseAlbums: [],
       moodsAndGenres: [
-        MoodAndGenreItem(title: 'Chill', stripeColor: 0xFF4E65FF, browseId: 'FEmusic_moods_and_genres_category'),
-        MoodAndGenreItem(title: 'Commute', stripeColor: 0xFFFF5722, browseId: 'FEmusic_moods_and_genres_category'),
-        MoodAndGenreItem(title: 'Energy Boost', stripeColor: 0xFFFFC107, browseId: 'FEmusic_moods_and_genres_category'),
-        MoodAndGenreItem(title: 'Focus', stripeColor: 0xFF00BCD4, browseId: 'FEmusic_moods_and_genres_category'),
-        MoodAndGenreItem(title: 'Party', stripeColor: 0xFFE91E63, browseId: 'FEmusic_moods_and_genres_category'),
-        MoodAndGenreItem(title: 'Romance', stripeColor: 0xFF9C27B0, browseId: 'FEmusic_moods_and_genres_category'),
-        MoodAndGenreItem(title: 'Sleep', stripeColor: 0xFF3F51B5, browseId: 'FEmusic_moods_and_genres_category'),
-        MoodAndGenreItem(title: 'Workout', stripeColor: 0xFF4CAF50, browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(
+            title: 'Chill',
+            stripeColor: 0xFF4E65FF,
+            browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(
+            title: 'Commute',
+            stripeColor: 0xFFFF5722,
+            browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(
+            title: 'Energy Boost',
+            stripeColor: 0xFFFFC107,
+            browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(
+            title: 'Focus',
+            stripeColor: 0xFF00BCD4,
+            browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(
+            title: 'Party',
+            stripeColor: 0xFFE91E63,
+            browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(
+            title: 'Romance',
+            stripeColor: 0xFF9C27B0,
+            browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(
+            title: 'Sleep',
+            stripeColor: 0xFF3F51B5,
+            browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(
+            title: 'Workout',
+            stripeColor: 0xFF4CAF50,
+            browseId: 'FEmusic_moods_and_genres_category'),
       ],
     );
   }
@@ -401,7 +459,9 @@ class YouTubeService {
     final List<MoodAndGenreItem> moods = [];
 
     try {
-      final contents = data['contents']?['singleColumnBrowseResultsRenderer']?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
+      final contents = data['contents']?['singleColumnBrowseResultsRenderer']
+              ?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']
+          ?['contents'];
       if (contents is List) {
         for (var section in contents) {
           final carousel = section['musicCarouselShelfRenderer'];
@@ -411,8 +471,11 @@ class YouTubeService {
                 final navBtn = item['musicNavigationButtonRenderer'];
                 if (navBtn != null) {
                   final text = navBtn['buttonText']?['runs']?[0]?['text'];
-                  final color = navBtn['solid']?['leftStripeColor'] ?? 0xFF6750A4;
-                  final browseId = navBtn['clickCommand']?['browseEndpoint']?['browseId'] ?? '';
+                  final color =
+                      navBtn['solid']?['leftStripeColor'] ?? 0xFF6750A4;
+                  final browseId = navBtn['clickCommand']?['browseEndpoint']
+                          ?['browseId'] ??
+                      '';
                   if (text != null && browseId.isNotEmpty) {
                     moods.add(
                       MoodAndGenreItem(
@@ -439,20 +502,26 @@ class YouTubeService {
   List<YTItem> _parseSearchResults(dynamic data) {
     final List<YTItem> items = [];
     try {
-      final contents = data['contents']?['tabbedSearchResultsRenderer']?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
+      final contents = data['contents']?['tabbedSearchResultsRenderer']?['tabs']
+          ?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
       if (contents is List) {
         for (var section in contents) {
           // Top Result Card
           final cardShelf = section['musicCardShelfRenderer'];
           if (cardShelf is Map) {
             final cardTitleRuns = cardShelf['title']?['runs'];
-            final cardTitle = (cardTitleRuns is List && cardTitleRuns.isNotEmpty)
-                ? cardTitleRuns[0]['text'] ?? ''
-                : '';
-            final cardVideoId = cardShelf['buttons']?[0]?['buttonRenderer']?['command']?['watchEndpoint']?['videoId'] ??
+            final cardTitle =
+                (cardTitleRuns is List && cardTitleRuns.isNotEmpty)
+                    ? cardTitleRuns[0]['text'] ?? ''
+                    : '';
+            final cardVideoId = cardShelf['buttons']?[0]?['buttonRenderer']
+                    ?['command']?['watchEndpoint']?['videoId'] ??
                 cardShelf['onTap']?['watchEndpoint']?['videoId'];
-            final thumbnails = cardShelf['thumbnail']?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'];
-            final cardThumb = (thumbnails is List && thumbnails.isNotEmpty) ? thumbnails.last['url'] : null;
+            final thumbnails = cardShelf['thumbnail']?['musicThumbnailRenderer']
+                ?['thumbnail']?['thumbnails'];
+            final cardThumb = (thumbnails is List && thumbnails.isNotEmpty)
+                ? thumbnails.last['url']
+                : null;
 
             if (cardVideoId is String && cardVideoId.isNotEmpty) {
               items.add(SongItem(
@@ -488,11 +557,16 @@ class YouTubeService {
       final id = videoId ?? browseId ?? '';
       if (id.isEmpty) return null;
 
-      final runs = renderer['flexColumns']?[0]?['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
-      final title = (runs is List && runs.isNotEmpty) ? runs[0]['text'] ?? '' : '';
+      final runs = renderer['flexColumns']?[0]
+          ?['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
+      final title =
+          (runs is List && runs.isNotEmpty) ? runs[0]['text'] ?? '' : '';
 
-      final thumbnails = renderer['thumbnail']?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'];
-      final thumbnailUrl = (thumbnails is List && thumbnails.isNotEmpty) ? thumbnails.last['url'] : null;
+      final thumbnails = renderer['thumbnail']?['musicThumbnailRenderer']
+          ?['thumbnail']?['thumbnails'];
+      final thumbnailUrl = (thumbnails is List && thumbnails.isNotEmpty)
+          ? thumbnails.last['url']
+          : null;
 
       if (videoId != null && videoId.isNotEmpty) {
         final artists = _extractArtists(renderer);
@@ -519,22 +593,28 @@ class YouTubeService {
     final direct = renderer['playlistItemData']?['videoId'];
     if (direct is String && direct.isNotEmpty) return direct;
 
-    final overlayVideoId = renderer['overlay']?['musicItemThumbnailOverlayRenderer']
-        ?['content']?['musicPlayButtonRenderer']?['playNavigationEndpoint']
+    final overlayVideoId = renderer['overlay']
+                ?['musicItemThumbnailOverlayRenderer']?['content']
+            ?['musicPlayButtonRenderer']?['playNavigationEndpoint']
         ?['watchEndpoint']?['videoId'];
-    if (overlayVideoId is String && overlayVideoId.isNotEmpty) return overlayVideoId;
+    if (overlayVideoId is String && overlayVideoId.isNotEmpty)
+      return overlayVideoId;
 
-    final navVideoId = renderer['navigationEndpoint']?['watchEndpoint']?['videoId'];
+    final navVideoId =
+        renderer['navigationEndpoint']?['watchEndpoint']?['videoId'];
     if (navVideoId is String && navVideoId.isNotEmpty) return navVideoId;
 
     final flexCols = renderer['flexColumns'];
     if (flexCols is List) {
       for (final col in flexCols) {
-        final runs = col['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
+        final runs =
+            col['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
         if (runs is List) {
           for (final run in runs) {
-            final runVideoId = run['navigationEndpoint']?['watchEndpoint']?['videoId'];
-            if (runVideoId is String && runVideoId.isNotEmpty) return runVideoId;
+            final runVideoId =
+                run['navigationEndpoint']?['watchEndpoint']?['videoId'];
+            if (runVideoId is String && runVideoId.isNotEmpty)
+              return runVideoId;
           }
         }
       }
@@ -543,8 +623,10 @@ class YouTubeService {
     final menuItems = renderer['menu']?['musicMenuRenderer']?['items'];
     if (menuItems is List) {
       for (final item in menuItems) {
-        final vId = item['menuNavigationItemRenderer']?['navigationEndpoint']?['watchEndpoint']?['videoId'] ??
-            item['menuServiceItemRenderer']?['serviceEndpoint']?['queueAddEndpoint']?['queueTarget']?['videoId'];
+        final vId = item['menuNavigationItemRenderer']?['navigationEndpoint']
+                ?['watchEndpoint']?['videoId'] ??
+            item['menuServiceItemRenderer']?['serviceEndpoint']
+                ?['queueAddEndpoint']?['queueTarget']?['videoId'];
         if (vId is String && vId.isNotEmpty) return vId;
       }
     }
@@ -554,16 +636,19 @@ class YouTubeService {
 
   String? _extractBrowseId(dynamic renderer) {
     if (renderer == null || renderer is! Map) return null;
-    final direct = renderer['navigationEndpoint']?['browseEndpoint']?['browseId'];
+    final direct =
+        renderer['navigationEndpoint']?['browseEndpoint']?['browseId'];
     if (direct is String && direct.isNotEmpty) return direct;
 
     final flexCols = renderer['flexColumns'];
     if (flexCols is List) {
       for (final col in flexCols) {
-        final runs = col['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
+        final runs =
+            col['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
         if (runs is List) {
           for (final run in runs) {
-            final bId = run['navigationEndpoint']?['browseEndpoint']?['browseId'];
+            final bId =
+                run['navigationEndpoint']?['browseEndpoint']?['browseId'];
             if (bId is String && bId.isNotEmpty) return bId;
           }
         }
@@ -576,11 +661,16 @@ class YouTubeService {
     final List<String> artists = [];
     final flexCols = renderer['flexColumns'];
     if (flexCols is List && flexCols.length > 1) {
-      final runs = flexCols[1]['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
+      final runs = flexCols[1]['musicResponsiveListItemFlexColumnRenderer']
+          ?['text']?['runs'];
       if (runs is List) {
         for (final run in runs) {
           final text = run['text']?.toString() ?? '';
-          if (text.isNotEmpty && text != ' • ' && text != 'Song' && text != 'Video' && text != 'Artist') {
+          if (text.isNotEmpty &&
+              text != ' • ' &&
+              text != 'Song' &&
+              text != 'Video' &&
+              text != 'Artist') {
             artists.add(text);
           }
         }

@@ -86,7 +86,8 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
       ),
       body: isDesktopWidth
           ? Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 48.0, vertical: 24.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 48.0, vertical: 24.0),
               child: Row(
                 children: [
                   // Left Column: Album Art & Track Info
@@ -112,13 +113,19 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                                       song.thumbnailUrl!,
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, __, ___) => Container(
-                                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                        child: const Icon(Icons.music_note, size: 80),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surfaceContainerHighest,
+                                        child: const Icon(Icons.music_note,
+                                            size: 80),
                                       ),
                                     )
                                   : Container(
-                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                      child: const Icon(Icons.music_note, size: 80),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest,
+                                      child: const Icon(Icons.music_note,
+                                          size: 80),
                                     ),
                             ),
                           ),
@@ -129,19 +136,27 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          song.artists.isNotEmpty ? song.artists.join(', ') : 'Metrolist Pro',
+                          song.artists.isNotEmpty
+                              ? song.artists.join(', ')
+                              : 'Metrolist Pro',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
                         ),
                       ],
                     ),
@@ -160,11 +175,15 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                           children: [
                             IconButton(
                               icon: Icon(
-                                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                isFav
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
                                 size: 28,
                                 color: isFav ? Colors.redAccent : null,
                               ),
-                              tooltip: isFav ? 'Remove from Favorites' : 'Add to Favorites',
+                              tooltip: isFav
+                                  ? 'Remove from Favorites'
+                                  : 'Add to Favorites',
                               onPressed: () {
                                 setState(() {
                                   playerService.toggleFavorite(song);
@@ -180,43 +199,59 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                           stream: playerService.positionDataStream,
                           builder: (context, snapshot) {
                             final positionData = snapshot.data;
-                            final position = positionData?.position ?? Duration.zero;
-                            final duration = positionData?.duration ?? Duration.zero;
+                            final position =
+                                positionData?.position ?? Duration.zero;
+                            final duration =
+                                positionData?.duration ?? Duration.zero;
 
                             return Column(
                               children: [
                                 SliderTheme(
                                   data: SliderTheme.of(context).copyWith(
                                     trackHeight: 4,
-                                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                                    thumbShape: const RoundSliderThumbShape(
+                                        enabledThumbRadius: 6),
                                   ),
                                   child: Slider(
                                     value: position.inMilliseconds
                                         .toDouble()
-                                        .clamp(0.0, duration.inMilliseconds.toDouble().clamp(1.0, double.infinity)),
-                                    max: duration.inMilliseconds.toDouble().clamp(1.0, double.infinity),
+                                        .clamp(
+                                            0.0,
+                                            duration.inMilliseconds
+                                                .toDouble()
+                                                .clamp(1.0, double.infinity)),
+                                    max: duration.inMilliseconds
+                                        .toDouble()
+                                        .clamp(1.0, double.infinity),
                                     onChanged: (value) {
-                                      playerService.seek(Duration(milliseconds: value.round()));
+                                      playerService.seek(Duration(
+                                          milliseconds: value.round()));
                                     },
                                   ),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16.0),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         _formatDuration(position),
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
                                         ),
                                       ),
                                       Text(
                                         _formatDuration(duration),
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
                                         ),
                                       ),
                                     ],
@@ -241,7 +276,11 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                                   icon: Icon(
                                     Icons.shuffle_rounded,
                                     size: 24,
-                                    color: isShuffle ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
+                                    color: isShuffle
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
                                   ),
                                   tooltip: 'Shuffle',
                                   onPressed: playerService.toggleShuffle,
@@ -249,7 +288,8 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                               },
                             ),
                             IconButton(
-                              icon: const Icon(Icons.skip_previous_rounded, size: 36),
+                              icon: const Icon(Icons.skip_previous_rounded,
+                                  size: 36),
                               tooltip: 'Previous',
                               onPressed: playerService.skipToPrevious,
                             ),
@@ -261,14 +301,17 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                                   elevation: 4,
                                   onPressed: playerService.togglePlayPause,
                                   child: Icon(
-                                    isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                    isPlaying
+                                        ? Icons.pause_rounded
+                                        : Icons.play_arrow_rounded,
                                     size: 40,
                                   ),
                                 );
                               },
                             ),
                             IconButton(
-                              icon: const Icon(Icons.skip_next_rounded, size: 36),
+                              icon:
+                                  const Icon(Icons.skip_next_rounded, size: 36),
                               tooltip: 'Next',
                               onPressed: playerService.skipToNext,
                             ),
@@ -276,8 +319,14 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                               stream: playerService.repeatModeStream,
                               builder: (context, snapshot) {
                                 final mode = snapshot.data ?? AppRepeatMode.off;
-                                final icon = mode == AppRepeatMode.one ? Icons.repeat_one_rounded : Icons.repeat_rounded;
-                                final color = mode != AppRepeatMode.off ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant;
+                                final icon = mode == AppRepeatMode.one
+                                    ? Icons.repeat_one_rounded
+                                    : Icons.repeat_rounded;
+                                final color = mode != AppRepeatMode.off
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant;
                                 return IconButton(
                                   icon: Icon(icon, size: 24, color: color),
                                   tooltip: 'Repeat',
@@ -294,7 +343,8 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
               ),
             )
           : Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
               child: Column(
                 children: [
                   const Spacer(),
@@ -316,12 +366,17 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                                   song.thumbnailUrl!,
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => Container(
-                                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                    child: const Icon(Icons.music_note, size: 80),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surfaceContainerHighest,
+                                    child:
+                                        const Icon(Icons.music_note, size: 80),
                                   ),
                                 )
                               : Container(
-                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
                                   child: const Icon(Icons.music_note, size: 80),
                                 ),
                         ),
@@ -340,17 +395,27 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                               song.title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                   ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              song.artists.isNotEmpty ? song.artists.join(', ') : 'Metrolist Pro',
+                              song.artists.isNotEmpty
+                                  ? song.artists.join(', ')
+                                  : 'Metrolist Pro',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
                                   ),
                             ),
                           ],
@@ -358,7 +423,9 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                       ),
                       IconButton(
                         icon: Icon(
-                          isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                          isFav
+                              ? Icons.favorite_rounded
+                              : Icons.favorite_border_rounded,
                           size: 28,
                           color: isFav ? Colors.redAccent : null,
                         ),
@@ -383,20 +450,27 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                           SliderTheme(
                             data: SliderTheme.of(context).copyWith(
                               trackHeight: 4,
-                              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                              thumbShape: const RoundSliderThumbShape(
+                                  enabledThumbRadius: 6),
                             ),
                             child: Slider(
-                              value: position.inMilliseconds
+                              value: position.inMilliseconds.toDouble().clamp(
+                                  0.0,
+                                  duration.inMilliseconds
+                                      .toDouble()
+                                      .clamp(1.0, double.infinity)),
+                              max: duration.inMilliseconds
                                   .toDouble()
-                                  .clamp(0.0, duration.inMilliseconds.toDouble().clamp(1.0, double.infinity)),
-                              max: duration.inMilliseconds.toDouble().clamp(1.0, double.infinity),
+                                  .clamp(1.0, double.infinity),
                               onChanged: (value) {
-                                playerService.seek(Duration(milliseconds: value.round()));
+                                playerService.seek(
+                                    Duration(milliseconds: value.round()));
                               },
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -404,14 +478,18 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                                   _formatDuration(position),
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
                                   ),
                                 ),
                                 Text(
                                   _formatDuration(duration),
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
                                   ),
                                 ),
                               ],
@@ -433,7 +511,11 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                             icon: Icon(
                               Icons.shuffle_rounded,
                               size: 24,
-                              color: isShuffle ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: isShuffle
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                             ),
                             onPressed: playerService.toggleShuffle,
                           );
@@ -451,7 +533,9 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                             elevation: 4,
                             onPressed: playerService.togglePlayPause,
                             child: Icon(
-                              isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                              isPlaying
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded,
                               size: 40,
                             ),
                           );
@@ -465,8 +549,12 @@ class _ExpandedPlayerState extends State<ExpandedPlayer> {
                         stream: playerService.repeatModeStream,
                         builder: (context, snapshot) {
                           final mode = snapshot.data ?? AppRepeatMode.off;
-                          final icon = mode == AppRepeatMode.one ? Icons.repeat_one_rounded : Icons.repeat_rounded;
-                          final color = mode != AppRepeatMode.off ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant;
+                          final icon = mode == AppRepeatMode.one
+                              ? Icons.repeat_one_rounded
+                              : Icons.repeat_rounded;
+                          final color = mode != AppRepeatMode.off
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurfaceVariant;
                           return IconButton(
                             icon: Icon(icon, size: 24, color: color),
                             onPressed: playerService.toggleRepeatMode,

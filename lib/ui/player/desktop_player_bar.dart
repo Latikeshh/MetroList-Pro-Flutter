@@ -160,9 +160,13 @@ class _DesktopPlayerBarState extends State<DesktopPlayerBar> {
                         return IconButton(
                           icon: Icon(
                             isFav ? Icons.favorite : Icons.favorite_border,
-                            color: isFav ? Colors.redAccent : colorScheme.onSurfaceVariant,
+                            color: isFav
+                                ? Colors.redAccent
+                                : colorScheme.onSurfaceVariant,
                           ),
-                          tooltip: isFav ? 'Remove from Favorites' : 'Add to Favorites',
+                          tooltip: isFav
+                              ? 'Remove from Favorites'
+                              : 'Add to Favorites',
                           onPressed: () => _playerService.toggleFavorite(song),
                         );
                       },
@@ -203,7 +207,8 @@ class _DesktopPlayerBarState extends State<DesktopPlayerBar> {
 
                         // Skip Previous
                         IconButton(
-                          icon: const Icon(Icons.skip_previous_rounded, size: 26),
+                          icon:
+                              const Icon(Icons.skip_previous_rounded, size: 26),
                           tooltip: 'Previous',
                           onPressed: _playerService.skipToPrevious,
                         ),
@@ -247,7 +252,8 @@ class _DesktopPlayerBarState extends State<DesktopPlayerBar> {
                         StreamBuilder<AppRepeatMode>(
                           stream: _playerService.repeatModeStream,
                           builder: (context, repeatSnapshot) {
-                            final mode = repeatSnapshot.data ?? AppRepeatMode.off;
+                            final mode =
+                                repeatSnapshot.data ?? AppRepeatMode.off;
                             final icon = switch (mode) {
                               AppRepeatMode.off => Icons.repeat,
                               AppRepeatMode.all => Icons.repeat,
@@ -274,8 +280,10 @@ class _DesktopPlayerBarState extends State<DesktopPlayerBar> {
                       stream: _playerService.positionDataStream,
                       builder: (context, positionSnapshot) {
                         final positionData = positionSnapshot.data;
-                        final position = positionData?.position ?? Duration.zero;
-                        final duration = positionData?.duration ?? Duration.zero;
+                        final position =
+                            positionData?.position ?? Duration.zero;
+                        final duration =
+                            positionData?.duration ?? Duration.zero;
 
                         return SizedBox(
                           height: 22,
@@ -303,7 +311,10 @@ class _DesktopPlayerBarState extends State<DesktopPlayerBar> {
                                     value: (duration.inMilliseconds > 0)
                                         ? position.inMilliseconds
                                             .toDouble()
-                                            .clamp(0.0, duration.inMilliseconds.toDouble())
+                                            .clamp(
+                                                0.0,
+                                                duration.inMilliseconds
+                                                    .toDouble())
                                         : 0.0,
                                     min: 0.0,
                                     max: (duration.inMilliseconds > 0)

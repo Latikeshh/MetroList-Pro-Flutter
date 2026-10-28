@@ -16,7 +16,11 @@ class _ListenTogetherScreenState extends State<ListenTogetherScreen> {
   final TextEditingController _joinCodeController = TextEditingController();
   final TextEditingController _chatController = TextEditingController();
 
-  final List<String> _participants = ['Host (You)', 'Alex_Listener', 'DesktopUser_42'];
+  final List<String> _participants = [
+    'Host (You)',
+    'Alex_Listener',
+    'DesktopUser_42'
+  ];
   final List<Map<String, String>> _messages = [
     {'sender': 'Alex_Listener', 'text': 'Hey! Awesome song playing!'},
     {'sender': 'DesktopUser_42', 'text': 'Love this vibe! 🔥'},
@@ -72,7 +76,8 @@ class _ListenTogetherScreenState extends State<ListenTogetherScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Listen Together', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Listen Together',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           if (_isInRoom)
             IconButton(
@@ -88,9 +93,14 @@ class _ListenTogetherScreenState extends State<ListenTogetherScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.groups_rounded, size: 80, color: colorScheme.primary),
+                  Icon(Icons.groups_rounded,
+                      size: 80, color: colorScheme.primary),
                   const SizedBox(height: 16),
-                  Text('Listen Together Room', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                  Text('Listen Together Room',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Text(
                     'Synchronize your playback in real-time with friends on Android, Windows, or iOS.',
@@ -104,13 +114,20 @@ class _ListenTogetherScreenState extends State<ListenTogetherScreen> {
                     onPressed: _createRoom,
                   ),
                   const SizedBox(height: 24),
-                  const Row(children: [Expanded(child: Divider()), Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('OR')), Expanded(child: Divider())]),
+                  const Row(children: [
+                    Expanded(child: Divider()),
+                    Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('OR')),
+                    Expanded(child: Divider())
+                  ]),
                   const SizedBox(height: 24),
                   TextField(
                     controller: _joinCodeController,
                     decoration: InputDecoration(
                       hintText: 'Enter Room Code (e.g. METRO-9842)',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -130,14 +147,24 @@ class _ListenTogetherScreenState extends State<ListenTogetherScreen> {
                   color: colorScheme.surfaceContainerHigh,
                   child: Row(
                     children: [
-                      CircleAvatar(backgroundColor: colorScheme.primaryContainer, child: const Icon(Icons.spatial_audio_off_rounded)),
+                      CircleAvatar(
+                          backgroundColor: colorScheme.primaryContainer,
+                          child: const Icon(Icons.spatial_audio_off_rounded)),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Room Code: $_roomCode', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            Text(_isHost ? 'Status: Room Host (Synchronizing playback)' : 'Status: Listener Guest', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                            Text('Room Code: $_roomCode',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text(
+                                _isHost
+                                    ? 'Status: Room Host (Synchronizing playback)'
+                                    : 'Status: Listener Guest',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: colorScheme.onSurfaceVariant)),
                           ],
                         ),
                       ),
@@ -163,9 +190,14 @@ class _ListenTogetherScreenState extends State<ListenTogetherScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(msg['sender']!, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: colorScheme.primary)),
+                            Text(msg['sender']!,
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: colorScheme.primary)),
                             const SizedBox(height: 2),
-                            Text(msg['text']!, style: const TextStyle(fontSize: 14)),
+                            Text(msg['text']!,
+                                style: const TextStyle(fontSize: 14)),
                           ],
                         ),
                       );
@@ -183,7 +215,8 @@ class _ListenTogetherScreenState extends State<ListenTogetherScreen> {
                           controller: _chatController,
                           decoration: InputDecoration(
                             hintText: 'Send message to room...',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12)),
                           ),
                           onSubmitted: (_) => _sendMessage(),
                         ),

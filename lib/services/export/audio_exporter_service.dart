@@ -3,7 +3,8 @@ library;
 import 'io_exporter.dart' if (dart.library.html) 'web_exporter.dart';
 
 class AudioExporterService {
-  static final AudioExporterService _instance = AudioExporterService._internal();
+  static final AudioExporterService _instance =
+      AudioExporterService._internal();
   factory AudioExporterService() => _instance;
 
   AudioExporterService._internal();

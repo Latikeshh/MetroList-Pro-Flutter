@@ -281,11 +281,13 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      final nextData = await _ytService.getHomePage(continuation: _homePageData!.continuation);
+      final nextData = await _ytService.getHomePage(
+          continuation: _homePageData!.continuation);
       if (mounted) {
         setState(() {
           if (_homePageData != null) {
-            _homePageData = YouTubeService.mergeHomePages(_homePageData!, nextData);
+            _homePageData =
+                YouTubeService.mergeHomePages(_homePageData!, nextData);
           } else {
             _homePageData = nextData;
           }
@@ -433,7 +435,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const ListenTogetherScreen()),
+                    MaterialPageRoute(
+                        builder: (_) => const ListenTogetherScreen()),
                   );
                 },
               ),
@@ -506,7 +509,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent: 420,
                         mainAxisExtent: 72,
                         crossAxisSpacing: 12,
@@ -540,7 +544,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemBuilder: (context, index) {
                       final chip = chips[index];
-                      final isSelected = chip.title == (_selectedChip?.title ?? 'All');
+                      final isSelected =
+                          chip.title == (_selectedChip?.title ?? 'All');
                       return FilterChip(
                         selected: isSelected,
                         label: Text(chip.title),
@@ -549,9 +554,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: isSelected
                               ? colorScheme.onPrimaryContainer
                               : colorScheme.onSurface,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
-                        onSelected: (_) => _loadHomePageData(chip: isSelected ? null : chip),
+                        onSelected: (_) =>
+                            _loadHomePageData(chip: isSelected ? null : chip),
                       );
                     },
                   ),
@@ -581,9 +588,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.redAccent,
                       onTap: () {
                         if (_userLikedSongs.isNotEmpty) {
-                          _playerService.playSong(_userLikedSongs.first, newQueue: _userLikedSongs);
+                          _playerService.playSong(_userLikedSongs.first,
+                              newQueue: _userLikedSongs);
                         } else {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const LibraryScreen()));
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const LibraryScreen()));
                         }
                       },
                     ),
@@ -602,7 +613,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const ChartsScreen()),
+                          MaterialPageRoute(
+                              builder: (_) => const ChartsScreen()),
                         );
                       },
                     ),
@@ -613,9 +625,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.blueAccent,
                       onTap: () {
                         if (_userHistorySongs.isNotEmpty) {
-                          _playerService.playSong(_userHistorySongs.first, newQueue: _userHistorySongs);
+                          _playerService.playSong(_userHistorySongs.first,
+                              newQueue: _userHistorySongs);
                         } else {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const LibraryScreen()));
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const LibraryScreen()));
                         }
                       },
                     ),
@@ -633,7 +649,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Color(0xFF6750A4), Color(0xFF381E72), Color(0xFF1D1B20)],
+                        colors: [
+                          Color(0xFF6750A4),
+                          Color(0xFF381E72),
+                          Color(0xFF1D1B20)
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -682,7 +702,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const WrappedScreen()),
+                              MaterialPageRoute(
+                                  builder: (context) => const WrappedScreen()),
                             );
                           },
                           child: const Text('Explore Stats'),
@@ -704,18 +725,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 32),
                     child: Column(
                       children: [
-                        Icon(Icons.error_outline_rounded, size: 48, color: colorScheme.error),
+                        Icon(Icons.error_outline_rounded,
+                            size: 48, color: colorScheme.error),
                         const SizedBox(height: 12),
                         Text(
-                          _homePageData?.errorMessage ?? 'Failed to load Home feed from YouTube Music.',
+                          _homePageData?.errorMessage ??
+                              'Failed to load Home feed from YouTube Music.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: colorScheme.error, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                              color: colorScheme.error,
+                              fontWeight: FontWeight.w500),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
                           icon: const Icon(Icons.refresh_rounded),
                           label: const Text('Retry'),
-                          onPressed: () => _loadHomePageData(chip: _selectedChip),
+                          onPressed: () =>
+                              _loadHomePageData(chip: _selectedChip),
                         ),
                       ],
                     ),
@@ -730,7 +756,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Text(
                               section.title,
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                   ),
                             ),
@@ -738,8 +767,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               icon: const Icon(Icons.radio_rounded, size: 18),
                               label: const Text('Start Radio'),
                               onPressed: () {
-                                if (section.items.isNotEmpty && section.items.first is SongItem) {
-                                  _playerService.playSong(section.items.first as SongItem);
+                                if (section.items.isNotEmpty &&
+                                    section.items.first is SongItem) {
+                                  _playerService.playSong(
+                                      section.items.first as SongItem);
                                 }
                               },
                             ),
@@ -751,7 +782,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: section.items.length,
-                            separatorBuilder: (_, __) => const SizedBox(width: 14),
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 14),
                             itemBuilder: (context, index) {
                               final item = section.items[index];
                               return SizedBox(
@@ -760,25 +792,34 @@ class _HomeScreenState extends State<HomeScreen> {
                                   onTap: () => _handleItemTap(item),
                                   borderRadius: BorderRadius.circular(14),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Expanded(
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(14),
+                                          borderRadius:
+                                              BorderRadius.circular(14),
                                           child: item.thumbnailUrl != null
                                               ? Image.network(
                                                   item.thumbnailUrl!,
                                                   width: 140,
                                                   height: 140,
                                                   fit: BoxFit.cover,
-                                                  errorBuilder: (_, __, ___) => Container(
-                                                    color: colorScheme.surfaceContainerHighest,
-                                                    child: const Icon(Icons.music_note, size: 40),
+                                                  errorBuilder: (_, __, ___) =>
+                                                      Container(
+                                                    color: colorScheme
+                                                        .surfaceContainerHighest,
+                                                    child: const Icon(
+                                                        Icons.music_note,
+                                                        size: 40),
                                                   ),
                                                 )
                                               : Container(
-                                                  color: colorScheme.surfaceContainerHighest,
-                                                  child: const Icon(Icons.music_note, size: 40),
+                                                  color: colorScheme
+                                                      .surfaceContainerHighest,
+                                                  child: const Icon(
+                                                      Icons.music_note,
+                                                      size: 40),
                                                 ),
                                         ),
                                       ),
@@ -787,12 +828,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                         item.title,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13),
                                       ),
                                       Text(
                                         item is SongItem
-                                            ? (item.artists.isNotEmpty ? item.artists.join(', ') : 'Track')
-                                            : (item is AlbumItem ? (item.artist ?? 'Album') : 'Media'),
+                                            ? (item.artists.isNotEmpty
+                                                ? item.artists.join(', ')
+                                                : 'Track')
+                                            : (item is AlbumItem
+                                                ? (item.artist ?? 'Album')
+                                                : 'Media'),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
@@ -814,7 +861,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 else
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Center(child: Text('No recommendations available for this category.')),
+                    child: Center(
+                        child: Text(
+                            'No recommendations available for this category.')),
                   ),
 
                 if (_isLoadingMore)
@@ -866,7 +915,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ),
             ],
@@ -948,15 +998,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'Japan (JP)',
           'India (IN)',
           'Global'
-        ].map((r) => SimpleDialogOption(
-          onPressed: () {
-            setState(() {
-              _region = r;
-            });
-            Navigator.pop(context);
-          },
-          child: Text(r),
-        )).toList(),
+        ]
+            .map((r) => SimpleDialogOption(
+                  onPressed: () {
+                    setState(() {
+                      _region = r;
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: Text(r),
+                ))
+            .toList(),
       ),
     );
   }
@@ -966,7 +1018,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) => LatikeshUpdateDialog(
         newVersion: '2026.10.24.2',
-        changelog: '• Full Cross-Platform Flutter Release for Android and Windows Desktop\n• Precision A-B Section Looper & Audio Clip Export\n• Integrated YouTube Music Discovery & Local Library',
+        changelog:
+            '• Full Cross-Platform Flutter Release for Android and Windows Desktop\n• Precision A-B Section Looper & Audio Clip Export\n• Integrated YouTube Music Discovery & Local Library',
         onDismiss: () => Navigator.pop(context),
       ),
     );
@@ -991,10 +1044,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ListTile(
                 leading: const Icon(Icons.account_circle_rounded),
                 title: const Text('Account & Channel Settings'),
-                subtitle: const Text('YouTube Music SAPISID login, profile, and library sync'),
+                subtitle: const Text(
+                    'YouTube Music SAPISID login, profile, and library sync'),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountScreen()));
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const AccountScreen()));
                 },
               ),
               const Divider(),
@@ -1003,10 +1058,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ListTile(
                 leading: const Icon(Icons.palette_rounded),
                 title: const Text('Appearance & Theme'),
-                subtitle: const Text('Color palette, dynamic themes, OLED black, and fonts'),
+                subtitle: const Text(
+                    'Color palette, dynamic themes, OLED black, and fonts'),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AppearanceSettingsScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const AppearanceSettingsScreen()));
                 },
               ),
               const Divider(),
@@ -1015,10 +1074,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ListTile(
                 leading: const Icon(Icons.tune_rounded),
                 title: const Text('Audio Player & Storage Settings'),
-                subtitle: const Text('Export format, cache limiters, gapless, and loudness'),
+                subtitle: const Text(
+                    'Export format, cache limiters, gapless, and loudness'),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PlayerStorageSettingsScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const PlayerStorageSettingsScreen()));
                 },
               ),
               const Divider(),
@@ -1039,16 +1102,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: const Text('Discord RPC status, Last.fm scrobbling'),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const IntegrationsSettingsScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const IntegrationsSettingsScreen()));
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.translate_rounded),
                 title: const Text('AI Translation & Romanization'),
-                subtitle: const Text('OpenRouter API key, Romaji / Furigana transliteration'),
+                subtitle: const Text(
+                    'OpenRouter API key, Romaji / Furigana transliteration'),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AiRomanizationSettingsScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              const AiRomanizationSettingsScreen()));
                 },
               ),
               const Divider(),
@@ -1057,16 +1128,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ListTile(
                 leading: const Icon(Icons.backup_rounded),
                 title: const Text('Backup & Restore'),
-                subtitle: const Text('Export or restore library data from JSON backup'),
+                subtitle: const Text(
+                    'Export or restore library data from JSON backup'),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupRestoreScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const BackupRestoreScreen()));
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.system_update_rounded),
                 title: const Text('Check for Updates'),
-                subtitle: const Text('Check latest desktop release from GitHub'),
+                subtitle:
+                    const Text('Check latest desktop release from GitHub'),
                 onTap: _showTestUpdateDialog,
               ),
               const Divider(),
@@ -1075,10 +1151,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ListTile(
                 leading: const Icon(Icons.info_outline_rounded),
                 title: const Text('About Metrolist Pro'),
-                subtitle: const Text('App version, lead developer, collaborators, GPL-3.0 license'),
+                subtitle: const Text(
+                    'App version, lead developer, collaborators, GPL-3.0 license'),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const AboutScreen()));
                 },
               ),
             ],

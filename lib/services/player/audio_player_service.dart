@@ -78,7 +78,8 @@ class AudioPlayerService {
   Stream<List<SongItem>> get queueStream => _queueSubject.stream;
   Stream<AppRepeatMode> get repeatModeStream => _repeatModeSubject.stream;
   Stream<bool> get isShuffleStream => _isShuffleSubject.stream;
-  Stream<List<SongItem>> get favoriteSongsStream => _favoriteSongsSubject.stream;
+  Stream<List<SongItem>> get favoriteSongsStream =>
+      _favoriteSongsSubject.stream;
   Stream<String?> get playbackErrorStream => _playbackErrorSubject.stream;
 
   Stream<PositionData> get positionDataStream =>
@@ -294,7 +295,8 @@ class AudioPlayerService {
   final BehaviorSubject<Duration?> _sleepTimerRemainingSubject =
       BehaviorSubject<Duration?>.seeded(null);
 
-  Stream<Duration?> get sleepTimerRemainingStream => _sleepTimerRemainingSubject.stream;
+  Stream<Duration?> get sleepTimerRemainingStream =>
+      _sleepTimerRemainingSubject.stream;
 
   void startSleepTimer(Duration duration) {
     _sleepTimer?.cancel();

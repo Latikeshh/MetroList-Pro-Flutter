@@ -12,16 +12,33 @@ class LibraryScreen extends StatefulWidget {
   State<LibraryScreen> createState() => _LibraryScreenState();
 }
 
-class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProviderStateMixin {
+class _LibraryScreenState extends State<LibraryScreen>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   final AudioPlayerService _playerService = AudioPlayerService();
   final List<SongItem> _localSongs = [];
 
   final List<Map<String, String>> _sampleAlbums = [
-    {'title': 'Midnight Frequency', 'subtitle': 'Album • 12 Tracks', 'type': 'Album'},
-    {'title': 'Chill Lofi Beats', 'subtitle': 'Playlist • 45 Tracks', 'type': 'Playlist'},
-    {'title': 'Workout Euphoria', 'subtitle': 'Playlist • 30 Tracks', 'type': 'Playlist'},
-    {'title': 'Velvet Horizon', 'subtitle': 'Album • 9 Tracks', 'type': 'Album'},
+    {
+      'title': 'Midnight Frequency',
+      'subtitle': 'Album • 12 Tracks',
+      'type': 'Album'
+    },
+    {
+      'title': 'Chill Lofi Beats',
+      'subtitle': 'Playlist • 45 Tracks',
+      'type': 'Playlist'
+    },
+    {
+      'title': 'Workout Euphoria',
+      'subtitle': 'Playlist • 30 Tracks',
+      'type': 'Playlist'
+    },
+    {
+      'title': 'Velvet Horizon',
+      'subtitle': 'Album • 9 Tracks',
+      'type': 'Album'
+    },
   ];
 
   final List<Map<String, String>> _sampleArtists = [
@@ -69,7 +86,9 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Imported ${result.files.length} song(s) into Library')),
+            SnackBar(
+                content: Text(
+                    'Imported ${result.files.length} song(s) into Library')),
           );
         }
       }
@@ -125,7 +144,8 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.favorite_rounded, size: 64, color: Colors.redAccent),
+                      Icon(Icons.favorite_rounded,
+                          size: 64, color: Colors.redAccent),
                       SizedBox(height: 16),
                       Text('Your favorite songs will appear here'),
                     ],
@@ -147,15 +167,19 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                               width: 48,
                               height: 48,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.music_note_rounded),
+                              errorBuilder: (_, __, ___) =>
+                                  const Icon(Icons.music_note_rounded),
                             ),
                     ),
-                    title: Text(song.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    subtitle: Text(song.artists.join(', '), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    title: Text(song.title,
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(song.artists.join(', '),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
                     onTap: () => _playerService.playSong(song),
                     trailing: IconButton(
                       tooltip: 'Remove from favorites',
-                      icon: const Icon(Icons.favorite_rounded, color: Colors.redAccent),
+                      icon: const Icon(Icons.favorite_rounded,
+                          color: Colors.redAccent),
                       onPressed: () => _playerService.toggleFavorite(song),
                     ),
                   );
@@ -244,7 +268,9 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                                 color: colorScheme.primaryContainer,
                                 child: Center(
                                   child: Icon(
-                                    item['type'] == 'Album' ? Icons.album_rounded : Icons.queue_music_rounded,
+                                    item['type'] == 'Album'
+                                        ? Icons.album_rounded
+                                        : Icons.queue_music_rounded,
                                     size: 48,
                                     color: colorScheme.onPrimaryContainer,
                                   ),
@@ -258,14 +284,17 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                                 children: [
                                   Text(
                                     item['title']!,
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     item['subtitle']!,
-                                    style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: colorScheme.onSurfaceVariant),
                                   ),
                                 ],
                               ),
@@ -285,10 +314,13 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                       leading: CircleAvatar(
                         backgroundColor: colorScheme.primaryContainer,
                         child: Icon(
-                          item['type'] == 'Album' ? Icons.album_rounded : Icons.queue_music_rounded,
+                          item['type'] == 'Album'
+                              ? Icons.album_rounded
+                              : Icons.queue_music_rounded,
                         ),
                       ),
-                      title: Text(item['title']!, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(item['title']!,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
                       subtitle: Text(item['subtitle']!),
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -310,7 +342,8 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                   backgroundColor: colorScheme.secondaryContainer,
                   child: const Icon(Icons.person_rounded),
                 ),
-                title: Text(artist['name']!, style: const TextStyle(fontWeight: FontWeight.bold)),
+                title: Text(artist['name']!,
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text(artist['subscribers']!),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () {
@@ -341,9 +374,13 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                   return ListTile(
                     selected: isCurrent,
                     leading: CircleAvatar(
-                      backgroundColor: isCurrent ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+                      backgroundColor: isCurrent
+                          ? colorScheme.primary
+                          : colorScheme.surfaceContainerHighest,
                       child: Icon(
-                        isCurrent ? Icons.graphic_eq_rounded : Icons.music_note_rounded,
+                        isCurrent
+                            ? Icons.graphic_eq_rounded
+                            : Icons.music_note_rounded,
                         color: isCurrent ? colorScheme.onPrimary : null,
                       ),
                     ),
@@ -352,11 +389,14 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                        fontWeight:
+                            isCurrent ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                     subtitle: Text(
-                      song.artists.isNotEmpty ? song.artists.join(', ') : 'Metrolist',
+                      song.artists.isNotEmpty
+                          ? song.artists.join(', ')
+                          : 'Metrolist',
                     ),
                     trailing: IconButton(
                       icon: const Icon(Icons.play_arrow_rounded),

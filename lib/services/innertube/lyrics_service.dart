@@ -81,12 +81,14 @@ class LyricsService {
         final minutes = int.tryParse(match.group(1) ?? '0') ?? 0;
         final seconds = int.tryParse(match.group(2) ?? '0') ?? 0;
         final millisStr = match.group(3) ?? '0';
-        final millis = int.tryParse(millisStr.padRight(3, '0').substring(0, 3)) ?? 0;
+        final millis =
+            int.tryParse(millisStr.padRight(3, '0').substring(0, 3)) ?? 0;
         final text = match.group(4)?.trim() ?? '';
 
         if (text.isNotEmpty) {
           lines.add(LyricLine(
-            timestamp: Duration(minutes: minutes, seconds: seconds, milliseconds: millis),
+            timestamp: Duration(
+                minutes: minutes, seconds: seconds, milliseconds: millis),
             text: text,
           ));
         }
