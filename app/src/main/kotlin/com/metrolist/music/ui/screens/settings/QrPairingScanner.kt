@@ -5,7 +5,10 @@
 
 package com.metrolist.music.ui.screens.settings
 
+import android.Manifest
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,7 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -26,13 +28,17 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -49,10 +55,8 @@ import com.metrolist.music.constants.AccountEmailKey
 import com.metrolist.music.constants.AccountNameKey
 import com.metrolist.music.constants.InnerTubeCookieKey
 import com.metrolist.music.constants.VisitorDataKey
-import com.metrolist.music.utils.dataStore
 import com.metrolist.music.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -75,9 +79,20 @@ fun QrPairingScanner(
     val (accountName) = rememberPreference(AccountNameKey, "YouTube Music User")
     val (accountEmail) = rememberPreference(AccountEmailKey, "")
 
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    var hasCameraPermission by remember { mutableStateOf(false) }
     var rawQrInput by remember { mutableStateOf("") }
     var isTransferring by remember { mutableStateOf(false) }
     var pendingPairingData by remember { mutableStateOf<Map<String, String>?>(null) }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasCameraPermission = isGranted
+        if (!isGranted) {
+            Toast.makeText(context, "Camera permission required for QR scanning", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     fun parsePairingUrl(qrUrl: String): Map<String, String>? {
         return try {
@@ -99,6 +114,7 @@ fun QrPairingScanner(
         val ip = pairingMap["ip"].orEmpty()
         val port = pairingMap["port"].orEmpty()
         val pairingId = pairingMap["id"].orEmpty()
+        val secretKey = pairingMap["key"].orEmpty()
 
         if (ip.isEmpty() || port.isEmpty() || pairingId.isEmpty()) {
             Toast.makeText(context, "Invalid pairing payload", Toast.LENGTH_SHORT).show()
@@ -111,6 +127,7 @@ fun QrPairingScanner(
                 val client = OkHttpClient.Builder().build()
                 val json = JSONObject().apply {
                     put("id", pairingId)
+                    put("key", secretKey)
                     put("cookie", cookie)
                     put("visitorData", visitorData)
                     put("accountName", accountName)
@@ -159,61 +176,126 @@ fun QrPairingScanner(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(20.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                painter = painterResource(R.drawable.login),
-                contentDescription = null,
-                modifier = Modifier.size(72.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
+            TabRow(selectedTabIndex = selectedTabIndex) {
+                Tab(
+                    selected = selectedTabIndex == 0,
+                    onClick = { selectedTabIndex = 0 },
+                    text = { Text("Camera Scanner") }
+                )
+                Tab(
+                    selected = selectedTabIndex == 1,
+                    onClick = { selectedTabIndex = 1 },
+                    text = { Text("Manual Entry") }
+                )
+            }
 
-            Spacer(Modifier.height(16.dp))
-
-            Text(
-                text = "Connect MetroList Pro Windows",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            Text(
-                text = "Scan the QR code displayed on MetroList Pro Windows or paste the pairing URL below to securely transfer your session.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(Modifier.height(24.dp))
-
-            OutlinedTextField(
-                value = rawQrInput,
-                onValueChange = { rawQrInput = it },
-                label = { Text("Pairing URL (metrolist://pair?...)") },
-                modifier = Modifier.fillMaxWidth(),
-                maxLines = 3
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    val parsed = parsePairingUrl(rawQrInput)
-                    if (parsed != null) {
-                        pendingPairingData = parsed
-                    } else {
-                        Toast.makeText(context, "Invalid QR Pairing URL format", Toast.LENGTH_SHORT).show()
-                    }
-                },
-                enabled = rawQrInput.isNotBlank() && !isTransferring,
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (isTransferring) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                if (selectedTabIndex == 0) {
+                    // Camera QR Scan Tab
+                    Icon(
+                        painter = painterResource(R.drawable.login),
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Text(
+                        text = "Scan QR Code on Windows",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        text = "Point your camera at the QR code displayed on MetroList Pro Windows to authorize and transfer your session.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(Modifier.height(24.dp))
+
+                    if (!hasCameraPermission) {
+                        Button(
+                            onClick = { cameraPermissionLauncher.launch(Manifest.permission.CAMERA) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Grant Camera Permission")
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = {
+                                Toast.makeText(context, "Point camera at Windows QR code", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Camera Ready (Scanning...)")
+                        }
+                    }
                 } else {
-                    Text("Pair Windows App")
+                    // Manual Pairing URL Entry Tab
+                    Icon(
+                        painter = painterResource(R.drawable.login),
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Text(
+                        text = "Manual Pairing URL Entry",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        text = "Paste the metrolist://pair? URL displayed under the QR code on Windows.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(Modifier.height(24.dp))
+
+                    OutlinedTextField(
+                        value = rawQrInput,
+                        onValueChange = { rawQrInput = it },
+                        label = { Text("Pairing URL (metrolist://pair?...)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 3
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            val parsed = parsePairingUrl(rawQrInput)
+                            if (parsed != null) {
+                                pendingPairingData = parsed
+                            } else {
+                                Toast.makeText(context, "Invalid QR Pairing URL format", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        enabled = rawQrInput.isNotBlank() && !isTransferring,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (isTransferring) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text("Pair Windows App")
+                        }
+                    }
                 }
             }
         }
