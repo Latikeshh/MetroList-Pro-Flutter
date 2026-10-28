@@ -52,10 +52,30 @@ class YouTubeService {
 
       if (response.statusCode == 200 && response.data is Map) {
         final data = response.data as Map;
-        if (data.containsKey('actions') || data.containsKey('contents')) {
+        final actions = data['actions'];
+        if (actions is List && actions.isNotEmpty) {
+          final header = actions[0]['openPopupAction']?['popup']
+              ?['multiPageMenuRenderer']?['header']
+              ?['activeAccountHeaderRenderer'];
+          if (header is Map) {
+            final nameRuns = header['accountName']?['runs'];
+            final emailRuns = header['email']?['runs'] ?? header['channelHandle']?['runs'];
+            final name = (nameRuns is List && nameRuns.isNotEmpty)
+                ? nameRuns[0]['text']?.toString() ?? 'YouTube Music User'
+                : 'YouTube Music User';
+            final email = (emailRuns is List && emailRuns.isNotEmpty)
+                ? emailRuns[0]['text']?.toString() ?? ''
+                : '';
+            return {
+              'accountName': name,
+              'accountEmail': email,
+            };
+          }
+        }
+        if (data.containsKey('contents') || data.containsKey('actions')) {
           return {
-            'accountName': 'YouTube Music User',
-            'accountEmail': 'authenticated_android@youtube.com',
+            'accountName': 'Authenticated YouTube Account',
+            'accountEmail': '',
           };
         }
       }

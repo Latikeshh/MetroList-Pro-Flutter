@@ -157,12 +157,13 @@ class QrPairingService {
       final content = await utf8.decoder.bind(request).join();
       final body = jsonDecode(content);
 
-      if (body is! Map || body['id'] != info.pairingId) {
+      if (body is! Map || body['id'] != info.pairingId || (body['key'] != info.secretKey && body['key'] != null)) {
         request.response.statusCode = HttpStatus.unauthorized;
-        request.response.write(jsonEncode({'status': 'ERROR', 'message': 'Invalid pairing ID'}));
+        request.response.write(jsonEncode({'status': 'ERROR', 'message': 'Invalid pairing credentials'}));
         await request.response.close();
         _stateSubject.add(QrPairingState.error);
-        _errorSubject.add('Invalid pairing ID received.');
+        _errorSubject.add('Invalid pairing credentials received.');
+        unawaited(stopPairingServer()); // Enforce one-time use
         return;
       }
 

@@ -117,8 +117,16 @@ class AccountService {
 
     // Verify session with real InnerTube request
     final verifiedInfo = await YouTubeService().verifySession(trimmed);
-    final accountName = name ?? verifiedInfo?['accountName'] ?? 'YouTube Music User';
-    final accountEmail = email ?? verifiedInfo?['accountEmail'] ?? 'authenticated_session@youtube.com';
+    if (verifiedInfo == null) {
+      _authStateSubject.add(AccountAuthState.disconnected);
+      _sessionSubject.add(null);
+      _errorSubject.add('Session verification failed: YouTube Music server rejected the session.');
+      debugPrint('Authentication failed: InnerTube server verification returned null.');
+      return false;
+    }
+
+    final accountName = verifiedInfo['accountName'] ?? name ?? 'YouTube Music Account';
+    final accountEmail = verifiedInfo['accountEmail'] ?? email ?? '';
 
     final session = UserAccountSession(
       cookie: trimmed,
