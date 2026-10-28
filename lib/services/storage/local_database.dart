@@ -46,6 +46,44 @@ class LocalDatabaseService {
     await prefs.remove(_historyKey);
   }
 
+  Future<String> exportBackupJson() async {
+    final liked = await getLikedSongs();
+    final history = await getHistory();
+    return jsonEncode({
+      'version': 'metrolist.backup.v1',
+      'timestamp': DateTime.now().toIso8601String(),
+      'likedSongs': liked.map(_songToJson).toList(),
+      'history': history.map(_songToJson).toList(),
+    });
+  }
+
+  Future<bool> importBackupJson(String jsonString) async {
+    try {
+      final decoded = jsonDecode(jsonString);
+      if (decoded is! Map) return false;
+      final rawLiked = decoded['likedSongs'];
+      final rawHistory = decoded['history'];
+
+      if (rawLiked is List) {
+        final liked = rawLiked
+            .whereType<Map>()
+            .map((entry) => _songFromJson(Map<String, dynamic>.from(entry)))
+            .toList();
+        await _writeSongs(_likedSongsKey, liked);
+      }
+      if (rawHistory is List) {
+        final history = rawHistory
+            .whereType<Map>()
+            .map((entry) => _songFromJson(Map<String, dynamic>.from(entry)))
+            .toList();
+        await _writeSongs(_historyKey, history);
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<List<SongItem>> _readSongs(String key) async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(key);
