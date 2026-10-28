@@ -61,6 +61,23 @@ class QrPairingService {
         includeLinkLocal: false,
       );
       for (final interface in interfaces) {
+        final name = interface.name.toLowerCase();
+        // Skip virtual network adapters (WSL, Hyper-V, VirtualBox, vEthernet)
+        if (name.contains('wsl') ||
+            name.contains('vethernet') ||
+            name.contains('hyper-v') ||
+            name.contains('virtualbox') ||
+            name.contains('vmware') ||
+            name.contains('virtual')) {
+          continue;
+        }
+        for (final addr in interface.addresses) {
+          if (!addr.isLoopback && !addr.isLinkLocal) {
+            return addr.address;
+          }
+        }
+      }
+      for (final interface in interfaces) {
         for (final addr in interface.addresses) {
           if (!addr.isLoopback && !addr.isLinkLocal) {
             return addr.address;

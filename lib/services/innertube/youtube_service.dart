@@ -61,20 +61,22 @@ class YouTubeService {
             final nameRuns = header['accountName']?['runs'];
             final emailRuns = header['email']?['runs'] ?? header['channelHandle']?['runs'];
             final name = (nameRuns is List && nameRuns.isNotEmpty)
-                ? nameRuns[0]['text']?.toString() ?? 'YouTube Music User'
-                : 'YouTube Music User';
+                ? nameRuns[0]['text']?.toString()
+                : null;
             final email = (emailRuns is List && emailRuns.isNotEmpty)
-                ? emailRuns[0]['text']?.toString() ?? ''
-                : '';
-            return {
-              'accountName': name,
-              'accountEmail': email,
-            };
+                ? emailRuns[0]['text']?.toString()
+                : null;
+            if (name != null && name.isNotEmpty) {
+              return {
+                'accountName': name,
+                'accountEmail': email ?? '',
+              };
+            }
           }
         }
         if (data.containsKey('contents') || data.containsKey('actions')) {
           return {
-            'accountName': 'Authenticated YouTube Account',
+            'accountName': 'Verified YouTube Account',
             'accountEmail': '',
           };
         }

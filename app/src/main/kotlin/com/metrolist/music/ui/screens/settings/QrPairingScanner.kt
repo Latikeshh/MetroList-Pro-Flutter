@@ -20,7 +20,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -217,7 +219,7 @@ fun QrPairingScanner(
                     Spacer(Modifier.height(8.dp))
 
                     Text(
-                        text = "Point your camera at the QR code displayed on MetroList Pro Windows to authorize and transfer your session.",
+                        text = "Point1 your camera at the QR code displayed on MetroList Pro Windows to authorize and transfer your session.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -232,14 +234,35 @@ fun QrPairingScanner(
                             Text("Grant Camera Permission")
                         }
                     } else {
-                        OutlinedButton(
-                            onClick = {
-                                Toast.makeText(context, "Point camera at Windows QR code", Toast.LENGTH_SHORT).show()
+                        val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+                        androidx.compose.ui.viewinterop.AndroidView(
+                            factory = { ctx ->
+                                androidx.camera.view.PreviewView(ctx).apply {
+                                    val cameraProviderFuture = androidx.camera.lifecycle.ProcessCameraProvider.getInstance(ctx)
+                                    cameraProviderFuture.addListener({
+                                        val cameraProvider = cameraProviderFuture.get()
+                                        val preview = androidx.camera.core.Preview.Builder().build()
+                                        preview.setSurfaceProvider(this.surfaceProvider)
+
+                                        val imageAnalysis = androidx.camera.core.ImageAnalysis.Builder()
+                                            .setBackpressureStrategy(androidx.camera.core.ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                                            .build()
+
+                                        val cameraSelector = androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA
+                                        try {
+                                            cameraProvider.unbindAll()
+                                            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, imageAnalysis)
+                                        } catch (e: Exception) {
+                                            Timber.e(e, "CameraX binding failed")
+                                        }
+                                    }, androidx.core.content.ContextCompat.getMainExecutor(ctx))
+                                }
                             },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Camera Ready (Scanning...)")
-                        }
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(320.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                        )
                     }
                 } else {
                     // Manual Pairing URL Entry Tab

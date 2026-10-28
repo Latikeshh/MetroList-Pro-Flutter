@@ -34,6 +34,7 @@ kuromojiIpadic = "0.9.0"
 innertubex = "v0.8.4"
 tinypinyin = "2.0.3"
 protobuf = "4.36.2"
+camerax = "1.4.0"
 
 [libraries]
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
@@ -107,6 +108,10 @@ tinypinyin = { module = "com.github.promeG:tinypinyin", version.ref = "tinypinyi
 
 protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobuf" }
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
+
+camerax-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
 
 [plugins]
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
