@@ -137,8 +137,17 @@ class AudioSourceResolver {
     }).toList();
 
     if (audioFormats.isNotEmpty) {
-      audioFormats
-          .sort((a, b) => _toInt(b['bitrate']).compareTo(_toInt(a['bitrate'])));
+      // Sort Windows-native AAC/M4A streams first for Windows Media Foundation, then by bitrate
+      audioFormats.sort((a, b) {
+        final mimeA = a['mimeType']?.toString().toLowerCase() ?? '';
+        final mimeB = b['mimeType']?.toString().toLowerCase() ?? '';
+        final isAWindowsNative = mimeA.contains('mp4') || mimeA.contains('m4a') || mimeA.contains('aac');
+        final isBWindowsNative = mimeB.contains('mp4') || mimeB.contains('m4a') || mimeB.contains('aac');
+        if (isAWindowsNative && !isBWindowsNative) return -1;
+        if (!isAWindowsNative && isBWindowsNative) return 1;
+        return _toInt(b['bitrate']).compareTo(_toInt(a['bitrate']));
+      });
+
       for (final f in audioFormats) {
         final url = extractUrlFromFormat(f, cfg);
         if (url != null && !candidateUrls.contains(url)) {
