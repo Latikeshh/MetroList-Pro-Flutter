@@ -318,10 +318,11 @@ dependencies {
     implementation(libs.protobuf.javalite)
     implementation(libs.protobuf.kotlin.lite)
 
-    // CameraX for QR pairing camera preview
+    // CameraX and ML Kit for QR pairing camera preview and scanning
     implementation(libs.camerax.camera2)
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.view)
+    implementation(libs.mlkit.barcode.scanning)
 
     coreLibraryDesugaring(libs.desugaring)
 

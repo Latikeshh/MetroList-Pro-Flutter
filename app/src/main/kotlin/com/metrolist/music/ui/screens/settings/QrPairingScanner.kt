@@ -9,20 +9,17 @@ import android.Manifest
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
+import androidx.camera.core.ExperimentalGetImage
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.draw.clip
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -30,7 +27,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -39,22 +35,32 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.common.InputImage
 import com.metrolist.music.R
+import com.metrolist.music.constants.AccountChannelHandleKey
 import com.metrolist.music.constants.AccountEmailKey
 import com.metrolist.music.constants.AccountNameKey
+import com.metrolist.music.constants.DataSyncIdKey
+import com.metrolist.music.constants.InnerTubeAuthUserKey
 import com.metrolist.music.constants.InnerTubeCookieKey
 import com.metrolist.music.constants.VisitorDataKey
 import com.metrolist.music.utils.rememberPreference
@@ -78,14 +84,30 @@ fun QrPairingScanner(
 
     val (cookie) = rememberPreference(InnerTubeCookieKey, "")
     val (visitorData) = rememberPreference(VisitorDataKey, "")
+    val (dataSyncId) = rememberPreference(DataSyncIdKey, "")
+    val (authUser) = rememberPreference(InnerTubeAuthUserKey, "")
     val (accountName) = rememberPreference(AccountNameKey, "YouTube Music User")
     val (accountEmail) = rememberPreference(AccountEmailKey, "")
+    val (accountChannelHandle) = rememberPreference(AccountChannelHandleKey, "")
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var hasCameraPermission by remember { mutableStateOf(false) }
     var rawQrInput by remember { mutableStateOf("") }
     var isTransferring by remember { mutableStateOf(false) }
     var pendingPairingData by remember { mutableStateOf<Map<String, String>?>(null) }
+
+    val barcodeScanner = remember {
+        val options = BarcodeScannerOptions.Builder()
+            .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+            .build()
+        BarcodeScanning.getClient(options)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            barcodeScanner.close()
+        }
+    }
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -99,7 +121,7 @@ fun QrPairingScanner(
     fun parsePairingUrl(qrUrl: String): Map<String, String>? {
         return try {
             val uri = android.net.Uri.parse(qrUrl)
-            if (uri.scheme == "metrolist" && uri.host == "pair") {
+            if ((uri.scheme == "metrolist" && uri.host == "pair") || (uri.host?.contains("metrolist") == true && uri.path == "/pair")) {
                 mapOf(
                     "ip" to (uri.getQueryParameter("ip") ?: ""),
                     "port" to (uri.getQueryParameter("port") ?: ""),
@@ -132,8 +154,11 @@ fun QrPairingScanner(
                     put("key", secretKey)
                     put("cookie", cookie)
                     put("visitorData", visitorData)
+                    put("dataSyncId", dataSyncId)
+                    put("authUser", authUser)
                     put("accountName", accountName)
                     put("accountEmail", accountEmail)
+                    put("accountChannelHandle", accountChannelHandle)
                 }
 
                 val body = json.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
@@ -234,7 +259,10 @@ fun QrPairingScanner(
                             Text("Grant Camera Permission")
                         }
                     } else {
+                        val currentPendingData by rememberUpdatedState(pendingPairingData)
+                        val currentIsTransferring by rememberUpdatedState(isTransferring)
                         val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+
                         androidx.compose.ui.viewinterop.AndroidView(
                             factory = { ctx ->
                                 androidx.camera.view.PreviewView(ctx).apply {
@@ -247,6 +275,37 @@ fun QrPairingScanner(
                                         val imageAnalysis = androidx.camera.core.ImageAnalysis.Builder()
                                             .setBackpressureStrategy(androidx.camera.core.ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                                             .build()
+
+                                        imageAnalysis.setAnalyzer(
+                                            androidx.core.content.ContextCompat.getMainExecutor(ctx)
+                                        ) { imageProxy ->
+                                            @OptIn(ExperimentalGetImage::class)
+                                            val mediaImage = imageProxy.image
+                                            if (mediaImage != null && currentPendingData == null && !currentIsTransferring) {
+                                                val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+                                                barcodeScanner.process(image)
+                                                    .addOnSuccessListener { barcodes ->
+                                                        for (barcode in barcodes) {
+                                                            val rawValue = barcode.rawValue
+                                                            if (!rawValue.isNullOrEmpty()) {
+                                                                val parsed = parsePairingUrl(rawValue)
+                                                                if (parsed != null && pendingPairingData == null) {
+                                                                    pendingPairingData = parsed
+                                                                    break
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    .addOnFailureListener { e ->
+                                                        Timber.e(e, "QR Barcode scan failed")
+                                                    }
+                                                    .addOnCompleteListener {
+                                                        imageProxy.close()
+                                                    }
+                                            } else {
+                                                imageProxy.close()
+                                            }
+                                        }
 
                                         val cameraSelector = androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA
                                         try {

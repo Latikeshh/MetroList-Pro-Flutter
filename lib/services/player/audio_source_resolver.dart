@@ -146,8 +146,32 @@ class AudioSourceResolver {
     final session = _accountService.currentSession;
     final cookieHeader = session?.cookie ?? '';
 
-    // 1. Primary: Direct InnerTube /player client endpoint attempts with sts (signatureTimestamp)
+    // 1. Primary: Direct InnerTube /player client endpoint attempts
     final clients = [
+      {
+        'name': 'ANDROID_VR',
+        'version': '1.57.2',
+        'ua':
+            'com.google.android.apps.youtube.vr.oculus/1.57.2 (Linux; U; Android 12)',
+        'clientNameHeader': '28',
+        'endpoint': 'https://www.youtube.com/youtubei/v1/player',
+      },
+      {
+        'name': 'TVHTML5_SIMPLY_EMBEDDED_PLAYER',
+        'version': '2.0',
+        'ua':
+            'Mozilla/5.0 (SmartHub; SMART-TV; U; Linux/SmartTV) AppleWebKit/537.42 SmartTV Safari/537.42',
+        'clientNameHeader': '85',
+        'endpoint': 'https://www.youtube.com/youtubei/v1/player',
+      },
+      {
+        'name': 'IOS',
+        'version': '19.29.1',
+        'ua':
+            'com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X; en_US)',
+        'clientNameHeader': '5',
+        'endpoint': 'https://www.youtube.com/youtubei/v1/player',
+      },
       {
         'name': 'WEB_REMIX',
         'version': '1.20241021.01.00',

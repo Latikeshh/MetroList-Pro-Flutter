@@ -91,18 +91,22 @@ class YouTubeCipher {
 
   /// Transforms the `n` query parameter on [streamUrl] using [PlayerConfig.nClass].
   String transformNParameter(String streamUrl, PlayerConfig config) {
-    final uri = Uri.tryParse(streamUrl);
-    if (uri == null || !uri.queryParameters.containsKey('n')) {
+    try {
+      final uri = Uri.tryParse(streamUrl);
+      if (uri == null || !uri.queryParameters.containsKey('n')) {
+        return streamUrl;
+      }
+
+      final nParam = uri.queryParameters['n']!;
+      final transformedN = transformNString(nParam, config.nClass);
+
+      final updatedParams = Map<String, String>.from(uri.queryParameters);
+      updatedParams['n'] = transformedN;
+
+      return uri.replace(queryParameters: updatedParams).toString();
+    } catch (_) {
       return streamUrl;
     }
-
-    final nParam = uri.queryParameters['n']!;
-    final transformedN = transformNString(nParam, config.nClass);
-
-    final updatedParams = Map<String, String>.from(uri.queryParameters);
-    updatedParams['n'] = transformedN;
-
-    return uri.replace(queryParameters: updatedParams).toString();
   }
 
   /// Evaluates verified n-parameter transformation based on nClass rules.
