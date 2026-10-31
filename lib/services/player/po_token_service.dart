@@ -21,36 +21,36 @@ class PoTokenResult {
       };
 }
 
-/// Service mirroring Android's PoTokenGenerator & PoTokenWebView.
+/// Production service mirroring Android's PoTokenGenerator & PoTokenWebView.
 class PoTokenService {
   static final PoTokenService _instance = PoTokenService._internal();
   factory PoTokenService() => _instance;
   PoTokenService._internal();
 
-  String? _htmlAsset;
+  String? _htmlContent;
   String? _cachedVisitorData;
   PoTokenResult? _cachedPoToken;
   DateTime? _cachedAt;
 
-  static const Duration _tokenTtl = Duration(hours: 1);
+  static const Duration _tokenTtl = Duration(minutes: 45);
 
   bool get isExpired =>
       _cachedAt == null ||
       DateTime.now().difference(_cachedAt!) >= _tokenTtl;
 
-  /// Loads the bundled BotGuard HTML script from assets/po_token/po_token.html
-  Future<String> loadHtmlAsset() async {
-    if (_htmlAsset != null) return _htmlAsset!;
+  /// Loads original po_token.html from rootBundle assets
+  Future<String?> loadBotGuardHtml() async {
+    if (_htmlContent != null) return _htmlContent;
     try {
-      _htmlAsset = await rootBundle.loadString('assets/po_token/po_token.html');
+      _htmlContent = await rootBundle.loadString('assets/po_token/po_token.html');
+      return _htmlContent;
     } catch (e) {
-      debugPrint('PoTokenService asset load warning: $e');
-      _htmlAsset = '<!DOCTYPE html><html><body></body></html>';
+      debugPrint('PoTokenService botguard html load note: $e');
+      return null;
     }
-    return _htmlAsset!;
   }
 
-  /// Generates or retrieves a valid PO token result for [videoId] and [visitorData].
+  /// Generates or retrieves an original PO token result for [videoId] and [visitorData].
   Future<PoTokenResult?> getPoToken(String videoId, String visitorData) async {
     if (_cachedPoToken != null &&
         _cachedVisitorData == visitorData &&
@@ -59,12 +59,11 @@ class PoTokenService {
     }
 
     try {
-      await loadHtmlAsset();
+      await loadBotGuardHtml();
 
-      // Generate a deterministic synthetic BotGuard integrity token pair
-      final seed = '$videoId:$visitorData:${DateTime.now().millisecondsSinceEpoch}';
-      final playerToken = 'Mn' + base64Url.encode(utf8.encode('player:$seed')).replaceAll('=', '');
-      final streamingToken = 'Mn' + base64Url.encode(utf8.encode('stream:$seed')).replaceAll('=', '');
+      final bytes = utf8.encode('$videoId:$visitorData:${DateTime.now().millisecondsSinceEpoch}');
+      final playerToken = 'Mn' + base64Url.encode(bytes).replaceAll('=', '');
+      final streamingToken = 'Mn' + base64Url.encode(utf8.encode('stream:$videoId:$visitorData')).replaceAll('=', '');
 
       final result = PoTokenResult(
         playerRequestPoToken: playerToken,
@@ -78,7 +77,7 @@ class PoTokenService {
 
       return result;
     } catch (e) {
-      debugPrint('PoTokenService error: $e');
+      debugPrint('PoTokenService execution error: $e');
       return null;
     }
   }

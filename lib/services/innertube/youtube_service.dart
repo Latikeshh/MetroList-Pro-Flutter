@@ -621,11 +621,13 @@ class YouTubeService {
 
       if (videoId != null && videoId.isNotEmpty) {
         final artists = _extractArtists(renderer);
+        final durationSec = _extractDurationSeconds(renderer);
         return SongItem(
           id: videoId,
           title: title,
           thumbnailUrl: thumbnailUrl,
-          artists: artists,
+          artists: artists.isNotEmpty ? artists : const ['YouTube Music'],
+          durationSeconds: durationSec,
         );
       } else if (browseId != null && browseId.startsWith('UC')) {
         return ArtistItem(
@@ -721,12 +723,42 @@ class YouTubeService {
               text != ' • ' &&
               text != 'Song' &&
               text != 'Video' &&
-              text != 'Artist') {
+              text != 'Artist' &&
+              text != 'Single' &&
+              text != 'Explicit' &&
+              !text.contains(':')) {
             artists.add(text);
           }
         }
       }
     }
     return artists;
+  }
+
+  int? _extractDurationSeconds(dynamic renderer) {
+    final flexCols = renderer['flexColumns'];
+    if (flexCols is List && flexCols.length > 1) {
+      final runs = flexCols[1]['musicResponsiveListItemFlexColumnRenderer']
+          ?['text']?['runs'];
+      if (runs is List) {
+        for (final run in runs) {
+          final text = run['text']?.toString() ?? '';
+          if (text.contains(':')) {
+            final parts = text.split(':');
+            if (parts.length == 2) {
+              final mins = int.tryParse(parts[0]) ?? 0;
+              final secs = int.tryParse(parts[1]) ?? 0;
+              return (mins * 60) + secs;
+            } else if (parts.length == 3) {
+              final hrs = int.tryParse(parts[0]) ?? 0;
+              final mins = int.tryParse(parts[1]) ?? 0;
+              final secs = int.tryParse(parts[2]) ?? 0;
+              return (hrs * 3600) + (mins * 60) + secs;
+            }
+          }
+        }
+      }
+    }
+    return null;
   }
 }
