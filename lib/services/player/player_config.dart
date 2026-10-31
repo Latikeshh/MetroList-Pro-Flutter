@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 /// Represents player configuration entry mapped to YouTube player.js versions.
 class PlayerConfig {
@@ -101,5 +103,31 @@ class PlayerConfigRegistry {
       (p) => p.aliases.contains(playerHashOrAlias),
       orElse: () => PlayerConfig.defaultFallback,
     );
+  }
+}
+
+/// Remote store mirroring Android's RemotePlayerConfigStore for dynamic player configs.
+class RemotePlayerConfigStore {
+  final Dio _dio = Dio();
+  PlayerConfig _activeConfig = PlayerConfig.defaultFallback;
+
+  PlayerConfig get activeConfig => _activeConfig;
+
+  Future<PlayerConfig> fetchLatestConfig() async {
+    try {
+      final response = await _dio.get<String>(
+        'https://raw.githubusercontent.com/vibe-music/player-configs/main/config.json',
+        options: Options(responseType: ResponseType.plain),
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final registry = PlayerConfigRegistry.fromRawJson(response.data!);
+        final resolved = registry.resolveConfig('default_active_player');
+        _activeConfig = resolved;
+        return resolved;
+      }
+    } catch (e) {
+      debugPrint('RemotePlayerConfigStore fetch failed: $e');
+    }
+    return PlayerConfig.defaultFallback;
   }
 }

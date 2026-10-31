@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 import '../innertube/models/yt_item.dart';
 import '../storage/account_service.dart';
 import 'player_config.dart';
+import 'po_token_service.dart';
 import 'youtube_cipher.dart';
 import 'youtube_stream_extractor_adapter.dart';
 
@@ -20,27 +21,34 @@ class AudioSourceResolutionResult {
 }
 
 /// Resolves remote audio sources using YouTube InnerTube player requests,
-/// player configuration ciphers, and fallback stream extractor adapters.
+/// PO tokens, player configuration ciphers, and fallback stream extractor adapters.
 class AudioSourceResolver {
   AudioSourceResolver._internal({
     YouTubeStreamExtractorAdapter? adapter,
     PlayerConfig? playerConfig,
     YouTubeCipher? cipherEngine,
+    PoTokenService? poTokenService,
   })  : _adapter = adapter,
         _playerConfig = playerConfig ?? PlayerConfig.defaultFallback,
-        _cipherEngine = cipherEngine ?? const YouTubeCipher();
+        _cipherEngine = cipherEngine ?? const YouTubeCipher(),
+        _poTokenService = poTokenService ?? PoTokenService();
 
   static final AudioSourceResolver _instance = AudioSourceResolver._internal();
   factory AudioSourceResolver({
     YouTubeStreamExtractorAdapter? adapter,
     PlayerConfig? playerConfig,
     YouTubeCipher? cipherEngine,
+    PoTokenService? poTokenService,
   }) {
-    if (adapter != null || playerConfig != null || cipherEngine != null) {
+    if (adapter != null ||
+        playerConfig != null ||
+        cipherEngine != null ||
+        poTokenService != null) {
       return AudioSourceResolver._internal(
         adapter: adapter,
         playerConfig: playerConfig,
         cipherEngine: cipherEngine,
+        poTokenService: poTokenService,
       );
     }
     return _instance;
@@ -52,9 +60,13 @@ class AudioSourceResolver {
 
   final PlayerConfig _playerConfig;
   final YouTubeCipher _cipherEngine;
+  final PoTokenService _poTokenService;
   final AccountService _accountService = AccountService();
 
   PlayerConfig get activePlayerConfig => _playerConfig;
+
+  final Map<String, int> _failedClients = <String, int>{};
+  static const int _clientFailureTtlMs = 5 * 60 * 1000;
 
   final Dio _dio = Dio(BaseOptions(
     connectTimeout: const Duration(seconds: 10),
@@ -145,8 +157,12 @@ class AudioSourceResolver {
     final List<String> candidateUrls = [];
     final session = _accountService.currentSession;
     final cookieHeader = session?.cookie ?? '';
+    final visitorData = session?.visitorData ?? '';
 
-    // 1. Primary: Direct InnerTube /player client endpoint attempts
+    // Generate PO Token for request context
+    final poTokenResult = await _poTokenService.getPoToken(videoId, visitorData);
+
+    // Primary: InnerTube client rotation mirroring InnerTubeXPlayer.kt
     final clients = [
       {
         'name': 'ANDROID_VR',
@@ -190,7 +206,17 @@ class AudioSourceResolver {
       },
     ];
 
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+
     for (final client in clients) {
+      final clientName = client['name'] as String;
+
+      // Check if client previously failed recently
+      final failedAt = _failedClients[clientName];
+      if (failedAt != null && (nowMs - failedAt) < _clientFailureTtlMs) {
+        continue;
+      }
+
       try {
         final reqHeaders = <String, String>{
           'User-Agent': client['ua'] as String,
@@ -202,27 +228,45 @@ class AudioSourceResolver {
           reqHeaders['Cookie'] = cookieHeader;
         }
 
+        final clientContext = <String, dynamic>{
+          'clientName': clientName,
+          'clientVersion': client['version'],
+          'gl': 'US',
+          'hl': 'en',
+        };
+        if (visitorData.isNotEmpty) {
+          clientContext['visitorData'] = visitorData;
+        }
+        if (poTokenResult?.playerRequestPoToken != null) {
+          clientContext['serviceIntegrityDimensions'] = {
+            'poToken': poTokenResult!.playerRequestPoToken,
+          };
+        }
+
+        final requestPayload = <String, dynamic>{
+          'context': {
+            'client': clientContext,
+          },
+          'videoId': videoId,
+          'playbackContext': {
+            'contentPlaybackContext': {
+              'html5Preference': 'HTML5_PREFER_SERVER_CONFIG',
+              'signatureTimestamp': _playerConfig.sts,
+            }
+          },
+          'contentCheckOk': true,
+          'racyCheckOk': true,
+        };
+
+        if (poTokenResult?.streamingDataPoToken != null) {
+          requestPayload['serviceIntegrityDimensionsParams'] = {
+            'poToken': poTokenResult!.streamingDataPoToken,
+          };
+        }
+
         final ytResponse = await _dio.post<dynamic>(
           client['endpoint'] as String,
-          data: {
-            'context': {
-              'client': {
-                'clientName': client['name'],
-                'clientVersion': client['version'],
-                'gl': 'US',
-                'hl': 'en',
-              },
-            },
-            'videoId': videoId,
-            'playbackContext': {
-              'contentPlaybackContext': {
-                'html5Preference': 'HTML5_PREFER_SERVER_CONFIG',
-                'signatureTimestamp': _playerConfig.sts,
-              }
-            },
-            'contentCheckOk': true,
-            'racyCheckOk': true,
-          },
+          data: requestPayload,
           options: Options(headers: reqHeaders),
         );
 
@@ -236,21 +280,16 @@ class AudioSourceResolver {
               candidateUrls.addAll(parsedUrls);
               break;
             }
-          } else {
-            final playability =
-                data['playabilityStatus']?['status']?.toString();
-            final reason = data['playabilityStatus']?['reason']?.toString();
-            debugPrint(
-                'InnerTube client ${client['name']} playabilityStatus: $playability, reason: $reason');
           }
         }
+        _failedClients[clientName] = nowMs;
       } catch (e) {
-        debugPrint(
-            'InnerTube stream resolve error for client ${client['name']}: $e');
+        _failedClients[clientName] = nowMs;
+        debugPrint('InnerTube stream resolve error for client $clientName: $e');
       }
     }
 
-    // 2. Secondary: Injectable Stream Extractor Adapter
+    // Secondary: Stream Extractor Adapter
     if (candidateUrls.isEmpty) {
       try {
         final adapterUrls = await adapter.extractAudioStreamUrls(videoId);
@@ -262,7 +301,7 @@ class AudioSourceResolver {
       }
     }
 
-    // 3. Tertiary: Public Piped instances fallback
+    // Tertiary: Public Piped instances fallback
     if (candidateUrls.isEmpty) {
       for (final instance in _pipedInstances) {
         try {
