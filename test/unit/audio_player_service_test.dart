@@ -44,7 +44,7 @@ void main() {
     });
   });
 
-  group('AudioSourceResolver Deterministic Format Parsing Tests', () {
+  group('AudioSourceResolver Deterministic Format Parsing & Song Loading Tests', () {
     late AudioSourceResolver resolver;
 
     setUp(() {
@@ -91,6 +91,22 @@ void main() {
 
       expect(urls, isNotEmpty);
       expect(urls.first, contains('https://googlevideo.com/stream'));
+    });
+
+    test('Resolves AudioSourceResolutionResult successfully from streaming data formats', () {
+      final streamingData = {
+        'adaptiveFormats': [
+          {
+            'mimeType': 'audio/webm; codecs="opus"',
+            'bitrate': 160000,
+            'url': 'https://googlevideo.com/videoplayback_audio_m4a',
+          },
+        ]
+      };
+
+      final urls = resolver.parseFormatsFromStreamingData(streamingData);
+      expect(urls, isNotEmpty);
+      expect(urls.first, contains('googlevideo.com/videoplayback_audio_m4a'));
     });
 
     test('Local file path resolution bypasses network resolver', () async {
