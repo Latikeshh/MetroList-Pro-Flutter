@@ -45,9 +45,21 @@ class StreamProxyServer {
   }
 
   Future<void> _handleRequest(HttpRequest request) async {
+    final clientResponse = request.response;
+    clientResponse.headers.add('Access-Control-Allow-Origin', '*');
+    clientResponse.headers.add('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    clientResponse.headers.add('Access-Control-Allow-Headers', '*');
+
+    if (request.method == 'OPTIONS') {
+      clientResponse
+        ..statusCode = HttpStatus.ok
+        ..close();
+      return;
+    }
+
     final path = request.uri.path;
     if (path != '/stream') {
-      request.response
+      clientResponse
         ..statusCode = HttpStatus.notFound
         ..close();
       return;
@@ -55,13 +67,16 @@ class StreamProxyServer {
 
     final rawUrl = request.uri.queryParameters['url'];
     if (rawUrl == null || rawUrl.isEmpty) {
-      request.response
+      clientResponse
         ..statusCode = HttpStatus.badRequest
         ..close();
       return;
     }
 
-    final targetUrl = Uri.decodeComponent(rawUrl);
+    // rawUrl is already decoded once from the query parameter by HttpRequest.uri.queryParameters.
+    // Do NOT call Uri.decodeComponent(rawUrl) again, as that double-decodes percent-encoded
+    // query values in YouTube CDN URLs (e.g. sparams=%2C into literal commas), breaking CDN signature verification.
+    final targetUrl = rawUrl;
 
     try {
       final reqHeaders = <String, String>{
@@ -77,16 +92,16 @@ class StreamProxyServer {
         reqHeaders['Range'] = rangeHeader;
       }
 
-      final response = await _dio.get<ResponseBody>(
+      final response = await _dio.request<ResponseBody>(
         targetUrl,
         options: Options(
+          method: request.method,
           headers: reqHeaders,
           responseType: ResponseType.stream,
           validateStatus: (status) => status != null && status < 500,
         ),
       );
 
-      final clientResponse = request.response;
       clientResponse.statusCode = response.statusCode ?? HttpStatus.ok;
 
       // Forward essential streaming response headers
@@ -110,7 +125,7 @@ class StreamProxyServer {
     } catch (e) {
       debugPrint('StreamProxyServer proxy error: $e');
       try {
-        request.response
+        clientResponse
           ..statusCode = HttpStatus.internalServerError
           ..close();
       } catch (_) {}
