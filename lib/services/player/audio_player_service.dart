@@ -8,6 +8,7 @@ import 'package:rxdart/rxdart.dart';
 import '../innertube/models/yt_item.dart';
 import '../storage/local_database.dart';
 import 'audio_source_resolver.dart';
+import 'stream_proxy_server.dart';
 
 class PositionData {
   final Duration position;
@@ -197,15 +198,8 @@ class AudioPlayerService {
           if (song.id.startsWith('local:')) {
             await _player.setFilePath(url);
           } else {
-            await _player.setUrl(
-              url,
-              headers: const {
-                'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Referer': 'https://music.youtube.com/',
-                'Origin': 'https://music.youtube.com',
-              },
-            );
+            final proxyUrl = await StreamProxyServer().getProxyUrl(url);
+            await _player.setUrl(proxyUrl);
           }
           await _player.play();
           return true;
