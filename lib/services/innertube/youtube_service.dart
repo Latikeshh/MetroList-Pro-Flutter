@@ -2320,9 +2320,6 @@ class YouTubeService {
     return verifySession(cookie);
   }
 
-  Future<Map<String, dynamic>?> getMediaInfo(String videoId) =>
-      getMediaInfoResponse(videoId);
-
   Future<List<SongItem>> episodesForLater() => getEpisodesForLater();
 
 
