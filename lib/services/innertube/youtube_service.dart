@@ -2149,11 +2149,38 @@ class YouTubeService {
 
   Future<ArtistPageData> artist(String browseId) => getArtistPage(browseId);
 
-  Future<ArtistSection?> artistItems(BrowseEndpoint endpoint) =>
-      getArtistItems(endpoint.params ?? '');
+  Future<ArtistSection?> artistItems(BrowseEndpoint endpoint) async {
+    try {
+      final response = await browseResponse(
+        browseId: endpoint.browseId,
+        params: endpoint.params,
+      );
+      if (response == null) return null;
+      final contents = response['contents']
+          ?['singleColumnBrowseResultsRenderer']?['tabs']?[0]
+          ?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
+      if (contents is! List || contents.isEmpty || contents.first is! Map) {
+        return null;
+      }
+      final first = contents.first as Map;
+      final shelf = first['musicShelfRenderer'];
+      final carousel = first['musicCarouselShelfRenderer'];
+      if (shelf is Map<String, dynamic>) {
+        return ArtistPageParser.fromMusicShelfRenderer(
+          MusicShelfRenderer.fromJson(shelf),
+        );
+      }
+      if (carousel is Map<String, dynamic>) {
+        return ArtistPageParser.fromMusicCarouselShelfRenderer(
+          MusicCarouselShelfRenderer.fromJson(carousel),
+        );
+      }
+    } catch (_) {}
+    return null;
+  }
 
-  Future<Map<String, dynamic>?> artistItemsContinuation(String continuation) =>
-      browseResponse(continuation: continuation);
+  Future<ArtistSection?> artistItemsContinuation(String continuation) =>
+      getArtistItemsContinuation(continuation);
 
   Future<List<SongItem>> playlist(String playlistId) =>
       getPlaylistPage(playlistId);
@@ -2193,12 +2220,8 @@ class YouTubeService {
     String? browseId,
     String? params,
     bool useLogin = true,
-  }) async {
-    if (browseId == null || browseId.isEmpty) {
-      return const LibraryPageData(items: []);
-    }
-    return getLibraryPage(browseId: browseId);
-  }
+  }) =>
+      getLibraryPage(browseId: browseId, params: params);
 
   Future<LibraryPageData> libraryContinuation(String continuation) =>
       getLibraryContinuation(continuation);
@@ -2212,8 +2235,7 @@ class YouTubeService {
 
   Future<List<PodcastItem>> savedPodcastShows() => getSavedPodcasts();
 
-  Future<List<EpisodeItem>> newEpisodes() async =>
-      (await getNewEpisodes()).whereType<EpisodeItem>().toList();
+  Future<List<SongItem>> newEpisodes() => getNewEpisodes();
 
   Future<Map<String, dynamic>?> player({
     required String videoId,
