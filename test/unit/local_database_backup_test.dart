@@ -19,7 +19,7 @@ void main() {
       const song1 = SongItem(
         id: 'test_song_1',
         title: 'Test Song 1',
-        artists: ['Artist A'],
+        artists: [Artist(name: 'Artist A')],
       );
       await db.addLikedSong(song1);
       await db.addToHistory(song1);
