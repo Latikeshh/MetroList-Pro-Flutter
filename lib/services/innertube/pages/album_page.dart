@@ -110,6 +110,14 @@ class AlbumPageParser {
       }
     }
 
+    final twoColumnSections = data['contents']?['twoColumnBrowseResultsRenderer']
+        ?['secondaryContents']?['sectionListRenderer']?['contents'];
+    if (twoColumnSections is List) {
+      for (final section in twoColumnSections) {
+        parseSection(section);
+      }
+    }
+
     final sectionList = data['contents']?['singleColumnBrowseResultsRenderer']?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
     if (sectionList is List) {
       for (final s in sectionList) {
