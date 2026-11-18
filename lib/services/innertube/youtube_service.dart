@@ -1087,7 +1087,7 @@ class YouTubeService {
 
       final episodes = <SongItem>[];
 
-      void parseMultiRowItems(dynamic rawItems, String? shelfTitle) {
+      void parseMultiRowItems(dynamic rawItems) {
         if (rawItems is! List) return;
         for (final rawItem in rawItems) {
           if (rawItem is! Map) continue;
@@ -1113,10 +1113,7 @@ class YouTubeService {
               .map((run) => parseTime(run.text))
               .firstWhere((value) => value != null, orElse: () => null);
 
-          var artists = PodcastPageParser.extractPodcastByline(runs);
-          if (artists.isEmpty && shelfTitle != null && shelfTitle.trim().isNotEmpty) {
-            artists = [Artist(name: shelfTitle.trim())];
-          }
+          final artists = PodcastPageParser.extractPodcastByline(runs);
 
           final thumbnailData = renderer['thumbnail'];
           final thumbs = thumbnailData is Map
@@ -1144,21 +1141,12 @@ class YouTubeService {
         if (section is! Map) continue;
         final shelf = section['musicShelfRenderer'];
         if (shelf is Map) {
-          final titleRuns = shelf['title']?['runs'];
-          final shelfTitle = titleRuns is List && titleRuns.isNotEmpty
-              ? titleRuns.first['text']?.toString()
-              : null;
-          parseMultiRowItems(shelf['contents'], shelfTitle);
+          parseMultiRowItems(shelf['contents']);
         }
 
         final carousel = section['musicCarouselShelfRenderer'];
         if (carousel is Map) {
-          final titleRuns = carousel['header']
-              ?['musicCarouselShelfBasicHeaderRenderer']?['title']?['runs'];
-          final carouselTitle = titleRuns is List && titleRuns.isNotEmpty
-              ? titleRuns.first['text']?.toString()
-              : null;
-          parseMultiRowItems(carousel['contents'], carouselTitle);
+          parseMultiRowItems(carousel['contents']);
         }
       }
 
