@@ -17,6 +17,8 @@ import 'models/youtube_account.dart';
 import 'models/yt_item.dart';
 import 'pages/album_page.dart';
 import 'pages/artist_page.dart';
+import 'pages/artist_items_page.dart';
+import 'pages/artist_items_continuation_page.dart';
 import 'pages/charts_page.dart';
 import 'pages/explore_page.dart';
 import 'pages/home_page.dart';
@@ -2195,14 +2197,22 @@ class YouTubeService {
     return null;
   }
 
-  Future<ArtistSection?> artistItemsContinuation(String continuation) =>
-      getArtistItemsContinuation(continuation);
+  Future<ArtistItemsContinuationPage> artistItemsContinuation(
+    String continuation,
+  ) async {
+    final response = await browseResponse(continuation: continuation);
+    return ArtistItemsContinuationPageParser.parse(response);
+  }
 
   Future<List<SongItem>> playlist(String playlistId) =>
       getPlaylistPage(playlistId);
 
-  Future<List<SongItem>> playlistContinuation(String continuation) =>
-      getPlaylistContinuation(continuation);
+  Future<PlaylistContinuationPage> playlistContinuation(
+    String continuation,
+  ) async {
+    final response = await browseResponse(continuation: continuation, useLogin: true);
+    return PlaylistPageParser.parseContinuation(response);
+  }
 
   Future<PodcastPageData> podcast(String podcastId) =>
       getPodcastPage(podcastId);
