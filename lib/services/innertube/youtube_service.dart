@@ -1162,8 +1162,33 @@ class YouTubeService {
         }
       }
 
-      final resolved = await resolveArtistIds(episodes);
-      return resolved.whereType<SongItem>().toList();
+      final resolved = (await resolveArtistIds(episodes)).whereType<SongItem>().toList();
+      return Future.wait(resolved.map((song) async {
+        if (song.artists.isNotEmpty) return song;
+        final mediaInfo = await getMediaInfo(song.id);
+        if (mediaInfo?.author == null || mediaInfo!.author!.isEmpty) return song;
+        return SongItem(
+          id: song.id,
+          title: song.title,
+          artists: [
+            Artist(name: mediaInfo.author!, id: mediaInfo.authorId),
+          ],
+          album: song.album,
+          duration: song.duration,
+          musicVideoType: song.musicVideoType,
+          chartPosition: song.chartPosition,
+          chartChange: song.chartChange,
+          thumbnail: song.thumbnail,
+          explicit: song.explicit,
+          endpoint: song.endpoint,
+          setVideoId: song.setVideoId,
+          libraryAddToken: song.libraryAddToken,
+          libraryRemoveToken: song.libraryRemoveToken,
+          historyRemoveToken: song.historyRemoveToken,
+          isEpisode: song.isEpisode,
+          uploadEntityId: song.uploadEntityId,
+        );
+      }));
     } catch (_) {
       return const [];
     }
