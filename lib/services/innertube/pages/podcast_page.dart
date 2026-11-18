@@ -77,6 +77,54 @@ class PodcastPageParser {
     );
   }
 
+  static EpisodeItem? fromMusicMultiRowListItemRenderer(
+    Map<String, dynamic> renderer, {
+    PodcastItem? podcast,
+  }) {
+    final videoId = renderer['onTap']?['watchEndpoint']?['videoId']?.toString();
+    final title = Runs.fromJson(renderer['title']).runs.firstOrNull?.text;
+    if (videoId == null || videoId.isEmpty || title == null || title.isEmpty) {
+      return null;
+    }
+
+    final subtitleRuns = Runs.fromJson(renderer['subtitle']).runs;
+    final secondaryRuns = Runs.fromJson(renderer['secondSubtitle']).runs;
+    final author = podcast?.author ??
+        extractPodcastByline(subtitleRuns).firstOrNull ??
+        extractPodcastByline(secondaryRuns).firstOrNull;
+    final groups = Runs.splitBySeparator(subtitleRuns);
+    int? duration;
+    for (final group in groups.reversed) {
+      duration = PageHelper.extractDuration(group);
+      if (duration != null) break;
+    }
+
+    final thumbnailData = renderer['thumbnail'];
+    final thumbs = thumbnailData is Map
+        ? (thumbnailData['musicThumbnailRenderer']?['thumbnail']?['thumbnails'] ??
+            thumbnailData['thumbnails'])
+        : null;
+    final thumbnail = thumbs is List && thumbs.isNotEmpty
+        ? thumbs.last['url']?.toString()
+        : null;
+
+    final onTap = renderer['onTap'];
+    final endpoint = onTap is Map<String, dynamic>
+        ? NavigationEndpoint.fromJson(onTap).watchEndpoint
+        : null;
+
+    return EpisodeItem(
+      id: videoId,
+      title: title,
+      author: author,
+      podcast: podcast == null ? null : Album(name: podcast.title, id: podcast.id),
+      duration: duration,
+      publishDateText: secondaryRuns.firstOrNull?.text,
+      thumbnail: thumbnail,
+      endpoint: endpoint ?? WatchEndpoint(videoId: videoId),
+    );
+  }
+
   static PodcastPageData parsePodcastPage(dynamic data, String podcastId) {
     if (data is! Map<String, dynamic>) {
       return PodcastPageData(
@@ -85,37 +133,94 @@ class PodcastPageParser {
       );
     }
 
-    String title = 'Podcast';
-    String? thumb;
-    final episodes = <EpisodeItem>[];
+    final twoColumnSections = data['contents']?['twoColumnBrowseResultsRenderer']
+        ?['secondaryContents']?['sectionListRenderer']?['contents'];
+    final singleColumnSections = data['contents']?['singleColumnBrowseResultsRenderer']
+        ?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
 
-    final header = data['header']?['musicDetailHeaderRenderer'] ?? data['header']?['musicResponsiveHeaderRenderer'];
+    dynamic firstHeader(List<dynamic>? sections) {
+      if (sections == null || sections.isEmpty) return null;
+      final first = sections.first;
+      if (first is! Map) return null;
+      return first['musicResponsiveHeaderRenderer'] ??
+          first['musicDetailHeaderRenderer'];
+    }
+
+    final header = data['header']?['musicDetailHeaderRenderer'] ??
+        data['header']?['musicResponsiveHeaderRenderer'] ??
+        firstHeader(twoColumnSections is List ? twoColumnSections : null) ??
+        firstHeader(singleColumnSections is List ? singleColumnSections : null);
+
+    String title = 'Podcast';
+    String? thumbnail;
+    Artist? author;
+    String? episodeCountText;
     if (header is Map<String, dynamic>) {
       final titleRuns = header['title']?['runs'];
       if (titleRuns is List && titleRuns.isNotEmpty) {
-        title = titleRuns[0]['text'] ?? 'Podcast';
+        title = titleRuns.map((run) => run['text']?.toString() ?? '').join();
       }
+
       final thumbs = header['thumbnail']?['croppedSquareThumbnailRenderer']?['thumbnail']?['thumbnails'] ??
           header['thumbnail']?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'];
       if (thumbs is List && thumbs.isNotEmpty) {
-        thumb = thumbs.last['url'];
+        thumbnail = thumbs.last['url']?.toString();
+      }
+
+      final authorRun = Runs.fromJson(header['straplineTextOne']).runs.firstOrNull;
+      if (authorRun != null && authorRun.text.trim().isNotEmpty) {
+        final browseId = authorRun.navigationEndpoint?.browseEndpoint?.browseId;
+        author = Artist(name: authorRun.text.trim(), id: browseId);
+      }
+
+      episodeCountText = Runs.fromJson(header['secondSubtitle']).runs.firstOrNull?.text;
+    }
+
+    final podcastItem = PodcastItem(
+      id: podcastId,
+      title: title,
+      author: author,
+      episodeCountText: episodeCountText,
+      thumbnail: thumbnail,
+    );
+
+    dynamic episodeContents;
+    if (twoColumnSections is List && twoColumnSections.isNotEmpty) {
+      final first = twoColumnSections.first;
+      if (first is Map) {
+        episodeContents = first['musicShelfRenderer']?['contents'] ??
+            first['musicPlaylistShelfRenderer']?['contents'];
+      }
+    }
+    if (episodeContents == null && singleColumnSections is List) {
+      for (final section in singleColumnSections) {
+        if (section is! Map) continue;
+        episodeContents = section['musicShelfRenderer']?['contents'] ??
+            section['musicPlaylistShelfRenderer']?['contents'];
+        if (episodeContents is List) break;
       }
     }
 
-    final podcastItem = PodcastItem(id: podcastId, title: title, thumbnail: thumb);
-
-    final contents = data['contents']?['singleColumnBrowseResultsRenderer']?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents']?[0]?['musicShelfRenderer']?['contents'];
-    if (contents is List) {
-      for (final c in contents) {
-        if (c is Map<String, dynamic>) {
-          final renderer = c['musicResponsiveListItemRenderer'];
-          if (renderer is Map<String, dynamic>) {
-            final episode = fromMusicResponsiveListItemRenderer(
-              MusicResponsiveListItemRenderer.fromJson(renderer),
-              podcast: podcastItem,
-            );
-            if (episode != null) episodes.add(episode);
-          }
+    final episodes = <EpisodeItem>[];
+    if (episodeContents is List) {
+      for (final item in episodeContents) {
+        if (item is! Map) continue;
+        final responsive = item['musicResponsiveListItemRenderer'];
+        if (responsive is Map<String, dynamic>) {
+          final episode = fromMusicResponsiveListItemRenderer(
+            MusicResponsiveListItemRenderer.fromJson(responsive),
+            podcast: podcastItem,
+          );
+          if (episode != null) episodes.add(episode);
+          continue;
+        }
+        final multiRow = item['musicMultiRowListItemRenderer'];
+        if (multiRow is Map<String, dynamic>) {
+          final episode = fromMusicMultiRowListItemRenderer(
+            multiRow,
+            podcast: podcastItem,
+          );
+          if (episode != null) episodes.add(episode);
         }
       }
     }
