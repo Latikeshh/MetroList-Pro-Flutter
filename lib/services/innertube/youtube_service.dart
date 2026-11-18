@@ -881,13 +881,40 @@ class YouTubeService {
 
   Future<List<YTItem>> getRelatedPage(String videoId) async {
     try {
-      final body = _buildContext()..['browseId'] = 'MPTR$videoId';
-      final response = await _dio.post('/browse', data: body);
-      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-        return _parseSearchResults(response.data);
+      final response = await browseResponse(browseId: 'MPTR$videoId');
+      if (response == null) return const [];
+      final sections = response['contents']?['sectionListRenderer']?['contents'] ??
+          response['contents']?['singleColumnBrowseResultsRenderer']?['tabs']?[0]
+              ?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
+      if (sections is! List) return const [];
+
+      final items = <YTItem>[];
+      for (final section in sections) {
+        if (section is! Map) continue;
+        final carousel = section['musicCarouselShelfRenderer'];
+        final rawItems = carousel is Map ? carousel['contents'] : null;
+        if (rawItems is! List) continue;
+        for (final rawItem in rawItems) {
+          if (rawItem is! Map) continue;
+          final twoRow = rawItem['musicTwoRowItemRenderer'];
+          final listItem = rawItem['musicResponsiveListItemRenderer'];
+          if (twoRow is Map<String, dynamic>) {
+            final item = LibraryPageParser.fromMusicTwoRowItemRenderer(
+              MusicTwoRowItemRenderer.fromJson(twoRow),
+            );
+            if (item != null) items.add(item);
+          } else if (listItem is Map<String, dynamic>) {
+            final item = LibraryPageParser.fromMusicResponsiveListItemRenderer(
+              MusicResponsiveListItemRenderer.fromJson(listItem),
+            );
+            if (item != null) items.add(item);
+          }
+        }
       }
-    } catch (_) {}
-    return const [];
+      return items;
+    } catch (_) {
+      return const [];
+    }
   }
 
   Future<bool> registerPlayback(
@@ -1098,6 +1125,44 @@ class YouTubeService {
   }
 
   Future<List<SongItem>> getEpisodesForLater() => getPlaylistPage('SE');
+
+  Future<HomePageData> getHomeContinuation(String continuation) =>
+      getHomePage(continuation: continuation);
+
+  Future<List<YTItem>> searchContinuationItems(String continuation) async {
+    final response = await searchContinuationResponse(continuation);
+    if (response == null) return const [];
+    final contents = response['continuationContents']?['musicShelfContinuation']?['contents'];
+    if (contents is! List) return const [];
+    final items = <YTItem>[];
+    for (final raw in contents) {
+      if (raw is! Map) continue;
+      final renderer = raw['musicResponsiveListItemRenderer'];
+      if (renderer is Map<String, dynamic>) {
+        final item = AlbumPageParser.getSong(
+          MusicResponsiveListItemRenderer.fromJson(renderer),
+        );
+        if (item != null) items.add(item);
+      }
+    }
+    return items;
+  }
+
+  Future<Map<String, dynamic>?> getNewEpisodesPlaylistInfo() =>
+      browseResponse(browseId: 'VLRDPN', useLogin: true);
+
+  Future<Map<String, String>?> getAccountInfo() async {
+    final cookie = _innerTubeClient.cookie;
+    if (cookie == null || cookie.isEmpty) return null;
+    return verifySession(cookie);
+  }
+
+  Future<List<PodcastItem>> getSavedPodcastShows() => getSavedPodcasts();
+
+  Future<List<PodcastItem>> getLibraryPodcastChannels() => getPodcastChannels();
+
+  Future<List<EpisodeItem>> getLibraryPodcastEpisodes() =>
+      getPodcastLibraryEpisodes();
 
 
 }
