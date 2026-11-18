@@ -1168,5 +1168,265 @@ class YouTubeService {
   Future<List<EpisodeItem>> getLibraryPodcastEpisodes() =>
       getPodcastLibraryEpisodes();
 
+  /// Refreshes YouTube visitor data from the service-worker endpoint, with a homepage fallback.
+  Future<String?> visitorData() async {
+    try {
+      final response = await _dio.get(
+        'https://www.youtube.com/sw.js_data',
+        options: Options(
+          responseType: ResponseType.plain,
+          headers: {
+            'User-Agent': YouTubeClient.webRemix.userAgent,
+            'Accept': 'application/json,text/plain,*/*',
+            'Accept-Language': _innerTubeClient.locale.hl + '-' +
+                _innerTubeClient.locale.gl + ',' +
+                _innerTubeClient.locale.hl + ';q=0.9',
+          },
+        ),
+      );
+      final raw = response.data?.toString() ?? '';
+      final jsonText = raw.contains('\n') ? raw.substring(raw.indexOf('\n') + 1) : raw;
+      final decoded = jsonDecode(jsonText);
+      final value = decoded[0][2][0][0][13]?.toString();
+      if (value != null && value.isNotEmpty) {
+        _innerTubeClient.visitorData = value;
+        return value;
+      }
+    } catch (_) {}
+
+    try {
+      final response = await _dio.get(
+        'https://music.youtube.com/',
+        options: Options(
+          responseType: ResponseType.plain,
+          headers: {'User-Agent': YouTubeClient.webRemix.userAgent},
+        ),
+      );
+      final raw = response.data?.toString() ?? '';
+      final match = RegExp(r'"VISITOR_DATA"\s*:\s*"([^"]+)"').firstMatch(raw);
+      final value = match?.group(1);
+      if (value != null && value.isNotEmpty) {
+        _innerTubeClient.visitorData = value;
+        return value;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> accountsList() async {
+    try {
+      final body = _buildContext()
+        ..['requestType'] = 'ACCOUNTS_LIST_REQUEST_TYPE_CHANNEL_SWITCHER'
+        ..['callCircumstance'] = 'SWITCHING_USERS_FULL';
+      final response = await _dio.post(
+        '/account/accounts_list',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(response.data);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<bool> deleteUploadedSong(String entityId) async {
+    if (entityId.isEmpty) return false;
+    try {
+      final body = _buildContext()..['entityId'] = entityId;
+      final response = await _dio.post(
+        '/music/delete_privately_owned_entity',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
+      return response.statusCode != null &&
+          response.statusCode! >= 200 &&
+          response.statusCode! < 300;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Streams a known-length audio file to YouTube Music without buffering it in memory.
+  Future<bool> uploadSong({
+    required String filename,
+    required int contentLength,
+    required Stream<List<int>> content,
+    void Function(double progress)? onProgress,
+  }) async {
+    if (contentLength <= 0 || contentLength >= 314572800) return false;
+    onProgress?.call(0);
+    try {
+      final start = await _dio.post(
+        'https://upload.youtube.com/upload/usermusic/http?authuser=' +
+            Uri.encodeComponent(_innerTubeClient.authUser),
+        data: {'filename': filename},
+        options: Options(
+          contentType: Headers.formUrlEncodedContentType,
+          responseType: ResponseType.plain,
+          headers: {
+            ..._getHeaders(),
+            'X-Goog-Upload-Command': 'start',
+            'X-Goog-Upload-Header-Content-Length': contentLength.toString(),
+            'X-Goog-Upload-Protocol': 'resumable',
+          },
+        ),
+      );
+      if (start.statusCode == null ||
+          start.statusCode! < 200 ||
+          start.statusCode! >= 300) {
+        return false;
+      }
+      final uploadUrl = start.headers.value('X-Goog-Upload-URL');
+      if (uploadUrl == null || uploadUrl.isEmpty) return false;
+      final uri = Uri.tryParse(uploadUrl);
+      if (uri == null ||
+          uri.scheme != 'https' ||
+          uri.host != 'upload.youtube.com' ||
+          uri.port != 443 ||
+          !(uri.path == '/' || uri.path.startsWith('/upload/')) ||
+          uri.userInfo.isNotEmpty) {
+        return false;
+      }
+
+      onProgress?.call(0.05);
+      final uploaded = await _dio.post(
+        uri.toString(),
+        data: content,
+        options: Options(
+          contentType: 'application/x-www-form-urlencoded',
+          responseType: ResponseType.plain,
+          headers: {
+            ..._getHeaders(),
+            'Content-Length': contentLength.toString(),
+            'X-Goog-Upload-Command': 'upload, finalize',
+            'X-Goog-Upload-Offset': '0',
+          },
+        ),
+        onSendProgress: (sent, total) {
+          final denominator = total > 0 ? total : contentLength;
+          onProgress?.call(
+            (0.05 + (sent / denominator).clamp(0.0, 1.0) * 0.95)
+                .clamp(0.05, 1.0),
+          );
+        },
+      );
+      final success = uploaded.statusCode != null &&
+          uploaded.statusCode! >= 200 &&
+          uploaded.statusCode! < 300;
+      if (success) onProgress?.call(1);
+      return success;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> uploadCustomThumbnailLink(
+    String playlistId,
+    List<int> image,
+  ) async {
+    if (image.isEmpty) return false;
+    try {
+      const uploadEndpoint =
+          'https://music.youtube.com/playlist_image_upload/playlist_custom_thumbnail';
+      final start = await _dio.post(
+        uploadEndpoint,
+        options: Options(
+          responseType: ResponseType.plain,
+          headers: {
+            ..._getHeaders(),
+            'X-Goog-Upload-Command': 'start',
+            'X-Goog-Upload-Protocol': 'resumable',
+            'X-Goog-Upload-Header-Content-Length': image.length.toString(),
+          },
+        ),
+      );
+      final uploadId = start.headers.value('X-Goog-Upload-Id') ??
+          start.headers.value('X-Guploader-Uploadid');
+      if (start.statusCode == null ||
+          start.statusCode! < 200 ||
+          start.statusCode! >= 300 ||
+          uploadId == null ||
+          uploadId.isEmpty) {
+        return false;
+      }
+
+      final uploaded = await _dio.post(
+        uploadEndpoint,
+        queryParameters: {
+          'upload_id': uploadId,
+          'upload_protocol': 'resumable',
+        },
+        data: image,
+        options: Options(
+          responseType: ResponseType.json,
+          headers: {
+            ..._getHeaders(),
+            'Content-Length': image.length.toString(),
+            'X-Goog-Upload-Command': 'upload, finalize',
+            'X-Goog-Upload-Offset': '0',
+          },
+        ),
+      );
+      if (uploaded.statusCode == null ||
+          uploaded.statusCode! < 200 ||
+          uploaded.statusCode! >= 300 ||
+          uploaded.data is! Map) {
+        return false;
+      }
+      final encryptedBlobId =
+          uploaded.data['encryptedBlobId']?.toString();
+      if (encryptedBlobId == null || encryptedBlobId.isEmpty) return false;
+
+      final body = _buildContext()
+        ..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '')
+        ..['actions'] = [
+          {
+            'action': 'ACTION_SET_CUSTOM_THUMBNAIL',
+            'addedCustomThumbnail': {
+              'playlistScottyEncryptedBlobId': encryptedBlobId,
+            },
+          }
+        ];
+      final applied = await _dio.post(
+        '/browse/edit_playlist',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
+      return applied.statusCode != null &&
+          applied.statusCode! >= 200 &&
+          applied.statusCode! < 300;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> removeThumbnailPlaylist(String playlistId) async {
+    try {
+      final body = _buildContext()
+        ..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '')
+        ..['actions'] = [
+          {'action': 'ACTION_REMOVE_CUSTOM_THUMBNAIL'}
+        ];
+      final response = await _dio.post(
+        '/browse/edit_playlist',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
+      return response.statusCode != null &&
+          response.statusCode! >= 200 &&
+          response.statusCode! < 300;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> moveSongPlaylist(
+    String playlistId,
+    String setVideoId,
+    String? successorSetVideoId,
+  ) =>
+      moveSongInPlaylist(playlistId, setVideoId, successorSetVideoId);
+
 
 }
