@@ -702,7 +702,7 @@ class YouTubeService {
     );
   }
 
-  Future<ChartsPage> getChartsPage({String? params}) async {
+  Future<ChartsPage> getChartsPage({String? params = 'ggMGCgQIgAQ%3D'}) async {
     try {
       final body = _buildContext()..['browseId'] = 'FEmusic_charts';
       if (params != null && params.isNotEmpty) {
@@ -1883,7 +1883,7 @@ class YouTubeService {
 
   Future<List<YouTubeAccount>> accountsList() async {
     try {
-      final body = _buildContext(YouTubeClient.web)
+      final body = _buildContext(YouTubeClient.web, useLogin: true)
         ..['requestType'] = 'ACCOUNTS_LIST_REQUEST_TYPE_CHANNEL_SWITCHER'
         ..['callCircumstance'] = 'SWITCHING_USERS_FULL';
       final response = await _dio.post(
