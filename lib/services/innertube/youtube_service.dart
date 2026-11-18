@@ -2362,34 +2362,12 @@ class YouTubeService {
 
   Future<ArtistPageData> artist(String browseId) => getArtistPage(browseId);
 
-  Future<ArtistSection?> artistItems(BrowseEndpoint endpoint) async {
-    try {
-      final response = await browseResponse(
-        browseId: endpoint.browseId,
-        params: endpoint.params,
-      );
-      if (response == null) return null;
-      final contents = response['contents']
-          ?['singleColumnBrowseResultsRenderer']?['tabs']?[0]
-          ?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
-      if (contents is! List || contents.isEmpty || contents.first is! Map) {
-        return null;
-      }
-      final first = contents.first as Map;
-      final shelf = first['musicShelfRenderer'];
-      final carousel = first['musicCarouselShelfRenderer'];
-      if (shelf is Map<String, dynamic>) {
-        return ArtistPageParser.fromMusicShelfRenderer(
-          MusicShelfRenderer.fromJson(shelf),
-        );
-      }
-      if (carousel is Map<String, dynamic>) {
-        return ArtistPageParser.fromMusicCarouselShelfRenderer(
-          MusicCarouselShelfRenderer.fromJson(carousel),
-        );
-      }
-    } catch (_) {}
-    return null;
+  Future<ArtistItemsPage> artistItems(BrowseEndpoint endpoint) async {
+    final response = await browseResponse(
+      browseId: endpoint.browseId,
+      params: endpoint.params,
+    );
+    return ArtistItemsPageParser.parse(response);
   }
 
   Future<ArtistItemsContinuationPage> artistItemsContinuation(
