@@ -24,6 +24,7 @@ import 'pages/explore_page.dart';
 import 'pages/home_page.dart';
 import 'pages/history_page.dart';
 import 'pages/library_page.dart';
+import 'pages/library_continuation_page.dart';
 import 'pages/next_page.dart';
 import 'pages/podcast_page.dart';
 import 'pages/playlist_page.dart';
@@ -2395,8 +2396,19 @@ class YouTubeService {
   }) =>
       getLibraryPage(browseId: browseId, params: params);
 
-  Future<LibraryPageData> libraryContinuation(String continuation) =>
-      getLibraryContinuation(continuation);
+  Future<LibraryContinuationPage> libraryContinuation(
+    String continuation, {
+    bool isUploaded = false,
+  }) async {
+    final response = await browseResponse(
+      continuation: continuation,
+      useLogin: true,
+    );
+    return LibraryContinuationPageParser.parse(
+      response,
+      isUploaded: isUploaded,
+    );
+  }
 
   Future<HistoryPageData> musicHistory() => getMusicHistory();
 
