@@ -21,6 +21,27 @@ class HistoryPageData {
 }
 
 class HistoryPageParser {
+  static HistoryPageData parseHistoryPage(dynamic data) {
+    if (data is! Map) return const HistoryPageData();
+    final rawSections = data['contents']
+        ?['singleColumnBrowseResultsRenderer']?['tabs']?[0]
+        ?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
+    if (rawSections is! List) return const HistoryPageData();
+
+    final sections = <HistorySection>[];
+    for (final raw in rawSections) {
+      if (raw is! Map) continue;
+      final shelf = raw['musicShelfRenderer'];
+      if (shelf is Map<String, dynamic>) {
+        final section = fromMusicShelfRenderer(
+          MusicShelfRenderer.fromJson(shelf),
+        );
+        if (section != null) sections.add(section);
+      }
+    }
+    return HistoryPageData(sections: sections);
+  }
+
   static HistorySection? fromMusicShelfRenderer(MusicShelfRenderer renderer) {
     final title = renderer.title?.runs.firstOrNull?.text;
     if (title == null || renderer.contents == null) return null;
