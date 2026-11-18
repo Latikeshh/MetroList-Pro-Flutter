@@ -36,9 +36,7 @@ class InnerTubeClient {
       headers['Cookie'] = activeCookie;
       final authorization = getSapisidHash(
         activeCookie,
-        origin: client.client == YouTubeClientName.webRemix
-            ? 'https://music.youtube.com'
-            : 'https://www.youtube.com',
+        origin: Uri.parse(client.client.endpointUrl).origin,
       );
       if (authorization != null) {
         headers['Authorization'] = authorization;
@@ -72,18 +70,25 @@ class InnerTubeClient {
   }
 
   Map<String, dynamic> buildContext([YouTubeClient client = YouTubeClient.webRemix]) {
+    final profile = client.client;
     return {
       'context': {
         'client': {
-          'clientName': client.client.clientName,
-          'clientVersion': client.client.clientVersion,
+          'clientName': profile.clientName,
+          'clientVersion': profile.clientVersion,
           'gl': locale.gl,
           'hl': locale.hl,
           if (visitorData != null) 'visitorData': visitorData,
+          if (profile.includeUserAgentInContext) 'userAgent': client.userAgent,
+          if (profile.osName != null) 'osName': profile.osName,
+          if (profile.osVersion != null) 'osVersion': profile.osVersion,
+          if (profile.deviceMake != null) 'deviceMake': profile.deviceMake,
+          if (profile.deviceModel != null) 'deviceModel': profile.deviceModel,
+          if (profile.androidSdkVersion != null)
+            'androidSdkVersion': profile.androidSdkVersion,
         },
-        if (dataSyncId != null)
+        if (profile.loginSupported && dataSyncId != null)
           'user': {
-            'dataSyncId': dataSyncId,
             'onBehalfOfUser': dataSyncId,
           },
       }
