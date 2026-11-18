@@ -343,7 +343,10 @@ void main() {
             'contents': [
               {
                 'musicResponsiveListItemRenderer': {
-                  'videoId': 'song-cont-1',
+                  'playlistItemData': {
+                    'videoId': 'song-cont-1',
+                    'playlistSetVideoId': 'set-cont-1'
+                  },
                   'flexColumns': [
                     {
                       'musicResponsiveListItemFlexColumnRenderer': {
