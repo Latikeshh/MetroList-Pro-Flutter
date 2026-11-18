@@ -1712,16 +1712,29 @@ class YouTubeService {
     YouTubeClient client = YouTubeClient.webRemix,
     int? signatureTimestamp,
     String? poToken,
+    String? encryptedHostFlags,
   }) async {
     try {
+      final profile = client.client;
       final body = _buildContext(client)..['videoId'] = videoId;
+      body['contentCheckOk'] = true;
+      body['racyCheckOk'] = true;
+      if (!profile.useMusicPlayerEndpoint) body['videoCheckOk'] = true;
       if (playlistId != null && playlistId.isNotEmpty) {
         body['playlistId'] = playlistId;
       }
-      if (signatureTimestamp != null) {
+      if (profile.isEmbedded) {
+        body['thirdParty'] = {'embedUrl': 'https://www.reddit.com/'};
+      }
+      if (profile.useSignatureTimestamp || profile.isEmbedded) {
         body['playbackContext'] = {
           'contentPlaybackContext': {
-            'signatureTimestamp': signatureTimestamp,
+            if (!profile.useMusicPlayerEndpoint)
+              'html5Preference': 'HTML5_PREF_WANTS',
+            if (profile.useSignatureTimestamp && signatureTimestamp != null)
+              'signatureTimestamp': signatureTimestamp,
+            if (profile.isEmbedded && encryptedHostFlags != null)
+              'encryptedHostFlags': encryptedHostFlags,
           },
         };
       }
@@ -1729,13 +1742,13 @@ class YouTubeService {
         body['serviceIntegrityDimensions'] = {'poToken': poToken};
       }
       final response = await _dio.post(
-        '${client.client.endpointUrl}/player',
+        profile.endpointUrl + '/player',
         data: body,
         options: Options(
           headers: _getHeaders(
             client: client,
             includeAccountCookies: _innerTubeClient.useLoginForBrowse &&
-                client.client.loginSupported,
+                profile.loginSupported,
           ),
         ),
       );
