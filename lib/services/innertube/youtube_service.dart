@@ -11,6 +11,7 @@ import 'models/return_youtube_dislike_response.dart';
 import 'models/runs.dart';
 import 'models/response/account_menu_response.dart';
 import 'models/response/get_transcript_response.dart';
+import 'models/response/get_queue_response.dart';
 import 'models/youtube_client.dart';
 import 'models/navigation_endpoint.dart';
 import 'models/youtube_account.dart';
@@ -154,7 +155,13 @@ class YouTubeService {
     return null;
   }
 
-  Future<List<Map<String, dynamic>>> getQueue({List<String>? videoIds, String? playlistId}) async {
+  Future<List<SongItem>> getQueue({
+    List<String>? videoIds,
+    String? playlistId,
+  }) async {
+    if (videoIds != null && videoIds.length > 1000) {
+      throw ArgumentError.value(videoIds.length, 'videoIds', 'Maximum queue size is 1000');
+    }
     try {
       final body = _buildContext()
         ..['videoIds'] = videoIds
@@ -169,14 +176,17 @@ class YouTubeService {
         ),
       );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-        final queueDatas = response.data['queueDatas'] as List?;
-        if (queueDatas != null) {
-          return queueDatas.map((e) => e['content'] as Map<String, dynamic>).toList();
-        }
+        final queue = GetQueueResponse.fromJson(response.data).queueDatas;
+        return queue
+                ?.map(NextPageParser.fromPlaylistPanelVideoRenderer)
+                .whereType<SongItem>()
+                .toList() ??
+            const [];
       }
     } catch (_) {}
     return const [];
   }
+
 
   Future<HomePageData> getHomePage({String? params, String? continuation}) async {
     try {
