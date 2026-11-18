@@ -128,7 +128,7 @@ class AlbumItem extends YTItem {
     String? playlistId,
     String? id,
     required super.title,
-    this.artists,
+    List<Artist>? artists,
     String? artist,
     this.year,
     String? thumbnail,
@@ -136,6 +136,7 @@ class AlbumItem extends YTItem {
     super.explicit = false,
   })  : browseId = browseId ?? id ?? '',
         playlistId = playlistId ?? '',
+        artists = artists ?? (artist == null ? null : [Artist(name: artist)]),
         super(
           id: id ?? browseId ?? '',
           thumbnail: thumbnail ?? thumbnailUrl ?? '',
