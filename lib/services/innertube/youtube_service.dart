@@ -89,10 +89,14 @@ class YouTubeService {
 
     try {
       final body = _buildContext();
-      // Transcript requests are intentionally anonymous and omit visitor/account identity.
-      final clientContext = body['context']?['client'];
-      if (clientContext is Map<String, dynamic>) {
-        clientContext.remove('visitorData');
+      // InnerTubeX transcript requests omit visitor and signed-in account context.
+      final requestContext = body['context'];
+      if (requestContext is Map<String, dynamic>) {
+        final clientContext = requestContext['client'];
+        if (clientContext is Map<String, dynamic>) {
+          clientContext.remove('visitorData');
+        }
+        requestContext.remove('user');
       }
       body['params'] = base64Encode(utf8.encode('\n\u000b$videoId'));
 
