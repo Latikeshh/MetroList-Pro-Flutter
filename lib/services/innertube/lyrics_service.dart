@@ -3,6 +3,8 @@ library;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import 'youtube_service.dart';
+
 class LyricLine {
   final Duration timestamp;
   final String text;
@@ -40,8 +42,8 @@ class LyricsService {
 
   LyricsService._internal();
 
-  /// Fetches synced or plain lyrics from LRCLIB API
-  Future<LyricsData?> getLyrics(String title, String artist) async {
+  /// Fetches synced or plain lyrics from LRCLIB API or InnerTube transcript fallback
+  Future<LyricsData?> getLyrics(String title, String artist, {String? videoId}) async {
     try {
       final response = await _dio.get(
         'https://lrclib.net/api/get',
@@ -58,16 +60,40 @@ class LyricsService {
 
         final syncedLines = _parseLrc(syncedStr ?? '');
 
-        return LyricsData(
-          trackName: title,
-          artistName: artist,
-          syncedLyrics: syncedLines,
-          plainLyrics: plainStr,
-        );
+        if (syncedLines.isNotEmpty || (plainStr != null && plainStr.isNotEmpty)) {
+          return LyricsData(
+            trackName: title,
+            artistName: artist,
+            syncedLyrics: syncedLines,
+            plainLyrics: plainStr,
+          );
+        }
       }
     } catch (e) {
-      debugPrint('Failed to fetch lyrics: $e');
+      debugPrint('Failed to fetch LRCLIB lyrics: $e');
     }
+
+    if (videoId != null && videoId.isNotEmpty) {
+      try {
+        final transcript = await YouTubeService().getTranscript(videoId);
+        if (transcript != null && transcript.cues.isNotEmpty) {
+          final syncedLines = transcript.cues.map((c) {
+            return LyricLine(
+              timestamp: Duration(milliseconds: c.startOffsetMs),
+              text: c.text,
+            );
+          }).toList();
+          return LyricsData(
+            trackName: title,
+            artistName: artist,
+            syncedLyrics: syncedLines,
+          );
+        }
+      } catch (e) {
+        debugPrint('Failed to fetch transcript: $e');
+      }
+    }
+
     return null;
   }
 

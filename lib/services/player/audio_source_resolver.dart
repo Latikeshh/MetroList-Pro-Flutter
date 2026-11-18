@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 
@@ -161,7 +163,14 @@ class AudioSourceResolver {
 
   Future<List<String>> resolveAudioStreamUrls(SongItem song) async {
     final videoId = song.id.trim();
-    if (videoId.isEmpty || videoId.startsWith('local:')) return const [];
+    if (videoId.isEmpty ||
+        videoId.startsWith('local:') ||
+        videoId.startsWith('playlist_track_') ||
+        videoId.startsWith('UC') ||
+        videoId.startsWith('VL') ||
+        videoId.length < 11) {
+      return const [];
+    }
 
     final List<String> candidateUrls = [];
     final session = _accountService.currentSession;
@@ -171,15 +180,15 @@ class AudioSourceResolver {
     // Generate PO Token for request context
     final poTokenResult = await _poTokenService.getPoToken(videoId, visitorData);
 
-    // Primary: InnerTube client rotation mirroring InnerTubeXPlayer.kt
+    // Primary: InnerTube client rotation (Prioritizing ANDROID_MUSIC and TVHTML5)
     final clients = [
       {
-        'name': 'ANDROID_VR',
-        'version': '1.57.2',
+        'name': 'ANDROID_MUSIC',
+        'version': '6.42.52',
         'ua':
-            'com.google.android.apps.youtube.vr.oculus/1.57.2 (Linux; U; Android 12)',
-        'clientNameHeader': '28',
-        'endpoint': 'https://www.youtube.com/youtubei/v1/player',
+            'com.google.android.apps.youtube.music/6.42.52 (Linux; U; Android 14; en_US)',
+        'clientNameHeader': '61',
+        'endpoint': 'https://music.youtube.com/youtubei/v1/player?prettyPrint=false',
       },
       {
         'name': 'TVHTML5_SIMPLY_EMBEDDED_PLAYER',
@@ -187,7 +196,15 @@ class AudioSourceResolver {
         'ua':
             'Mozilla/5.0 (SmartHub; SMART-TV; U; Linux/SmartTV) AppleWebKit/537.42 SmartTV Safari/537.42',
         'clientNameHeader': '85',
-        'endpoint': 'https://www.youtube.com/youtubei/v1/player',
+        'endpoint': 'https://www.youtube.com/youtubei/v1/player?prettyPrint=false',
+      },
+      {
+        'name': 'WEB_REMIX',
+        'version': '1.20250122.01.00',
+        'ua':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'clientNameHeader': '67',
+        'endpoint': 'https://music.youtube.com/youtubei/v1/player?prettyPrint=false',
       },
       {
         'name': 'IOS',
@@ -195,23 +212,15 @@ class AudioSourceResolver {
         'ua':
             'com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X; en_US)',
         'clientNameHeader': '5',
-        'endpoint': 'https://www.youtube.com/youtubei/v1/player',
+        'endpoint': 'https://www.youtube.com/youtubei/v1/player?prettyPrint=false',
       },
       {
-        'name': 'WEB_REMIX',
-        'version': '1.20241021.01.00',
+        'name': 'ANDROID',
+        'version': '19.09.37',
         'ua':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'clientNameHeader': '67',
-        'endpoint': 'https://music.youtube.com/youtubei/v1/player',
-      },
-      {
-        'name': 'ANDROID_MUSIC',
-        'version': '6.20.51',
-        'ua':
-            'com.google.android.apps.youtube.music/6.20.51 (Linux; U; Android 14; en_US)',
-        'clientNameHeader': '61',
-        'endpoint': 'https://music.youtube.com/youtubei/v1/player',
+            'com.google.android.youtube/19.09.37 (Linux; U; Android 14; en_US)',
+        'clientNameHeader': '3',
+        'endpoint': 'https://www.youtube.com/youtubei/v1/player?prettyPrint=false',
       },
     ];
 
@@ -232,6 +241,7 @@ class AudioSourceResolver {
           'X-YouTube-Client-Name': client['clientNameHeader'] as String,
           'X-YouTube-Client-Version': client['version'] as String,
           'Content-Type': 'application/json',
+          'Accept': '*/*',
         };
         if (cookieHeader.isNotEmpty) {
           reqHeaders['Cookie'] = cookieHeader;
@@ -246,10 +256,20 @@ class AudioSourceResolver {
         if (visitorData.isNotEmpty) {
           clientContext['visitorData'] = visitorData;
         }
-        if (poTokenResult?.playerRequestPoToken != null) {
+        if (poTokenResult?.playerRequestPoToken != null &&
+            poTokenResult!.playerRequestPoToken.isNotEmpty) {
           clientContext['serviceIntegrityDimensions'] = {
-            'poToken': poTokenResult!.playerRequestPoToken,
+            'poToken': poTokenResult.playerRequestPoToken,
           };
+        }
+
+        final playbackContext = <String, dynamic>{
+          'contentPlaybackContext': <String, dynamic>{
+            'html5Preference': 'HTML5_PREFER_SERVER_CONFIG',
+          }
+        };
+        if (_playerConfig.sts > 0) {
+          (playbackContext['contentPlaybackContext'] as Map<String, dynamic>)['signatureTimestamp'] = _playerConfig.sts;
         }
 
         final requestPayload = <String, dynamic>{
@@ -257,44 +277,47 @@ class AudioSourceResolver {
             'client': clientContext,
           },
           'videoId': videoId,
-          'playbackContext': {
-            'contentPlaybackContext': {
-              'html5Preference': 'HTML5_PREFER_SERVER_CONFIG',
-              'signatureTimestamp': _playerConfig.sts,
-            }
-          },
+          'playbackContext': playbackContext,
           'contentCheckOk': true,
           'racyCheckOk': true,
         };
 
-        if (poTokenResult?.streamingDataPoToken != null) {
+        if (poTokenResult?.streamingDataPoToken != null &&
+            poTokenResult!.streamingDataPoToken.isNotEmpty) {
           requestPayload['serviceIntegrityDimensionsParams'] = {
-            'poToken': poTokenResult!.streamingDataPoToken,
+            'poToken': poTokenResult.streamingDataPoToken,
           };
         }
 
         final ytResponse = await _dio.post<dynamic>(
           client['endpoint'] as String,
-          data: requestPayload,
-          options: Options(headers: reqHeaders),
+          data: jsonEncode(requestPayload),
+          options: Options(
+            headers: reqHeaders,
+            validateStatus: (status) => status != null && status < 500,
+          ),
         );
 
-        if (ytResponse.statusCode == 200 && ytResponse.data is Map) {
-          final data = ytResponse.data as Map;
-          final streamingData = data['streamingData'];
-          if (streamingData is Map) {
-            final parsedUrls =
-                parseFormatsFromStreamingData(streamingData, _playerConfig);
-            if (parsedUrls.isNotEmpty) {
-              candidateUrls.addAll(parsedUrls);
-              break;
+        if (ytResponse.statusCode == 200 && ytResponse.data != null) {
+          final data = ytResponse.data is String
+              ? jsonDecode(ytResponse.data as String)
+              : ytResponse.data;
+          if (data is Map) {
+            final streamingData = data['streamingData'];
+            if (streamingData is Map) {
+              final parsedUrls =
+                  parseFormatsFromStreamingData(streamingData, _playerConfig);
+              if (parsedUrls.isNotEmpty) {
+                candidateUrls.addAll(parsedUrls);
+                break;
+              }
             }
           }
         }
         _failedClients[clientName] = nowMs;
       } catch (e) {
         _failedClients[clientName] = nowMs;
-        debugPrint('InnerTube stream resolve error for client $clientName: $e');
+        debugPrint('InnerTube stream resolve info ($clientName): $e');
       }
     }
 

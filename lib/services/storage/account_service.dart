@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:rxdart/rxdart.dart';
+
 import '../innertube/youtube_service.dart';
 
 enum AccountAuthState {

@@ -3,6 +3,7 @@ library;
 import 'package:flutter/material.dart';
 import '../../services/innertube/models/yt_item.dart';
 import '../../services/player/audio_player_service.dart';
+import '../../services/storage/local_database.dart';
 
 class RecognitionScreen extends StatefulWidget {
   const RecognitionScreen({super.key});
@@ -15,25 +16,11 @@ class _RecognitionScreenState extends State<RecognitionScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _animController;
   final AudioPlayerService _playerService = AudioPlayerService();
+  final LocalDatabaseService _dbService = LocalDatabaseService();
+
   bool _isListening = false;
   SongItem? _identifiedSong;
-
-  final List<SongItem> _history = [
-    SongItem(
-      id: 'rec_1',
-      title: 'Midnight Frequency',
-      artists: const ['The Metrolist Band'],
-      thumbnailUrl:
-          'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
-    ),
-    SongItem(
-      id: 'rec_2',
-      title: 'Starlight Memories',
-      artists: const ['Lofi Collective'],
-      thumbnailUrl:
-          'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500',
-    ),
-  ];
+  late Future<List<SongItem>> _historyFuture;
 
   @override
   void initState() {
@@ -42,6 +29,7 @@ class _RecognitionScreenState extends State<RecognitionScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     );
+    _historyFuture = _dbService.getHistory();
   }
 
   @override
@@ -61,17 +49,17 @@ class _RecognitionScreenState extends State<RecognitionScreen>
 
     if (mounted) {
       _animController.stop();
-      setState(() {
-        _isListening = false;
-        _identifiedSong = SongItem(
-          id: 'rec_result_0',
-          title: 'Velvet Horizon (Identified)',
-          artists: const ['Synthwave Express'],
-          thumbnailUrl:
-              'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500',
-        );
-        _history.insert(0, _identifiedSong!);
-      });
+      final history = await _dbService.getHistory();
+      if (history.isNotEmpty) {
+        setState(() {
+          _isListening = false;
+          _identifiedSong = history.first;
+        });
+      } else {
+        setState(() {
+          _isListening = false;
+        });
+      }
     }
   }
 
@@ -81,8 +69,10 @@ class _RecognitionScreenState extends State<RecognitionScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Song Recognition',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Song Recognition',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(24),
@@ -152,12 +142,16 @@ class _RecognitionScreenState extends State<RecognitionScreen>
               child: ListTile(
                 leading: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.network(_identifiedSong!.thumbnailUrl!,
-                      width: 48, height: 48, fit: BoxFit.cover),
+                  child: _identifiedSong!.thumbnailUrl != null &&
+                          _identifiedSong!.thumbnailUrl!.isNotEmpty
+                      ? Image.network(_identifiedSong!.thumbnailUrl!,
+                          width: 48, height: 48, fit: BoxFit.cover)
+                      : const Icon(Icons.music_note_rounded),
                 ),
                 title: Text(_identifiedSong!.title,
                     style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(_identifiedSong!.artists.join(', ')),
+                subtitle:
+                    Text(_identifiedSong!.artists.map((a) => a.name).join(', ')),
                 trailing: IconButton(
                   icon: const Icon(Icons.play_arrow_rounded),
                   onPressed: () => _playerService.playSong(_identifiedSong!),
@@ -170,27 +164,57 @@ class _RecognitionScreenState extends State<RecognitionScreen>
           const Divider(),
           const SizedBox(height: 12),
 
-          Text('Recognition History',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Recognition History',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 12),
 
-          ..._history.map((song) => ListTile(
-                leading: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(song.thumbnailUrl!,
-                      width: 44, height: 44, fit: BoxFit.cover),
-                ),
-                title: Text(song.title,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(song.artists.join(', ')),
-                trailing: IconButton(
-                  icon: const Icon(Icons.play_arrow_rounded),
-                  onPressed: () => _playerService.playSong(song),
-                ),
-              )),
+          FutureBuilder<List<SongItem>>(
+            future: _historyFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final historySongs = snapshot.data ?? [];
+              if (historySongs.isEmpty) {
+                return const Center(
+                  child: Text('No recognized song history available.'),
+                );
+              }
+
+              return Column(
+                children: historySongs
+                    .map(
+                      (song) => ListTile(
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: song.thumbnailUrl != null &&
+                                  song.thumbnailUrl!.isNotEmpty
+                              ? Image.network(song.thumbnailUrl!,
+                                  width: 44, height: 44, fit: BoxFit.cover)
+                              : const Icon(Icons.music_note_rounded),
+                        ),
+                        title: Text(
+                          song.title,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle:
+                            Text(song.artists.map((a) => a.name).join(', ')),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.play_arrow_rounded),
+                          onPressed: () => _playerService.playSong(song),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              );
+            },
+          ),
         ],
       ),
     );

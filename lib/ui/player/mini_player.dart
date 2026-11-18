@@ -1,6 +1,7 @@
 library;
 
 import 'package:flutter/material.dart';
+
 import '../../services/innertube/models/yt_item.dart';
 import '../../services/player/audio_player_service.dart';
 

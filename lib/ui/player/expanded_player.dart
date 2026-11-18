@@ -1,10 +1,11 @@
 library;
 
 import 'package:flutter/material.dart';
+
 import '../../services/player/audio_player_service.dart';
 import 'ab_looper_sheet.dart';
-import 'lyrics_sheet.dart';
 import 'equalizer_sheet.dart';
+import 'lyrics_sheet.dart';
 
 class ExpandedPlayer extends StatefulWidget {
   const ExpandedPlayer({super.key});

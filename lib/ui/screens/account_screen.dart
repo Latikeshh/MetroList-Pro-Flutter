@@ -2,6 +2,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+
 import '../../services/storage/account_service.dart';
 import '../../services/storage/qr_pairing_service.dart';
 

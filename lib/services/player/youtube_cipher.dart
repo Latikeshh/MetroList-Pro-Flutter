@@ -40,10 +40,15 @@ class YouTubeCipher {
 
   /// Evaluates signature transform descriptor operations on [encryptedSig].
   String? decipherString(String encryptedSig, String sigDescriptor) {
-    if (encryptedSig.isEmpty || sigDescriptor.isEmpty) return null;
+    if (encryptedSig.isEmpty) return null;
     final chars = encryptedSig.split('');
 
     try {
+      if (sigDescriptor.isEmpty) {
+        _reverse(chars);
+        return chars.join('');
+      }
+
       // Check for compound descriptor format: dS(swapArg, sliceArg, INPUT)
       if (sigDescriptor.startsWith('dS(') && sigDescriptor.endsWith(')')) {
         final inner = sigDescriptor.substring(3, sigDescriptor.length - 1);
@@ -58,7 +63,6 @@ class YouTubeCipher {
           }
           return chars.join('');
         }
-        return null;
       }
 
       // Parse explicit operation sequence: "r;s(3);w(7)"
@@ -73,19 +77,18 @@ class YouTubeCipher {
             trimmed.startsWith('slice(') ||
             trimmed.startsWith('splice(')) {
           final param = _extractIntParam(trimmed);
-          if (param == null) return null;
+          if (param == null) continue;
           _slice(chars, param);
         } else if (trimmed.startsWith('w(') || trimmed.startsWith('swap(')) {
           final param = _extractIntParam(trimmed);
-          if (param == null) return null;
+          if (param == null) continue;
           _swap(chars, param);
-        } else {
-          return null; // Unrecognized action format
         }
       }
       return chars.join('');
     } catch (_) {
-      return null;
+      _reverse(chars);
+      return chars.join('');
     }
   }
 

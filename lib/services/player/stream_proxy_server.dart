@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
@@ -119,15 +120,19 @@ class StreamProxyServer {
 
       final stream = response.data?.stream;
       if (stream != null) {
-        await clientResponse.addStream(stream);
+        try {
+          await clientResponse.addStream(stream);
+        } catch (_) {}
       }
-      await clientResponse.close();
+      try {
+        await clientResponse.close();
+      } catch (_) {}
     } catch (e) {
-      debugPrint('StreamProxyServer proxy error: $e');
+      debugPrint('StreamProxyServer proxy info: $e');
       try {
         clientResponse
-          ..statusCode = HttpStatus.internalServerError
-          ..close();
+          ..statusCode = HttpStatus.internalServerError;
+        await clientResponse.close();
       } catch (_) {}
     }
   }

@@ -1,7 +1,9 @@
 library;
 
 import 'package:flutter/material.dart';
+
 import '../../services/innertube/models/yt_item.dart';
+import '../../services/innertube/youtube_service.dart';
 import '../../services/player/audio_player_service.dart';
 
 class PlaylistScreen extends StatefulWidget {
@@ -26,21 +28,25 @@ class PlaylistScreen extends StatefulWidget {
 
 class _PlaylistScreenState extends State<PlaylistScreen> {
   final AudioPlayerService _playerService = AudioPlayerService();
-  late List<SongItem> _tracks;
+  final YouTubeService _ytService = YouTubeService();
+  List<SongItem> _tracks = [];
+  bool _isLoading = true;
   bool _isDownloaded = false;
 
   @override
   void initState() {
     super.initState();
-    _tracks = List.generate(
-      8,
-      (index) => SongItem(
-        id: 'playlist_track_${widget.playlistId}_$index',
-        title: '${widget.title} - Track ${index + 1}',
-        artists: [widget.author ?? 'Metrolist Mix'],
-        thumbnailUrl: widget.thumbnailUrl,
-      ),
-    );
+    _loadPlaylistTracks();
+  }
+
+  Future<void> _loadPlaylistTracks() async {
+    final realSongs = await _ytService.getPlaylistPage(widget.playlistId);
+    if (mounted) {
+      setState(() {
+        _tracks = realSongs;
+        _isLoading = false;
+      });
+    }
   }
 
   void _removeTrack(int index) {
@@ -79,7 +85,9 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
         children: [
           // Playlist Header Card
           Container(

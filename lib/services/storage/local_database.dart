@@ -117,25 +117,34 @@ class LocalDatabaseService {
   Map<String, Object?> _songToJson(SongItem song) => <String, Object?>{
         'id': song.id,
         'title': song.title,
-        'artists': song.artists,
+        'artists': song.artists.map((a) => {'name': a.name, 'id': a.id}).toList(),
         'thumbnailUrl': song.thumbnailUrl,
-        'album': song.album,
+        'album': song.album != null ? {'name': song.album!.name, 'id': song.album!.id} : null,
         'durationSeconds': song.durationSeconds,
       };
 
   SongItem _songFromJson(Map<String, dynamic> json) {
     final rawArtists = json['artists'];
-    final artists = rawArtists is List
-        ? rawArtists.whereType<String>().toList()
-        : <String>[];
-    final duration = json['durationSeconds'];
+    final List<Artist> artists = [];
+    if (rawArtists is List) {
+      for (final a in rawArtists) {
+        if (a is Map) {
+          artists.add(Artist(name: a['name']?.toString() ?? '', id: a['id']?.toString()));
+        } else if (a != null) {
+          artists.add(Artist(name: a.toString()));
+        }
+      }
+    }
+    final duration = json['durationSeconds'] ?? json['duration'];
+    final albumMap = json['album'] is Map ? json['album'] as Map<String, dynamic> : null;
     return SongItem(
       id: json['id'] as String? ?? '',
       title: json['title'] as String? ?? '',
       artists: artists,
+      album: albumMap != null ? Album(name: albumMap['name']?.toString() ?? '', id: albumMap['id']?.toString() ?? '') : null,
       thumbnailUrl: json['thumbnailUrl'] as String?,
-      album: json['album'] as String?,
-      durationSeconds: duration is num ? duration.toInt() : null,
+      duration: duration is num ? duration.toInt() : null,
     );
   }
 }
+

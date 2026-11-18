@@ -1,8 +1,9 @@
 library;
 
 import 'package:flutter/material.dart';
-import '../../services/player/audio_player_service.dart';
+
 import '../../services/export/audio_exporter_service.dart';
+import '../../services/player/audio_player_service.dart';
 
 class AbLooperSheet extends StatefulWidget {
   const AbLooperSheet({super.key});
@@ -278,7 +279,7 @@ class _AbLooperSheetState extends State<AbLooperSheet> {
                         final success = await AudioExporterService().exportClip(
                           title: song.title,
                           artist: song.artists.isNotEmpty
-                              ? song.artists.first
+                              ? song.artists.first.name
                               : 'Metrolist',
                           start: pointA,
                           end: pointB,

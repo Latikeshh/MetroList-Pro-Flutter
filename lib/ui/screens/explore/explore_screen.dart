@@ -1,10 +1,11 @@
 library;
 
 import 'package:flutter/material.dart';
-import '../../../services/innertube/youtube_service.dart';
 import '../../../services/innertube/models/explore_models.dart';
 import '../../../services/innertube/models/yt_item.dart';
+import '../../../services/innertube/youtube_service.dart';
 import '../../../services/player/audio_player_service.dart';
+import '../album_screen.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -18,6 +19,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   final AudioPlayerService _playerService = AudioPlayerService();
 
   late Future<ExplorePageData> _exploreFuture;
+  late Future<List<SongItem>> _chartsFuture;
   int _selectedFilterIndex = 0;
 
   final List<String> _filters = [
@@ -27,46 +29,21 @@ class _ExploreScreenState extends State<ExploreScreen> {
     'Top Charts'
   ];
 
-  final List<SongItem> _topChartSongs = const [
-    SongItem(
-      id: 'dQw4w9WgXcQ',
-      title: 'Global Top Track #1',
-      artists: ['Metrolist Trending'],
-      thumbnailUrl:
-          'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
-    ),
-    SongItem(
-      id: '3JZ_D3ELwOQ',
-      title: 'Global Top Track #2',
-      artists: ['Worldwide Artist'],
-      thumbnailUrl:
-          'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500',
-    ),
-    SongItem(
-      id: 'L_jWHffIx5E',
-      title: 'Global Top Track #3',
-      artists: ['Chart Dominator'],
-      thumbnailUrl:
-          'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500',
-    ),
-    SongItem(
-      id: 'fJ9rUzIMcZQ',
-      title: 'Global Top Track #4',
-      artists: ['Popular Hitmakers'],
-      thumbnailUrl:
-          'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500',
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
-    _exploreFuture = _ytService.getExplorePage();
+    _loadData();
   }
 
-  void _refreshExplore() {
+  void _loadData() {
     setState(() {
       _exploreFuture = _ytService.getExplorePage();
+      _chartsFuture = _ytService.getChartsPage().then((chartsPage) {
+        if (chartsPage.sections.isNotEmpty) {
+          return chartsPage.sections.first.items.whereType<SongItem>().toList();
+        }
+        return <SongItem>[];
+      });
     });
   }
 
@@ -85,7 +62,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Refresh Explore Data',
-            onPressed: _refreshExplore,
+            onPressed: _loadData,
           ),
         ],
       ),
@@ -101,6 +78,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 newReleaseAlbums: [],
                 moodsAndGenres: [],
               );
+
+          final albums = data.newReleaseAlbums;
 
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
@@ -151,111 +130,121 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
-                    height: 200,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: 6,
-                      separatorBuilder: (_, __) => const SizedBox(width: 16),
-                      itemBuilder: (context, index) {
-                        final albumTitles = [
-                          'Midnight Frequency',
-                          'Starlight Memories',
-                          'Velvet Horizon',
-                          'Echoes of Today',
-                          'Neon Drive 2026',
-                          'Acoustic Serenade'
-                        ];
-                        final artists = [
-                          'The Metrolist Band',
-                          'Lofi Collective',
-                          'Synthwave Express',
-                          'Global Hitmakers',
-                          'Electra Crew',
-                          'Unplugged Voices'
-                        ];
-
-                        return SizedBox(
-                          width: 140,
-                          child: Card(
-                            elevation: 1,
-                            clipBehavior: Clip.antiAlias,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: InkWell(
-                              onTap: () {
-                                _playerService.playSong(_topChartSongs[
-                                    index % _topChartSongs.length]);
-                              },
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Container(
-                                      color: colorScheme.primaryContainer,
-                                      child: Stack(
-                                        children: [
-                                          const Center(
-                                            child: Icon(Icons.album_rounded,
-                                                size: 54,
-                                                color: Colors.white70),
-                                          ),
-                                          Positioned(
-                                            right: 6,
-                                            bottom: 6,
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: colorScheme.primary,
-                                              ),
-                                              child: const Padding(
-                                                padding: EdgeInsets.all(6.0),
-                                                child: Icon(
-                                                    Icons.play_arrow_rounded,
-                                                    size: 20,
-                                                    color: Colors.white),
-                                              ),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
+                    height: 210,
+                    child: albums.isNotEmpty
+                        ? ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: albums.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 16),
+                            itemBuilder: (context, index) {
+                              final album = albums[index];
+                              return SizedBox(
+                                width: 140,
+                                child: Card(
+                                  elevation: 1,
+                                  clipBehavior: Clip.antiAlias,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
                                   ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                  child: InkWell(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => AlbumScreen(
+                                            albumId: album.browseId,
+                                            title: album.title,
+                                            artist: album.artist,
+                                            thumbnailUrl: album.thumbnailUrl,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          albumTitles[
-                                              index % albumTitles.length],
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13),
+                                        Expanded(
+                                          child: Stack(
+                                            fit: StackFit.expand,
+                                            children: [
+                                              album.thumbnailUrl != null &&
+                                                      album.thumbnailUrl!
+                                                          .isNotEmpty
+                                                  ? Image.network(
+                                                      album.thumbnailUrl!,
+                                                      fit: BoxFit.cover,
+                                                    )
+                                                  : Container(
+                                                      color: colorScheme
+                                                          .primaryContainer,
+                                                      child: const Icon(
+                                                        Icons.album_rounded,
+                                                        size: 54,
+                                                      ),
+                                                    ),
+                                              Positioned(
+                                                right: 6,
+                                                bottom: 6,
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    color: colorScheme.primary,
+                                                  ),
+                                                  child: const Padding(
+                                                    padding:
+                                                        EdgeInsets.all(6.0),
+                                                    child: Icon(
+                                                      Icons.play_arrow_rounded,
+                                                      size: 20,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                ),
+                                              )
+                                            ],
+                                          ),
                                         ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          artists[index % artists.length],
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                              fontSize: 11,
-                                              color:
-                                                  colorScheme.onSurfaceVariant),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                album.title,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                album.artist ?? 'Album',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
+                                ),
+                              );
+                            },
+                          )
+                        : const Center(
+                            child: Text('No new release albums found'),
                           ),
-                        );
-                      },
-                    ),
                   ),
                   const SizedBox(height: 28),
                 ],
@@ -293,8 +282,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                  content: Text(
-                                      'Exploring ${mood.title} mood category')),
+                                content: Text(
+                                  'Exploring ${mood.title} mood category',
+                                ),
+                              ),
                             );
                           },
                           child: Container(
@@ -309,7 +300,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               ),
                             ),
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                             alignment: Alignment.centerLeft,
                             child: Row(
                               children: [
@@ -325,8 +318,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                     ),
                                   ),
                                 ),
-                                const Icon(Icons.music_note_rounded,
-                                    color: Colors.white54, size: 28),
+                                const Icon(
+                                  Icons.music_note_rounded,
+                                  color: Colors.white54,
+                                  size: 28,
+                                ),
                               ],
                             ),
                           ),
@@ -346,59 +342,77 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         ),
                   ),
                   const SizedBox(height: 12),
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _topChartSongs.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final song = _topChartSongs[index];
-                      return ListTile(
-                        leading: SizedBox(
-                          width: 80,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 28,
-                                child: Text(
-                                  '#${index + 1}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: colorScheme.primary,
-                                  ),
-                                ),
-                              ),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: song.thumbnailUrl != null
-                                    ? Image.network(
-                                        song.thumbnailUrl!,
-                                        width: 48,
-                                        height: 48,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Container(
-                                        width: 48,
-                                        height: 48,
-                                        color:
-                                            colorScheme.surfaceContainerHighest,
-                                        child: const Icon(Icons.music_note),
+                  FutureBuilder<List<SongItem>>(
+                    future: _chartsFuture,
+                    builder: (context, chartSnapshot) {
+                      if (chartSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      final chartSongs = chartSnapshot.data ?? [];
+                      if (chartSongs.isEmpty) {
+                        return const Text('No trending charts found.');
+                      }
+
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: chartSongs.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final song = chartSongs[index];
+                          return ListTile(
+                            leading: SizedBox(
+                              width: 80,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    width: 28,
+                                    child: Text(
+                                      '#${index + 1}',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: colorScheme.primary,
                                       ),
+                                    ),
+                                  ),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: song.thumbnailUrl != null &&
+                                            song.thumbnailUrl!.isNotEmpty
+                                        ? Image.network(
+                                            song.thumbnailUrl!,
+                                            width: 48,
+                                            height: 48,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Container(
+                                            width: 48,
+                                            height: 48,
+                                            color: colorScheme
+                                                .surfaceContainerHighest,
+                                            child: const Icon(Icons.music_note),
+                                          ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                        title: Text(
-                          song.title,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(song.artists.join(', ')),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.play_arrow_rounded),
-                          onPressed: () => _playerService.playSong(song),
-                        ),
+                            ),
+                            title: Text(
+                              song.title,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Text(
+                              song.artists.map((a) => a.name).join(', '),
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.play_arrow_rounded),
+                              onPressed: () => _playerService.playSong(song),
+                            ),
+                          );
+                        },
                       );
                     },
                   ),

@@ -2,31 +2,32 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'services/innertube/youtube_service.dart';
-import 'services/innertube/models/yt_item.dart';
+
 import 'services/innertube/models/home_models.dart';
-import 'services/storage/local_database.dart';
+import 'services/innertube/models/yt_item.dart';
+import 'services/innertube/youtube_service.dart';
 import 'services/player/audio_player_service.dart';
-import 'ui/player/mini_player.dart';
-import 'ui/player/expanded_player.dart';
+import 'services/storage/local_database.dart';
+import 'ui/component/latikesh_update_dialog.dart';
 import 'ui/player/desktop_player_bar.dart';
 import 'ui/player/equalizer_sheet.dart';
-import 'ui/screens/explore/explore_screen.dart';
-import 'ui/screens/library/library_screen.dart';
-import 'ui/screens/wrapped_screen.dart';
+import 'ui/player/expanded_player.dart';
+import 'ui/player/mini_player.dart';
 import 'ui/screens/about_screen.dart';
 import 'ui/screens/account_screen.dart';
 import 'ui/screens/album_screen.dart';
 import 'ui/screens/artist_screen.dart';
 import 'ui/screens/charts_screen.dart';
+import 'ui/screens/explore/explore_screen.dart';
+import 'ui/screens/library/library_screen.dart';
 import 'ui/screens/listen_together_screen.dart';
 import 'ui/screens/playlist_screen.dart';
-import 'ui/screens/settings/appearance_settings_screen.dart';
-import 'ui/screens/settings/player_storage_settings_screen.dart';
-import 'ui/screens/settings/integrations_settings_screen.dart';
 import 'ui/screens/settings/ai_romanization_settings_screen.dart';
+import 'ui/screens/settings/appearance_settings_screen.dart';
 import 'ui/screens/settings/backup_restore_screen.dart';
-import 'ui/component/latikesh_update_dialog.dart';
+import 'ui/screens/settings/integrations_settings_screen.dart';
+import 'ui/screens/settings/player_storage_settings_screen.dart';
+import 'ui/screens/wrapped_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -365,7 +366,7 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (_) => PlaylistScreen(
             playlistId: item.id,
             title: item.title,
-            author: item.author,
+            author: item.author?.name,
             thumbnailUrl: item.thumbnailUrl,
           ),
         ),

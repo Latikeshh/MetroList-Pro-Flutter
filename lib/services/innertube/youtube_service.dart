@@ -1,9 +1,20 @@
-library;
-
 import 'package:dio/dio.dart';
-import 'models/yt_item.dart';
+
+import 'innertube_client.dart';
 import 'models/explore_models.dart';
-import 'models/home_models.dart';
+import 'models/renderers.dart';
+import 'models/response/account_menu_response.dart';
+import 'models/response/get_transcript_response.dart';
+import 'models/youtube_client.dart';
+import 'models/yt_item.dart';
+import 'pages/album_page.dart';
+import 'pages/artist_page.dart';
+import 'pages/charts_page.dart';
+import 'pages/explore_page.dart';
+import 'pages/home_page.dart';
+import 'pages/library_page.dart';
+import 'pages/next_page.dart';
+import 'pages/podcast_page.dart';
 
 class YouTubeService {
   static final YouTubeService _instance = YouTubeService._internal();
@@ -11,96 +22,90 @@ class YouTubeService {
 
   late final Dio _dio;
   static const String _baseUrl = 'https://music.youtube.com/youtubei/v1';
+  final InnerTubeClient _innerTubeClient = InnerTubeClient();
 
   YouTubeService._internal() {
     _dio = Dio(
       BaseOptions(
         baseUrl: _baseUrl,
-        headers: {
-          'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': '*/*',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Content-Type': 'application/json',
-          'X-YouTube-Client-Name': '67',
-          'X-YouTube-Client-Version': '1.20241021.01.00',
-        },
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 15),
       ),
     );
   }
 
-  /// Allows setting a mock adapter for widget tests
   void setDioAdapter(HttpClientAdapter adapter) {
     _dio.httpClientAdapter = adapter;
   }
 
-  /// Verifies YouTube Music session cookie against real InnerTube account_menu endpoint.
-  Future<Map<String, String>?> verifySession(String cookie) async {
-    if (!cookie.contains('SAPISID')) return null;
+  Map<String, dynamic> _buildContext([YouTubeClient client = YouTubeClient.webRemix]) {
+    return _innerTubeClient.buildContext(client);
+  }
 
+  Map<String, String> _getHeaders({YouTubeClient client = YouTubeClient.webRemix, String? cookie}) {
+    return _innerTubeClient.getHeaders(client: client, pageCookie: cookie);
+  }
+
+  Future<AccountMenuResponse?> getAccountMenu(String cookie) async {
     try {
       final body = _buildContext();
-      final response = await _dio.post<dynamic>(
+      final response = await _dio.post(
         '/account/account_menu',
         data: body,
-        options: Options(
-          headers: {
-            'Cookie': cookie,
-          },
-        ),
+        options: Options(headers: _getHeaders(cookie: cookie)),
       );
-
-      if (response.statusCode == 200 && response.data is Map) {
-        final data = response.data as Map;
-        final actions = data['actions'];
-        if (actions is List && actions.isNotEmpty) {
-          final header = actions[0]['openPopupAction']?['popup']
-              ?['multiPageMenuRenderer']?['header']
-              ?['activeAccountHeaderRenderer'];
-          if (header is Map) {
-            final nameRuns = header['accountName']?['runs'];
-            final emailRuns = header['email']?['runs'] ?? header['channelHandle']?['runs'];
-            final name = (nameRuns is List && nameRuns.isNotEmpty)
-                ? nameRuns[0]['text']?.toString()
-                : null;
-            final email = (emailRuns is List && emailRuns.isNotEmpty)
-                ? emailRuns[0]['text']?.toString()
-                : null;
-            if (name != null && name.isNotEmpty) {
-              return {
-                'accountName': name,
-                'accountEmail': email ?? '',
-              };
-            }
-          }
-        }
-        if (data.containsKey('contents') || data.containsKey('actions')) {
-          return {
-            'accountName': 'Verified YouTube Account',
-            'accountEmail': '',
-          };
-        }
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return AccountMenuResponse.fromJson(response.data);
       }
     } catch (_) {}
     return null;
   }
 
-  Map<String, dynamic> _buildContext() {
-    return {
-      'context': {
-        'client': {
-          'clientName': 'WEB_REMIX',
-          'clientVersion': '1.20241021.01.00',
-          'gl': 'US',
-          'hl': 'en',
-        }
+  Future<Map<String, String>?> verifySession(String cookie) async {
+    if (!cookie.contains('SAPISID')) return null;
+
+    try {
+      final menu = await getAccountMenu(cookie);
+      final header = menu?.actions?.firstOrNull?.openPopupAction?.popup
+          ?.multiPageMenuRenderer?.header?.activeAccountHeaderRenderer;
+      if (header != null && header.accountName != null) {
+        return {
+          'accountName': header.accountName!,
+          'accountEmail': header.email ?? '',
+        };
       }
-    };
+    } catch (_) {}
+    return null;
   }
 
-  /// Fetches the YouTube Music Home page (FEmusic_home) with optional chip parameters or continuation token
-  Future<HomePageData> getHomePage(
-      {String? params, String? continuation}) async {
+  Future<GetTranscriptResponse?> getTranscript(String videoId) async {
+    try {
+      final body = _buildContext()..['params'] = 'CgEAEgA%3D';
+      final response = await _dio.post('/get_transcript', data: body);
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return GetTranscriptResponse.fromJson(response.data);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>> getQueue({required List<String> videoIds, String? playlistId}) async {
+    try {
+      final body = _buildContext()
+        ..['videoIds'] = videoIds
+        ..['playlistId'] = playlistId;
+      final response = await _dio.post('/get_queue', data: body);
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        final queueDatas = response.data['queueDatas'] as List?;
+        if (queueDatas != null) {
+          return queueDatas.map((e) => e['content'] as Map<String, dynamic>).toList();
+        }
+      }
+    } catch (_) {}
+    return const [];
+  }
+
+  Future<HomePageData> getHomePage({String? params, String? continuation}) async {
     try {
       final body = _buildContext();
       if (continuation != null && continuation.isNotEmpty) {
@@ -123,45 +128,24 @@ class YouTubeService {
         }
       }
     } catch (e) {
-      return HomePageData(
-        chips: const [
+      return const HomePageData(
+        chips: [
           HomeChip(title: 'All'),
           HomeChip(title: 'Podcasts'),
           HomeChip(title: 'Workout'),
           HomeChip(title: 'Focus'),
           HomeChip(title: 'Chill'),
-          HomeChip(title: 'Commute'),
-          HomeChip(title: 'Energy Boost'),
-          HomeChip(title: 'Party'),
-          HomeChip(title: 'Romance'),
-          HomeChip(title: 'Sleep'),
         ],
-        sections: const [],
-        isError: true,
-        errorMessage: e.toString(),
+        sections: [],
       );
     }
 
     return const HomePageData(
-      chips: [
-        HomeChip(title: 'All'),
-        HomeChip(title: 'Podcasts'),
-        HomeChip(title: 'Workout'),
-        HomeChip(title: 'Focus'),
-        HomeChip(title: 'Chill'),
-        HomeChip(title: 'Commute'),
-        HomeChip(title: 'Energy Boost'),
-        HomeChip(title: 'Party'),
-        HomeChip(title: 'Romance'),
-        HomeChip(title: 'Sleep'),
-      ],
+      chips: [HomeChip(title: 'All')],
       sections: [],
-      isError: true,
-      errorMessage: 'Invalid HTTP status response',
     );
   }
 
-  /// Exposes parser for deterministic unit testing with JSON fixtures
   HomePageData parseHomePageData(dynamic data) => _parseHomePage(data);
 
   static bool _areSectionsEqual(HomeSection a, HomeSection b) {
@@ -171,7 +155,6 @@ class YouTubeService {
     return a.items.first.id == b.items.first.id;
   }
 
-  /// Safely merges continuation home page data into current home page data, preventing duplicate sections and tokens
   static HomePageData mergeHomePages(HomePageData current, HomePageData next) {
     final newSections = next.sections
         .where((nextSec) => !current.sections
@@ -187,30 +170,12 @@ class YouTubeService {
       chips: current.chips.isNotEmpty ? current.chips : next.chips,
       sections: [...current.sections, ...newSections],
       continuation: newContinuation,
-      isError: next.isError,
-      errorMessage: next.errorMessage,
     );
   }
 
   HomePageData _parseHomePage(dynamic data) {
     if (data == null || data is! Map) {
-      return const HomePageData(
-        chips: [],
-        sections: [],
-        isError: true,
-        errorMessage: 'Invalid API response format',
-      );
-    }
-
-    if (data.containsKey('error')) {
-      final errorMsg =
-          data['error']?['message']?.toString() ?? 'YouTube Music API error';
-      return HomePageData(
-        chips: const [],
-        sections: const [],
-        isError: true,
-        errorMessage: errorMsg,
-      );
+      return const HomePageData(chips: [], sections: []);
     }
 
     final List<HomeChip> chips = [];
@@ -223,15 +188,13 @@ class YouTubeService {
               ?['sectionListRenderer'] ??
           data['continuationContents']?['sectionListContinuation'];
 
-      // Parse Chips
       final rawChips = sectionList?['header']?['chipCloudRenderer']?['chips'];
       if (rawChips is List) {
         for (var c in rawChips) {
           final renderer = c['chipCloudChipRenderer'];
           if (renderer != null) {
             final title = renderer['text']?['runs']?[0]?['text'] ?? '';
-            final p =
-                renderer['navigationEndpoint']?['browseEndpoint']?['params'];
+            final p = renderer['navigationEndpoint']?['browseEndpoint']?['params'];
             if (title.isNotEmpty) {
               chips.add(HomeChip(title: title, params: p is String ? p : null));
             }
@@ -239,11 +202,9 @@ class YouTubeService {
         }
       }
 
-      // Parse Sections
       final rawContents = sectionList?['contents'];
       if (rawContents is List) {
         for (var sec in rawContents) {
-          // Check for continuation
           final cont = sec['continuationItemRenderer']?['continuationEndpoint']
               ?['continuationCommand']?['token'];
           if (cont is String && cont.isNotEmpty) {
@@ -255,10 +216,7 @@ class YouTubeService {
           final shelf = sec['musicShelfRenderer'];
 
           if (carousel != null) {
-            final header = carousel['header']
-                    ?['musicCarouselShelfBasicHeaderRenderer'] ??
-                carousel['header']?['musicCarouselShelfHeaderRenderer'];
-            final titleRuns = header?['title']?['runs'];
+            final titleRuns = carousel['header']?['musicCarouselShelfBasicHeaderRenderer']?['title']?['runs'];
             final title = (titleRuns is List && titleRuns.isNotEmpty)
                 ? titleRuns[0]['text'] ?? ''
                 : 'Recommended';
@@ -295,11 +253,9 @@ class YouTubeService {
         }
       }
 
-      // Check for sectionList continuations
       final sectionContinuations = sectionList?['continuations'];
       if (sectionContinuations is List && sectionContinuations.isNotEmpty) {
-        final token =
-            sectionContinuations[0]?['nextContinuationData']?['continuation'];
+        final token = sectionContinuations[0]?['nextContinuationData']?['continuation'];
         if (token is String && token.isNotEmpty) {
           continuationToken = token;
         }
@@ -316,29 +272,6 @@ class YouTubeService {
   YTItem? _parseTwoRowOrListItem(dynamic rawItem) {
     if (rawItem == null || rawItem is! Map) return null;
 
-    final multiRow = rawItem['musicMultiRowListItemRenderer'];
-    if (multiRow != null) {
-      final titleRuns = multiRow['title']?['runs'];
-      final title = (titleRuns is List && titleRuns.isNotEmpty)
-          ? titleRuns[0]['text'] ?? ''
-          : '';
-      final videoId = multiRow['onTap']?['watchEndpoint']?['videoId'] ??
-          multiRow['navigationEndpoint']?['watchEndpoint']?['videoId'];
-      final thumbnails = multiRow['thumbnail']?['musicThumbnailRenderer']
-          ?['thumbnail']?['thumbnails'];
-      final thumbUrl = (thumbnails is List && thumbnails.isNotEmpty)
-          ? thumbnails.last['url']
-          : null;
-      if (videoId is String && videoId.isNotEmpty) {
-        return SongItem(
-          id: videoId,
-          title: title,
-          thumbnailUrl: thumbUrl,
-          artists: const ['Podcast Episode'],
-        );
-      }
-    }
-
     final twoRow = rawItem['musicTwoRowItemRenderer'];
     if (twoRow != null) {
       final titleRuns = twoRow['title']?['runs'];
@@ -352,47 +285,35 @@ class YouTubeService {
           ? thumbnails.last['url']
           : null;
 
-      final watchVideoId =
-          twoRow['navigationEndpoint']?['watchEndpoint']?['videoId'];
-      final browseId =
-          twoRow['navigationEndpoint']?['browseEndpoint']?['browseId'];
-
-      final subtitleRuns = twoRow['subtitle']?['runs'];
-      final subtitle = (subtitleRuns is List)
-          ? subtitleRuns
-              .map((r) => r['text']?.toString() ?? '')
-              .where((t) => t.isNotEmpty && t != ' • ')
-              .join(' ')
-          : '';
+      final watchVideoId = twoRow['navigationEndpoint']?['watchEndpoint']?['videoId'];
+      final browseId = twoRow['navigationEndpoint']?['browseEndpoint']?['browseId'];
 
       if (watchVideoId is String && watchVideoId.isNotEmpty) {
         return SongItem(
           id: watchVideoId,
           title: title,
-          thumbnailUrl: thumbUrl,
-          artists: subtitle.isNotEmpty ? [subtitle] : const ['YouTube Music'],
+          thumbnail: thumbUrl ?? '',
+          artists: const [Artist(name: 'YouTube Music')],
         );
       } else if (browseId is String && browseId.isNotEmpty) {
         if (browseId.startsWith('UC')) {
           return ArtistItem(
             id: browseId,
             title: title,
-            thumbnailUrl: thumbUrl,
-            subscribers: subtitle,
+            thumbnail: thumbUrl,
           );
         } else if (browseId.startsWith('MPRE') || browseId.contains('album')) {
           return AlbumItem(
-            id: browseId,
+            browseId: browseId,
+            playlistId: '',
             title: title,
-            thumbnailUrl: thumbUrl,
-            artist: subtitle,
+            thumbnail: thumbUrl ?? '',
           );
         } else {
           return PlaylistItem(
             id: browseId,
             title: title,
-            thumbnailUrl: thumbUrl,
-            author: subtitle,
+            thumbnail: thumbUrl,
           );
         }
       }
@@ -400,13 +321,12 @@ class YouTubeService {
 
     final listItem = rawItem['musicResponsiveListItemRenderer'];
     if (listItem != null) {
-      return _parseListItemRenderer(listItem);
+      return AlbumPageParser.getSong(MusicResponsiveListItemRenderer.fromJson(listItem));
     }
 
     return null;
   }
 
-  /// Searches YouTube Music for songs, artists, albums, or playlists
   Future<List<YTItem>> search(String query) async {
     try {
       final body = _buildContext()..['query'] = query;
@@ -415,139 +335,405 @@ class YouTubeService {
         final results = _parseSearchResults(response.data);
         if (results.isNotEmpty) return results;
       }
-    } catch (_) {
-      // Fallback on error
-    }
+    } catch (_) {}
 
-    final q = query.isEmpty ? 'Top Hits' : query;
-    return [
-      SongItem(
-        id: 'dQw4w9WgXcQ',
-        title: '$q (Popular Track)',
-        artists: const ['Metrolist Featured Artist'],
-        thumbnailUrl:
-            'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
-      ),
-      SongItem(
-        id: '3JZ_D3ELwOQ',
-        title: '$q - Remix Edition',
-        artists: const ['Top Global Producer'],
-        thumbnailUrl:
-            'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500',
-      ),
-      SongItem(
-        id: 'L_jWHffIx5E',
-        title: '$q Chill Vibes',
-        artists: const ['Metrolist Radio'],
-        thumbnailUrl:
-            'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500',
-      ),
-      ArtistItem(
-        id: 'UC3IZKseVzc01iBr797FQqVA',
-        title: q,
-        subscribers: '12.5M Subscribers',
-        thumbnailUrl:
-            'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500',
-      ),
-    ];
+    return const [];
   }
 
-  /// Fetches the Explore page containing New Releases and Moods & Genres
   Future<ExplorePageData> getExplorePage() async {
     try {
       final body = _buildContext()..['browseId'] = 'FEmusic_explore';
       final response = await _dio.post('/browse', data: body);
       if (response.statusCode == 200) {
-        final parsedData = _parseExplorePage(response.data);
-        if (parsedData.moodsAndGenres.isNotEmpty) {
-          return parsedData;
-        }
+        return _parseExplorePage(response.data);
       }
     } catch (_) {}
 
-    // Default fallback moods & genres matching Metrolist Android
     return const ExplorePageData(
       newReleaseAlbums: [],
       moodsAndGenres: [
-        MoodAndGenreItem(
-            title: 'Chill',
-            stripeColor: 0xFF4E65FF,
-            browseId: 'FEmusic_moods_and_genres_category'),
-        MoodAndGenreItem(
-            title: 'Commute',
-            stripeColor: 0xFFFF5722,
-            browseId: 'FEmusic_moods_and_genres_category'),
-        MoodAndGenreItem(
-            title: 'Energy Boost',
-            stripeColor: 0xFFFFC107,
-            browseId: 'FEmusic_moods_and_genres_category'),
-        MoodAndGenreItem(
-            title: 'Focus',
-            stripeColor: 0xFF00BCD4,
-            browseId: 'FEmusic_moods_and_genres_category'),
-        MoodAndGenreItem(
-            title: 'Party',
-            stripeColor: 0xFFE91E63,
-            browseId: 'FEmusic_moods_and_genres_category'),
-        MoodAndGenreItem(
-            title: 'Romance',
-            stripeColor: 0xFF9C27B0,
-            browseId: 'FEmusic_moods_and_genres_category'),
-        MoodAndGenreItem(
-            title: 'Sleep',
-            stripeColor: 0xFF3F51B5,
-            browseId: 'FEmusic_moods_and_genres_category'),
-        MoodAndGenreItem(
-            title: 'Workout',
-            stripeColor: 0xFF4CAF50,
-            browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(title: 'Chill', stripeColor: 0xFF4E65FF, browseId: 'FEmusic_moods_and_genres_category'),
+        MoodAndGenreItem(title: 'Focus', stripeColor: 0xFF00BCD4, browseId: 'FEmusic_moods_and_genres_category'),
       ],
     );
   }
 
   ExplorePageData _parseExplorePage(dynamic data) {
-    final List<AlbumItem> albums = [];
-    final List<MoodAndGenreItem> moods = [];
+    return ExplorePageParser.parse(data);
+  }
 
+  Future<List<SongItem>> getPlaylistPage(String playlistId) async {
+    final cleanId = playlistId.startsWith('VL') ? playlistId : 'VL$playlistId';
     try {
-      final contents = data['contents']?['singleColumnBrowseResultsRenderer']
-              ?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']
-          ?['contents'];
-      if (contents is List) {
-        for (var section in contents) {
-          final carousel = section['musicCarouselShelfRenderer'];
-          if (carousel != null) {
-            if (carousel['contents'] is List) {
-              for (var item in carousel['contents']) {
-                final navBtn = item['musicNavigationButtonRenderer'];
-                if (navBtn != null) {
-                  final text = navBtn['buttonText']?['runs']?[0]?['text'];
-                  final color =
-                      navBtn['solid']?['leftStripeColor'] ?? 0xFF6750A4;
-                  final browseId = navBtn['clickCommand']?['browseEndpoint']
-                          ?['browseId'] ??
-                      '';
-                  if (text != null && browseId.isNotEmpty) {
-                    moods.add(
-                      MoodAndGenreItem(
-                        title: text,
-                        stripeColor: color is int ? color : 0xFF6750A4,
-                        browseId: browseId,
-                      ),
-                    );
-                  }
-                }
-              }
-            }
+      final body = _buildContext()..['browseId'] = cleanId;
+      final response = await _dio.post('/browse', data: body);
+      if (response.statusCode == 200 && response.data is Map) {
+        return AlbumPageParser.parseTracks(response.data);
+      }
+    } catch (_) {}
+    return const [];
+  }
+
+  Future<ArtistPageData> getArtistPage(String artistId) async {
+    try {
+      final body = _buildContext()..['browseId'] = artistId;
+      final response = await _dio.post('/browse', data: body);
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return ArtistPageParser.parseArtistPage(response.data, artistId);
+      }
+    } catch (_) {}
+    return ArtistPageData(
+      artist: ArtistItem(id: artistId, title: 'Artist'),
+      sections: const [],
+    );
+  }
+
+  Future<ArtistSection?> getArtistItems(String params) async {
+    try {
+      final body = _buildContext()
+        ..['browseId'] = 'FEmusic_artist_detail'
+        ..['params'] = params;
+      final response = await _dio.post('/browse', data: body);
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        final contents = response.data['contents']?['singleColumnBrowseResultsRenderer']?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
+        if (contents is List && contents.isNotEmpty) {
+          final shelf = contents[0]['musicShelfRenderer'];
+          final carousel = contents[0]['musicCarouselShelfRenderer'];
+          if (shelf is Map<String, dynamic>) {
+            return ArtistPageParser.fromMusicShelfRenderer(MusicShelfRenderer.fromJson(shelf));
+          } else if (carousel is Map<String, dynamic>) {
+            return ArtistPageParser.fromMusicCarouselShelfRenderer(MusicCarouselShelfRenderer.fromJson(carousel));
           }
         }
       }
     } catch (_) {}
+    return null;
+  }
 
-    return ExplorePageData(
-      newReleaseAlbums: albums,
-      moodsAndGenres: moods,
+  Future<ArtistSection?> getArtistItemsContinuation(String continuation) async {
+    try {
+      final body = _buildContext()..['continuation'] = continuation;
+      final response = await _dio.post('/browse?continuation=$continuation&ctoken=$continuation', data: body);
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        final continuationContents = response.data['continuationContents']?['musicShelfContinuation'];
+        if (continuationContents is Map<String, dynamic>) {
+          return ArtistPageParser.fromMusicShelfRenderer(MusicShelfRenderer.fromJson(continuationContents));
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<AlbumPageData> getAlbumPage(String browseId) async {
+    try {
+      final body = _buildContext()..['browseId'] = browseId;
+      final response = await _dio.post('/browse', data: body);
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return AlbumPageParser.parseAlbumPage(response.data, browseId);
+      }
+    } catch (_) {}
+    return AlbumPageData(
+      album: AlbumItem(browseId: browseId, playlistId: '', title: 'Album'),
+      songs: const [],
     );
+  }
+
+  Future<ChartsPage> getChartsPage({String? params}) async {
+    try {
+      final body = _buildContext()..['browseId'] = 'FEmusic_charts';
+      if (params != null && params.isNotEmpty) {
+        body['params'] = params;
+      }
+      final response = await _dio.post('/browse', data: body);
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return ChartsPage.fromJson(response.data);
+      }
+    } catch (_) {}
+    return const ChartsPage(sections: []);
+  }
+
+  Future<bool> likeVideo(String videoId, bool like) async {
+    try {
+      final endpoint = like ? '/like/like' : '/like/indifferent';
+      final body = _buildContext()..['target'] = {'videoId': videoId};
+      final response = await _dio.post(endpoint, data: body);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> likePlaylist(String playlistId, bool like) async {
+    try {
+      final endpoint = like ? '/like/like' : '/like/indifferent';
+      final body = _buildContext()..['target'] = {'playlistId': playlistId};
+      final response = await _dio.post(endpoint, data: body);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> subscribeChannel(String channelId, bool subscribe) async {
+    try {
+      final endpoint = subscribe ? '/subscription/subscribe' : '/subscription/unsubscribe';
+      final body = _buildContext()..['channelIds'] = [channelId];
+      final response = await _dio.post(endpoint, data: body);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<String?> createPlaylist(String title) async {
+    try {
+      final body = _buildContext()..['title'] = title;
+      final response = await _dio.post('/playlist/create', data: body);
+      if (response.statusCode == 200 && response.data is Map) {
+        return response.data['playlistId']?.toString();
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<bool> deletePlaylist(String playlistId) async {
+    try {
+      final body = _buildContext()..['playlistId'] = playlistId;
+      final response = await _dio.post('/playlist/delete', data: body);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> renamePlaylist(String playlistId, String newTitle) async {
+    try {
+      final body = _buildContext()
+        ..['playlistId'] = playlistId
+        ..['actions'] = [
+          {
+            'action': 'ACTION_SET_PLAYLIST_NAME',
+            'playlistName': newTitle,
+          }
+        ];
+      final response = await _dio.post('/browse/edit_playlist', data: body);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> addToPlaylist(String playlistId, List<String> videoIds) async {
+    try {
+      final actions = videoIds
+          .map((id) => {
+                'action': 'ACTION_ADD_VIDEO',
+                'addedVideoId': id,
+              })
+          .toList();
+      final body = _buildContext()
+        ..['playlistId'] = playlistId
+        ..['actions'] = actions;
+      final response = await _dio.post('/browse/edit_playlist', data: body);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> addPlaylistToPlaylist(String targetPlaylistId, String sourcePlaylistId) async {
+    try {
+      final body = _buildContext()
+        ..['playlistId'] = targetPlaylistId
+        ..['actions'] = [
+          {
+            'action': 'ACTION_ADD_PLAYLIST',
+            'addedFullListId': sourcePlaylistId,
+          }
+        ];
+      final response = await _dio.post('/browse/edit_playlist', data: body);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> removeFromPlaylist(String playlistId, String setVideoId, String videoId) async {
+    try {
+      final body = _buildContext()
+        ..['playlistId'] = playlistId
+        ..['actions'] = [
+          {
+            'action': 'ACTION_REMOVE_VIDEO',
+            'setVideoId': setVideoId,
+            'removedVideoId': videoId,
+          }
+        ];
+      final response = await _dio.post('/browse/edit_playlist', data: body);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<LibraryPageData> getLibraryPage({String? browseId, String? params}) async {
+    try {
+      final body = _buildContext()..['browseId'] = browseId ?? 'FEmusic_library_landing';
+      if (params != null && params.isNotEmpty) {
+        body['params'] = params;
+      }
+      final response = await _dio.post('/browse', data: body);
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return LibraryPageParser.parseLibraryPage(response.data);
+      }
+    } catch (_) {}
+    return const LibraryPageData(items: []);
+  }
+
+  Future<LibraryPageData> getLibraryContinuation(String continuation) async {
+    try {
+      final body = _buildContext()..['continuation'] = continuation;
+      final response = await _dio.post('/browse?continuation=$continuation&ctoken=$continuation', data: body);
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return LibraryPageParser.parseLibraryPage(response.data);
+      }
+    } catch (_) {}
+    return const LibraryPageData(items: []);
+  }
+
+  Future<bool> addSongToLibrary(String videoId) async {
+    try {
+      final body = _buildContext()..['feedbackTokens'] = ['add_to_library'];
+      final response = await _dio.post('/feedback', data: body);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> removeSongFromLibrary(String videoId) async {
+    try {
+      final body = _buildContext()..['feedbackTokens'] = ['remove_from_library'];
+      final response = await _dio.post('/feedback', data: body);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<PodcastPageData> getPodcastPage(String podcastId) async {
+    try {
+      final body = _buildContext()..['browseId'] = podcastId;
+      final response = await _dio.post('/browse', data: body);
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return PodcastPageParser.parsePodcastPage(response.data, podcastId);
+      }
+    } catch (_) {}
+    return PodcastPageData(
+      podcast: PodcastItem(id: podcastId, title: 'Podcast'),
+      episodes: const [],
+    );
+  }
+
+  Future<bool> savePodcast(String podcastId, bool save) async {
+    return subscribeChannel(podcastId, save);
+  }
+
+  Future<bool> addEpisodeToSavedEpisodes(String videoId) async {
+    return likeVideo(videoId, true);
+  }
+
+  Future<bool> removeEpisodeFromSavedEpisodes(String videoId) async {
+    return likeVideo(videoId, false);
+  }
+
+  Future<List<PodcastItem>> getSavedPodcasts() async {
+    final page = await getLibraryPage(browseId: 'FEmusic_liked_podcasts');
+    return page.items.whereType<PodcastItem>().toList();
+  }
+
+  Future<List<EpisodeItem>> getNewEpisodes() async {
+    final page = await getPodcastPage('FEmusic_new_episodes');
+    return page.episodes;
+  }
+
+  Future<NextPageData> getNextPage({
+    String? videoId,
+    String? playlistId,
+    String? playlistSetVideoId,
+    int? index,
+    String? params,
+    String? continuation,
+  }) async {
+    try {
+      final body = _buildContext();
+      if (videoId != null) body['videoId'] = videoId;
+      if (playlistId != null) body['playlistId'] = playlistId;
+      if (playlistSetVideoId != null) body['playlistSetVideoId'] = playlistSetVideoId;
+      if (index != null) body['index'] = index;
+      if (params != null) body['params'] = params;
+      if (continuation != null) body['continuation'] = continuation;
+
+      final response = await _dio.post('/next', data: body);
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return NextPageParser.parse(response.data);
+      }
+    } catch (_) {}
+    return const NextPageData(queue: []);
+  }
+
+  Future<List<YTItem>> getRelatedPage(String videoId) async {
+    try {
+      final body = _buildContext()..['browseId'] = 'MPTR$videoId';
+      final response = await _dio.post('/browse', data: body);
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return _parseSearchResults(response.data);
+      }
+    } catch (_) {}
+    return const [];
+  }
+
+  Future<bool> registerPlayback(String playbackUrl) async {
+    try {
+      final response = await _dio.get(playbackUrl);
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> moveSongInPlaylist(String playlistId, String setVideoId, String? nextSetVideoId) async {
+    try {
+      final actionMap = <String, dynamic>{
+        'action': 'ACTION_MOVE_VIDEO',
+        'setVideoId': setVideoId,
+      };
+      if (nextSetVideoId != null) {
+        actionMap['movedSetVideoIdPreceding'] = nextSetVideoId;
+      }
+      final body = _buildContext()
+        ..['playlistId'] = playlistId
+        ..['actions'] = [actionMap];
+      final response = await _dio.post('/browse/edit_playlist', data: body);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<String?> lyrics(String browseId) async {
+    try {
+      final body = _buildContext()..['browseId'] = browseId;
+      final response = await _dio.post('/browse', data: body);
+      if (response.statusCode == 200 && response.data is Map) {
+        final description = response.data['contents']?['sectionListRenderer']
+            ?['contents']?[0]?['musicDescriptionShelfRenderer']?['description']?['runs'];
+        if (description is List && description.isNotEmpty) {
+          return description.map((r) => r['text']).join();
+        }
+      }
+    } catch (_) {}
+    return null;
   }
 
   List<YTItem> _parseSearchResults(dynamic data) {
@@ -557,41 +743,13 @@ class YouTubeService {
           ?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
       if (contents is List) {
         for (var section in contents) {
-          // Top Result Card
-          final cardShelf = section['musicCardShelfRenderer'];
-          if (cardShelf is Map) {
-            final cardTitleRuns = cardShelf['title']?['runs'];
-            final cardTitle =
-                (cardTitleRuns is List && cardTitleRuns.isNotEmpty)
-                    ? cardTitleRuns[0]['text'] ?? ''
-                    : '';
-            final cardVideoId = cardShelf['buttons']?[0]?['buttonRenderer']
-                    ?['command']?['watchEndpoint']?['videoId'] ??
-                cardShelf['onTap']?['watchEndpoint']?['videoId'];
-            final thumbnails = cardShelf['thumbnail']?['musicThumbnailRenderer']
-                ?['thumbnail']?['thumbnails'];
-            final cardThumb = (thumbnails is List && thumbnails.isNotEmpty)
-                ? thumbnails.last['url']
-                : null;
-
-            if (cardVideoId is String && cardVideoId.isNotEmpty) {
-              items.add(SongItem(
-                id: cardVideoId,
-                title: cardTitle,
-                thumbnailUrl: cardThumb,
-                artists: const [],
-              ));
-            }
-          }
-
-          // Shelves (Songs, Videos, Artists, Albums)
           final shelf = section['musicShelfRenderer'];
           if (shelf is Map && shelf['contents'] is List) {
             for (var item in shelf['contents']) {
               final renderer = item['musicResponsiveListItemRenderer'];
               if (renderer != null) {
-                final ytItem = _parseListItemRenderer(renderer);
-                if (ytItem != null) items.add(ytItem);
+                final song = AlbumPageParser.getSong(MusicResponsiveListItemRenderer.fromJson(renderer));
+                if (song != null) items.add(song);
               }
             }
           }
@@ -599,166 +757,5 @@ class YouTubeService {
       }
     } catch (_) {}
     return items;
-  }
-
-  YTItem? _parseListItemRenderer(dynamic renderer) {
-    try {
-      final videoId = _extractVideoId(renderer);
-      final browseId = _extractBrowseId(renderer);
-      final id = videoId ?? browseId ?? '';
-      if (id.isEmpty) return null;
-
-      final runs = renderer['flexColumns']?[0]
-          ?['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
-      final title =
-          (runs is List && runs.isNotEmpty) ? runs[0]['text'] ?? '' : '';
-
-      final thumbnails = renderer['thumbnail']?['musicThumbnailRenderer']
-          ?['thumbnail']?['thumbnails'];
-      final thumbnailUrl = (thumbnails is List && thumbnails.isNotEmpty)
-          ? thumbnails.last['url']
-          : null;
-
-      if (videoId != null && videoId.isNotEmpty) {
-        final artists = _extractArtists(renderer);
-        final durationSec = _extractDurationSeconds(renderer);
-        return SongItem(
-          id: videoId,
-          title: title,
-          thumbnailUrl: thumbnailUrl,
-          artists: artists.isNotEmpty ? artists : const ['YouTube Music'],
-          durationSeconds: durationSec,
-        );
-      } else if (browseId != null && browseId.startsWith('UC')) {
-        return ArtistItem(
-          id: browseId,
-          title: title,
-          thumbnailUrl: thumbnailUrl,
-        );
-      }
-    } catch (_) {}
-    return null;
-  }
-
-  String? _extractVideoId(dynamic renderer) {
-    if (renderer == null || renderer is! Map) return null;
-
-    final direct = renderer['playlistItemData']?['videoId'];
-    if (direct is String && direct.isNotEmpty) return direct;
-
-    final overlayVideoId = renderer['overlay']
-                ?['musicItemThumbnailOverlayRenderer']?['content']
-            ?['musicPlayButtonRenderer']?['playNavigationEndpoint']
-        ?['watchEndpoint']?['videoId'];
-    if (overlayVideoId is String && overlayVideoId.isNotEmpty)
-      return overlayVideoId;
-
-    final navVideoId =
-        renderer['navigationEndpoint']?['watchEndpoint']?['videoId'];
-    if (navVideoId is String && navVideoId.isNotEmpty) return navVideoId;
-
-    final flexCols = renderer['flexColumns'];
-    if (flexCols is List) {
-      for (final col in flexCols) {
-        final runs =
-            col['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
-        if (runs is List) {
-          for (final run in runs) {
-            final runVideoId =
-                run['navigationEndpoint']?['watchEndpoint']?['videoId'];
-            if (runVideoId is String && runVideoId.isNotEmpty)
-              return runVideoId;
-          }
-        }
-      }
-    }
-
-    final menuItems = renderer['menu']?['musicMenuRenderer']?['items'];
-    if (menuItems is List) {
-      for (final item in menuItems) {
-        final vId = item['menuNavigationItemRenderer']?['navigationEndpoint']
-                ?['watchEndpoint']?['videoId'] ??
-            item['menuServiceItemRenderer']?['serviceEndpoint']
-                ?['queueAddEndpoint']?['queueTarget']?['videoId'];
-        if (vId is String && vId.isNotEmpty) return vId;
-      }
-    }
-
-    return null;
-  }
-
-  String? _extractBrowseId(dynamic renderer) {
-    if (renderer == null || renderer is! Map) return null;
-    final direct =
-        renderer['navigationEndpoint']?['browseEndpoint']?['browseId'];
-    if (direct is String && direct.isNotEmpty) return direct;
-
-    final flexCols = renderer['flexColumns'];
-    if (flexCols is List) {
-      for (final col in flexCols) {
-        final runs =
-            col['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
-        if (runs is List) {
-          for (final run in runs) {
-            final bId =
-                run['navigationEndpoint']?['browseEndpoint']?['browseId'];
-            if (bId is String && bId.isNotEmpty) return bId;
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-  List<String> _extractArtists(dynamic renderer) {
-    final List<String> artists = [];
-    final flexCols = renderer['flexColumns'];
-    if (flexCols is List && flexCols.length > 1) {
-      final runs = flexCols[1]['musicResponsiveListItemFlexColumnRenderer']
-          ?['text']?['runs'];
-      if (runs is List) {
-        for (final run in runs) {
-          final text = run['text']?.toString() ?? '';
-          if (text.isNotEmpty &&
-              text != ' • ' &&
-              text != 'Song' &&
-              text != 'Video' &&
-              text != 'Artist' &&
-              text != 'Single' &&
-              text != 'Explicit' &&
-              !text.contains(':')) {
-            artists.add(text);
-          }
-        }
-      }
-    }
-    return artists;
-  }
-
-  int? _extractDurationSeconds(dynamic renderer) {
-    final flexCols = renderer['flexColumns'];
-    if (flexCols is List && flexCols.length > 1) {
-      final runs = flexCols[1]['musicResponsiveListItemFlexColumnRenderer']
-          ?['text']?['runs'];
-      if (runs is List) {
-        for (final run in runs) {
-          final text = run['text']?.toString() ?? '';
-          if (text.contains(':')) {
-            final parts = text.split(':');
-            if (parts.length == 2) {
-              final mins = int.tryParse(parts[0]) ?? 0;
-              final secs = int.tryParse(parts[1]) ?? 0;
-              return (mins * 60) + secs;
-            } else if (parts.length == 3) {
-              final hrs = int.tryParse(parts[0]) ?? 0;
-              final mins = int.tryParse(parts[1]) ?? 0;
-              final secs = int.tryParse(parts[2]) ?? 0;
-              return (hrs * 3600) + (mins * 60) + secs;
-            }
-          }
-        }
-      }
-    }
-    return null;
   }
 }

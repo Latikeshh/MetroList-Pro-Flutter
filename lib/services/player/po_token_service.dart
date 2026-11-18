@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/services.dart' show rootBundle;
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class PoTokenResult {
   final String playerRequestPoToken;
@@ -52,6 +53,10 @@ class PoTokenService {
 
   /// Generates or retrieves an original PO token result for [videoId] and [visitorData].
   Future<PoTokenResult?> getPoToken(String videoId, String visitorData) async {
+    if (visitorData.isEmpty) {
+      return null;
+    }
+
     if (_cachedPoToken != null &&
         _cachedVisitorData == visitorData &&
         !isExpired) {
@@ -62,8 +67,8 @@ class PoTokenService {
       await loadBotGuardHtml();
 
       final bytes = utf8.encode('$videoId:$visitorData:${DateTime.now().millisecondsSinceEpoch}');
-      final playerToken = 'Mn' + base64Url.encode(bytes).replaceAll('=', '');
-      final streamingToken = 'Mn' + base64Url.encode(utf8.encode('stream:$videoId:$visitorData')).replaceAll('=', '');
+      final playerToken = 'Mn${base64Url.encode(bytes).replaceAll('=', '')}';
+      final streamingToken = 'Mn${base64Url.encode(utf8.encode('stream:$videoId:$visitorData')).replaceAll('=', '')}';
 
       final result = PoTokenResult(
         playerRequestPoToken: playerToken,

@@ -1,6 +1,7 @@
 library;
 
 import 'package:flutter/material.dart';
+
 import '../../services/innertube/lyrics_service.dart';
 import '../../services/player/audio_player_service.dart';
 
@@ -26,8 +27,8 @@ class _LyricsSheetState extends State<LyricsSheet> {
     super.initState();
     final song = _playerService.currentSong;
     if (song != null) {
-      final artist = song.artists.isNotEmpty ? song.artists.first : '';
-      _lyricsFuture = _lyricsService.getLyrics(song.title, artist);
+      final artist = song.artists.isNotEmpty ? song.artists.first.name : '';
+      _lyricsFuture = _lyricsService.getLyrics(song.title, artist, videoId: song.id);
     }
   }
 

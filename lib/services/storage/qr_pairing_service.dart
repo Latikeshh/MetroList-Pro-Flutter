@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:rxdart/rxdart.dart';
+
 import 'account_service.dart';
 
 enum QrPairingState {
