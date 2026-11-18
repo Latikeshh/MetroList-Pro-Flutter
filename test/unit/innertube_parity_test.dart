@@ -212,6 +212,92 @@ void main() {
       expect(parsed.relatedEndpoint, 'related-id');
     });
 
+    test('PodcastPageParser reads two-column multi-row episodes', () {
+      final parsed = PodcastPageParser.parsePodcastPage(
+        {
+          'header': {
+            'musicResponsiveHeaderRenderer': {
+              'title': {
+                'runs': [{'text': 'Test Podcast'}]
+              },
+              'straplineTextOne': {
+                'runs': [
+                  {
+                    'text': 'Podcast Host',
+                    'navigationEndpoint': {
+                      'browseEndpoint': {'browseId': 'UC-host'}
+                    }
+                  }
+                ]
+              },
+              'thumbnail': {
+                'musicThumbnailRenderer': {
+                  'thumbnail': {
+                    'thumbnails': [
+                      {'url': 'https://example.com/podcast.jpg'}
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          'contents': {
+            'twoColumnBrowseResultsRenderer': {
+              'secondaryContents': {
+                'sectionListRenderer': {
+                  'contents': [
+                    {
+                      'musicShelfRenderer': {
+                        'contents': [
+                          {
+                            'musicMultiRowListItemRenderer': {
+                              'title': {
+                                'runs': [{'text': 'Episode One'}]
+                              },
+                              'subtitle': {
+                                'runs': [
+                                  {'text': '2026-11-18'},
+                                  {'text': ' • '},
+                                  {'text': '25:10'}
+                                ]
+                              },
+                              'secondSubtitle': {
+                                'runs': [{'text': 'Published today'}]
+                              },
+                              'onTap': {
+                                'watchEndpoint': {'videoId': 'episode-1'}
+                              },
+                              'thumbnail': {
+                                'musicThumbnailRenderer': {
+                                  'thumbnail': {
+                                    'thumbnails': [
+                                      {'url': 'https://example.com/episode.jpg'}
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        'MPSP-test',
+      );
+
+      expect(parsed.podcast.title, 'Test Podcast');
+      expect(parsed.podcast.author?.name, 'Podcast Host');
+      expect(parsed.episodes, hasLength(1));
+      expect(parsed.episodes.single.id, 'episode-1');
+      expect(parsed.episodes.single.title, 'Episode One');
+      expect(parsed.episodes.single.podcast?.name, 'Test Podcast');
+    });
+
     test('InnerTubeClient SAPISIDHASH computation works correctly', () {
       const mockCookie = 'SAPISID=test_sapisid_12345; __Secure-3PAPISID=test_sapisid_12345;';
       final hash = InnerTubeClient.getSapisidHash(mockCookie);
