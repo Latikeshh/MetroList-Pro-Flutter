@@ -1220,7 +1220,7 @@ class YouTubeService {
         body['serviceIntegrityDimensions'] = {'poToken': poToken};
       }
       final response = await _dio.post(
-        '/player',
+        '${client.client.endpointUrl}/player',
         data: body,
         options: Options(headers: _getHeaders(client: client)),
       );
