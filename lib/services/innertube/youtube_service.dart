@@ -7,6 +7,7 @@ import 'innertube_client.dart';
 import 'models/account_info.dart';
 import 'models/explore_models.dart';
 import 'models/renderers.dart';
+import 'models/return_youtube_dislike_response.dart';
 import 'models/runs.dart';
 import 'models/response/account_menu_response.dart';
 import 'models/response/get_transcript_response.dart';
@@ -1512,6 +1513,115 @@ class YouTubeService {
       }
     } catch (_) {}
     return null;
+  }
+
+  Future<Map<String, dynamic>?> getNextResponse({
+    required String videoId,
+    String? playlistId,
+    String? playlistSetVideoId,
+    int? index,
+    String? params,
+    String? continuation,
+    YouTubeClient client = YouTubeClient.web,
+  }) async {
+    try {
+      final body = _buildContext(client)..['videoId'] = videoId;
+      if (playlistId != null) body['playlistId'] = playlistId;
+      if (playlistSetVideoId != null) {
+        body['playlistSetVideoId'] = playlistSetVideoId;
+      }
+      if (index != null) body['index'] = index;
+      if (params != null) body['params'] = params;
+      if (continuation != null) body['continuation'] = continuation;
+      final response = await _dio.post(
+        client.client.endpointUrl + '/next',
+        data: body,
+        options: Options(headers: _getHeaders(client: client)),
+      );
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(response.data);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<ReturnYouTubeDislikeResponse?> getReturnYouTubeDislike(
+    String videoId,
+  ) async {
+    try {
+      final response = await _dio.get(
+        'https://returnyoutubedislikeapi.com/Votes',
+        queryParameters: {'videoId': videoId},
+        options: Options(
+          headers: const {'Accept': 'application/json'},
+        ),
+      );
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return ReturnYouTubeDislikeResponse.fromJson(response.data);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<MediaInfo?> getMediaInfo(String videoId) async {
+    final response = await getNextResponse(videoId: videoId);
+    if (response == null) return null;
+
+    final rawContents = response['contents']?['twoColumnWatchNextResults']
+        ?['results']?['results']?['contents'];
+    if (rawContents is! List) return null;
+
+    Map<String, dynamic>? secondary;
+    Map<String, dynamic>? primary;
+    for (final raw in rawContents) {
+      if (raw is! Map) continue;
+      final secondaryRenderer = raw['videoSecondaryInfoRenderer'];
+      final primaryRenderer = raw['videoPrimaryInfoRenderer'];
+      if (secondary == null && secondaryRenderer is Map<String, dynamic>) {
+        secondary = secondaryRenderer;
+      }
+      if (primary == null && primaryRenderer is Map<String, dynamic>) {
+        primary = primaryRenderer;
+      }
+    }
+
+    final dislike = await getReturnYouTubeDislike(videoId);
+    final owner = secondary?['owner']?['videoOwnerRenderer'];
+    final authorRuns = owner?['title']?['runs'];
+    final author = authorRuns is List && authorRuns.isNotEmpty
+        ? authorRuns.first['text']?.toString()
+        : null;
+    final authorThumbs = owner?['thumbnail']?['thumbnails'];
+    String? authorThumbnail;
+    if (authorThumbs is List && authorThumbs.isNotEmpty) {
+      final preferred = authorThumbs.where(
+        (item) => item is Map && item['height'] == 48,
+      );
+      final chosen = preferred.isNotEmpty ? preferred.first : authorThumbs.last;
+      authorThumbnail = chosen['url']?.toString().replaceAll('s48', 's960');
+    }
+
+    final titleRuns = primary?['title']?['runs'];
+    final title = titleRuns is List && titleRuns.isNotEmpty
+        ? titleRuns.first['text']?.toString()
+        : null;
+    final dateText = primary?['dateText']?['simpleText']?.toString();
+    final subscriberText = owner?['subscriberCountText']?['simpleText']?.toString();
+
+    return MediaInfo(
+      videoId: videoId,
+      title: title,
+      author: author,
+      authorId: owner?['navigationEndpoint']?['browseEndpoint']?['browseId']
+          ?.toString(),
+      authorThumbnail: authorThumbnail,
+      description: secondary?['attributedDescription']?['content']?.toString(),
+      uploadDate: dateText,
+      subscribers: subscriberText?.split(' ').firstOrNull,
+      viewCount: dislike?.viewCount,
+      like: dislike?.likes,
+      dislike: dislike?.dislikes,
+    );
   }
 
   Future<Map<String, dynamic>?> getPlayerResponse({
