@@ -1,10 +1,10 @@
 import '../models/yt_item.dart';
 
 class PlaylistContinuationPage {
-  final List<PlaylistItem> songs;
+  final List<SongItem> songs;
   final String? continuation;
 
-  PlaylistContinuationPage({
+  const PlaylistContinuationPage({
     required this.songs,
     this.continuation,
   });
