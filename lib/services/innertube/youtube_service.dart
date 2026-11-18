@@ -1015,6 +1015,32 @@ class YouTubeService {
     );
   }
 
+  Future<List<EpisodeItem>> getPodcastContinuation(
+    String continuation, {
+    PodcastItem? podcast,
+  }) async {
+    try {
+      final body = _buildContext(useLogin: true)
+        ..['continuation'] = continuation;
+      final response = await _dio.post(
+        '/browse',
+        queryParameters: {
+          'continuation': continuation,
+          'ctoken': continuation,
+        },
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
+      if (response.statusCode == 200) {
+        return PodcastPageParser.parsePodcastContinuation(
+          response.data,
+          podcast: podcast,
+        );
+      }
+    } catch (_) {}
+    return const [];
+  }
+
   Future<bool> savePodcast(String podcastId, bool save) async {
     final playlistId = podcastId.startsWith('MPSP')
         ? podcastId.substring(4)
