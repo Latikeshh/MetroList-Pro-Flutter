@@ -260,10 +260,14 @@ class PlaylistPageParser {
     }
 
     final actions = data['onResponseReceivedActions'];
+    final appendedItems = <dynamic>[];
     if (actions is List) {
       for (final action in actions) {
         final appended = action?['appendContinuationItemsAction']?['continuationItems'];
-        if (appended is List) allRawItems.addAll(appended);
+        if (appended is List) {
+          allRawItems.addAll(appended);
+          appendedItems.addAll(appended);
+        }
       }
     }
 
@@ -293,10 +297,7 @@ class PlaylistPageParser {
     final continuation = nextContinuation(sectionList?['continuations']) ??
         nextContinuation(contents?['musicPlaylistShelfContinuation']?['continuations']) ??
         nextContinuation(contents?['musicShelfContinuation']?['continuations']) ??
-        nextContinuation(actions?.expand((action) {
-          final appended = action?['appendContinuationItemsAction']?['continuationItems'];
-          return appended is List ? appended : const [];
-        }).toList());
+        nextContinuation(appendedItems);
 
     return PlaylistContinuationPage(
       songs: songs,
