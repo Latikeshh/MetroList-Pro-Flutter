@@ -983,26 +983,171 @@ class YouTubeService {
   }
 
   List<YTItem> _parseSearchResults(dynamic data) {
-    final List<YTItem> items = [];
+    final items = <YTItem>[];
     try {
       final contents = data['contents']?['tabbedSearchResultsRenderer']?['tabs']
           ?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
-      if (contents is List) {
-        for (var section in contents) {
-          final shelf = section['musicShelfRenderer'];
-          if (shelf is Map && shelf['contents'] is List) {
-            for (var item in shelf['contents']) {
-              final renderer = item['musicResponsiveListItemRenderer'];
-              if (renderer != null) {
-                final song = AlbumPageParser.getSong(MusicResponsiveListItemRenderer.fromJson(renderer));
-                if (song != null) items.add(song);
-              }
-            }
+      if (contents is! List) return items;
+
+      for (final section in contents) {
+        if (section is! Map) continue;
+        final shelf = section['musicShelfRenderer'];
+        final itemSection = section['itemSectionRenderer'];
+        final rawItems = shelf is Map
+            ? shelf['contents']
+            : itemSection is Map
+                ? itemSection['contents']
+                : null;
+        if (rawItems is! List) continue;
+
+        for (final rawItem in rawItems) {
+          if (rawItem is! Map) continue;
+          final renderer = rawItem['musicResponsiveListItemRenderer'];
+          if (renderer is Map<String, dynamic>) {
+            final parsed = LibraryPageParser.fromMusicResponsiveListItemRenderer(
+              MusicResponsiveListItemRenderer.fromJson(renderer),
+            );
+            if (parsed != null) items.add(parsed);
+          }
+          final twoRow = rawItem['musicTwoRowItemRenderer'];
+          if (twoRow is Map<String, dynamic>) {
+            final parsed = LibraryPageParser.fromMusicTwoRowItemRenderer(
+              MusicTwoRowItemRenderer.fromJson(twoRow),
+            );
+            if (parsed != null) items.add(parsed);
           }
         }
       }
     } catch (_) {}
     return items;
+  }
+
+  static const String _artistSearchFilter =
+      'EgWKAQIgAWoKEAkQChAFEAMQBA%3D%3D';
+
+  Future<Map<String, String>> resolveArtistIdMap(List<YTItem> items) async {
+    final missingNames = <String>{};
+    for (final item in items) {
+      if (item is SongItem) {
+        missingNames.addAll(item.artists.where((artist) => artist.id == null).map((artist) => artist.name));
+      } else if (item is AlbumItem) {
+        missingNames.addAll((item.artists ?? const []).where((artist) => artist.id == null).map((artist) => artist.name));
+      } else if (item is PlaylistItem || item is EpisodeItem || item is PodcastItem) {
+        final author = item is PlaylistItem
+            ? item.author
+            : item is EpisodeItem
+                ? item.author
+                : (item as PodcastItem).author;
+        if (author != null && author.id == null) missingNames.add(author.name);
+      }
+    }
+
+    final names = missingNames.where((name) => name.trim().isNotEmpty).toList();
+    final resolved = <String, String>{};
+    for (var offset = 0; offset < names.length; offset += 8) {
+      final batch = names.skip(offset).take(8);
+      final results = await Future.wait(batch.map((name) async {
+        final candidates = await search(name, filter: _artistSearchFilter);
+        final match = candidates.whereType<ArtistItem>().where(
+          (artist) => artist.title.trim().toLowerCase() == name.trim().toLowerCase(),
+        ).firstOrNull;
+        return match == null ? null : MapEntry(name, match.id);
+      }));
+      for (final entry in results.whereType<MapEntry<String, String>>()) {
+        resolved[entry.key] = entry.value;
+      }
+    }
+    return resolved;
+  }
+
+  Future<List<YTItem>> resolveArtistIds(List<YTItem> items) async {
+    final resolved = await resolveArtistIdMap(items);
+    Artist resolve(Artist artist) => artist.id == null && resolved[artist.name] != null
+        ? Artist(name: artist.name, id: resolved[artist.name])
+        : artist;
+
+    return items.map((item) {
+      if (item is SongItem) {
+        return SongItem(
+          id: item.id,
+          title: item.title,
+          artists: item.artists.map(resolve).toList(),
+          album: item.album,
+          duration: item.duration,
+          musicVideoType: item.musicVideoType,
+          chartPosition: item.chartPosition,
+          chartChange: item.chartChange,
+          thumbnail: item.thumbnail,
+          explicit: item.explicit,
+          endpoint: item.endpoint,
+          setVideoId: item.setVideoId,
+          libraryAddToken: item.libraryAddToken,
+          libraryRemoveToken: item.libraryRemoveToken,
+          historyRemoveToken: item.historyRemoveToken,
+          isEpisode: item.isEpisode,
+          uploadEntityId: item.uploadEntityId,
+        );
+      }
+      if (item is AlbumItem) {
+        return AlbumItem(
+          browseId: item.browseId,
+          playlistId: item.playlistId,
+          title: item.title,
+          artists: item.artists?.map(resolve).toList(),
+          year: item.year,
+          thumbnail: item.thumbnail,
+          explicit: item.explicit,
+        );
+      }
+      if (item is PlaylistItem) {
+        return PlaylistItem(
+          id: item.id,
+          title: item.title,
+          author: item.author == null ? null : resolve(item.author!),
+          songCountText: item.songCountText,
+          thumbnail: item.thumbnail,
+          playEndpoint: item.playEndpoint,
+          shuffleEndpoint: item.shuffleEndpoint,
+          radioEndpoint: item.radioEndpoint,
+          isEditable: item.isEditable,
+          isPodcast: item.isPodcast,
+          description: item.description,
+          authorAvatarUrl: item.authorAvatarUrl,
+        );
+      }
+      if (item is EpisodeItem) {
+        return EpisodeItem(
+          id: item.id,
+          title: item.title,
+          author: item.author == null ? null : resolve(item.author!),
+          podcast: item.podcast,
+          duration: item.duration,
+          publishDateText: item.publishDateText,
+          thumbnail: item.thumbnail,
+          explicit: item.explicit,
+          endpoint: item.endpoint,
+          libraryAddToken: item.libraryAddToken,
+          libraryRemoveToken: item.libraryRemoveToken,
+          markAsPlayedToken: item.markAsPlayedToken,
+          markAsUnplayedToken: item.markAsUnplayedToken,
+        );
+      }
+      if (item is PodcastItem) {
+        return PodcastItem(
+          id: item.id,
+          title: item.title,
+          author: item.author == null ? null : resolve(item.author!),
+          episodeCountText: item.episodeCountText,
+          thumbnail: item.thumbnail,
+          playEndpoint: item.playEndpoint,
+          shuffleEndpoint: item.shuffleEndpoint,
+          libraryAddToken: item.libraryAddToken,
+          libraryRemoveToken: item.libraryRemoveToken,
+          channelId: item.channelId,
+        );
+      }
+      return item;
+    }).toList();
   }
 
   /// Low-level browse parity for Kotlin YouTube.browse and continuation calls.
