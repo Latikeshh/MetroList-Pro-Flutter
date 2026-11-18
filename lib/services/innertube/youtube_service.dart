@@ -1528,6 +1528,8 @@ class YouTubeService {
         options: Options(
           contentType: 'application/x-www-form-urlencoded',
           responseType: ResponseType.plain,
+          sendTimeout: const Duration(minutes: 10),
+          receiveTimeout: const Duration(minutes: 10),
           headers: {
             ..._getHeaders(),
             'Content-Length': contentLength.toString(),
@@ -1545,7 +1547,8 @@ class YouTubeService {
       );
       final success = uploaded.statusCode != null &&
           uploaded.statusCode! >= 200 &&
-          uploaded.statusCode! < 300;
+          uploaded.statusCode! < 300 &&
+          uploaded.headers.value('X-Goog-Upload-Status') == 'final';
       if (success) onProgress?.call(1);
       return success;
     } catch (_) {
@@ -1591,7 +1594,10 @@ class YouTubeService {
         },
         data: image,
         options: Options(
+          contentType: 'application/octet-stream',
           responseType: ResponseType.json,
+          sendTimeout: const Duration(minutes: 2),
+          receiveTimeout: const Duration(minutes: 2),
           headers: {
             ..._getHeaders(),
             'Content-Length': image.length.toString(),
