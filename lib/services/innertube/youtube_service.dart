@@ -1798,7 +1798,10 @@ class YouTubeService {
 
   Future<List<SongItem>> getPlaylistContinuation(String continuation) async {
     try {
-      final response = await browseResponse(continuation: continuation);
+      final response = await browseResponse(
+        continuation: continuation,
+        useLogin: true,
+      );
       if (response != null) return AlbumPageParser.parseTracks(response);
     } catch (_) {}
     return const [];
