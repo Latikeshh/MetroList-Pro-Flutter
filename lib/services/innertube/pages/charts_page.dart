@@ -3,6 +3,7 @@ library;
 import '../models/renderers.dart';
 import '../models/yt_item.dart';
 import 'album_page.dart';
+import 'library_page.dart';
 
 enum ChartType {
   trending,
@@ -52,24 +53,49 @@ class ChartsPage {
                 ? titleRuns[0]['text']?.toString() ?? 'Charts'
                 : 'Charts';
 
+            final chartType = title.toLowerCase().contains('trending')
+                ? ChartType.trending
+                : title.toLowerCase().contains('top')
+                    ? ChartType.top
+                    : ChartType.genre;
+
             final List<YTItem> items = [];
             final rawItems = shelf['contents'];
             if (rawItems is List) {
-              for (var rawItem in rawItems) {
-                final item = rawItem['musicResponsiveListItemRenderer'];
-                if (item != null) {
-                  final song = AlbumPageParser.getSong(MusicResponsiveListItemRenderer.fromJson(item));
-                  if (song != null) items.add(song);
+              for (final rawItem in rawItems) {
+                if (rawItem is! Map<String, dynamic>) continue;
+                final responsive = rawItem['musicResponsiveListItemRenderer'];
+                final twoRow = rawItem['musicTwoRowItemRenderer'];
+                if (responsive is Map<String, dynamic>) {
+                  final item = LibraryPageParser.fromMusicResponsiveListItemRenderer(
+                    MusicResponsiveListItemRenderer.fromJson(responsive),
+                  );
+                  if (item != null) items.add(item);
+                } else if (twoRow is Map<String, dynamic>) {
+                  final item = LibraryPageParser.fromMusicTwoRowItemRenderer(
+                    MusicTwoRowItemRenderer.fromJson(twoRow),
+                  );
+                  if (item != null) items.add(item);
                 }
               }
             }
             if (items.isNotEmpty) {
-              sections.add(ChartSection(title: title, items: items));
+              sections.add(
+                ChartSection(title: title, items: items, chartType: chartType),
+              );
             }
           }
         }
       }
     } catch (_) {}
+
+    final sectionList = json['contents']?['singleColumnBrowseResultsRenderer']
+        ?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer'];
+    final continuations = sectionList?['continuations'];
+    if (continuations is List && continuations.isNotEmpty) {
+      continuationToken = continuations.first?['nextContinuationData']?['continuation']
+          ?.toString();
+    }
 
     return ChartsPage(
       sections: sections,
