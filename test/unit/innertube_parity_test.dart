@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metrolist_pro/services/innertube/innertube_client.dart';
 import 'package:metrolist_pro/services/innertube/pages/album_page.dart';
+import 'package:metrolist_pro/services/innertube/pages/next_page.dart';
+import 'package:metrolist_pro/services/innertube/models/youtube_client.dart';
 import 'package:metrolist_pro/services/innertube/pages/artist_page.dart';
 import 'package:metrolist_pro/services/innertube/pages/library_page.dart';
 import 'package:metrolist_pro/services/innertube/pages/podcast_page.dart';
@@ -103,6 +105,111 @@ void main() {
       final parsed = PodcastPageParser.parsePodcastPage({}, 'POD123');
       expect(parsed.podcast.id, 'POD123');
       expect(parsed.episodes, isEmpty);
+    });
+
+    test('InnerTubeClient login context follows client capability', () {
+      final client = InnerTubeClient();
+      client.dataSyncId = 'test-data-sync-id';
+
+      final anonymous = client.buildContext(YouTubeClient.webRemix);
+      expect(anonymous['context']['user'], isNull);
+
+      final authenticated = client.buildContext(
+        YouTubeClient.webRemix,
+        useLogin: true,
+      );
+      expect(
+        authenticated['context']['user']['onBehalfOfUser'],
+        'test-data-sync-id',
+      );
+
+      final mobile = client.buildContext(
+        YouTubeClient.androidMusic,
+        useLogin: true,
+      );
+      expect(mobile['context']['user'], isNull);
+      client.dataSyncId = null;
+    });
+
+    test('NextPageParser extracts queue selection and continuation', () {
+      final parsed = NextPageParser.parse({
+        'contents': {
+          'singleColumnMusicWatchNextResultsRenderer': {
+            'tabbedRenderer': {
+              'watchNextTabbedResultsRenderer': {
+                'tabs': [
+                  {
+                    'tabRenderer': {
+                      'content': {
+                        'musicQueueRenderer': {
+                          'content': {
+                            'playlistPanelRenderer': {
+                              'contents': [
+                                {
+                                  'playlistPanelVideoRenderer': {
+                                    'videoId': 'video-123',
+                                    'title': {
+                                      'runs': [{'text': 'Queue Track'}]
+                                    },
+                                    'longBylineText': {
+                                      'runs': [{'text': 'Queue Artist'}]
+                                    },
+                                    'lengthText': {
+                                      'runs': [{'text': '3:20'}]
+                                    },
+                                    'selected': true,
+                                    'thumbnail': {
+                                      'thumbnails': [
+                                        {'url': 'https://example.com/thumb.jpg'}
+                                      ]
+                                    },
+                                    'navigationEndpoint': {
+                                      'watchEndpoint': {'videoId': 'video-123'}
+                                    }
+                                  }
+                                }
+                              ],
+                              'continuations': [
+                                {
+                                  'nextContinuationData': {
+                                    'continuation': 'next-token'
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    'tabRenderer': {
+                      'endpoint': {
+                        'browseEndpoint': {'browseId': 'lyrics-id'}
+                      }
+                    }
+                  },
+                  {
+                    'tabRenderer': {
+                      'endpoint': {
+                        'browseEndpoint': {'browseId': 'related-id'}
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      });
+
+      expect(parsed.queue, hasLength(1));
+      expect(parsed.queue.single.id, 'video-123');
+      expect(parsed.queue.single.title, 'Queue Track');
+      expect(parsed.currentIndex, 0);
+      expect(parsed.continuation, 'next-token');
+      expect(parsed.lyricsEndpoint, 'lyrics-id');
+      expect(parsed.relatedEndpoint, 'related-id');
     });
 
     test('InnerTubeClient SAPISIDHASH computation works correctly', () {
