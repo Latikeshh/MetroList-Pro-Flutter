@@ -51,9 +51,12 @@ class YouTubeService {
 
   Map<String, dynamic> _buildContext(
     [YouTubeClient client = YouTubeClient.webRemix], {
-    bool useLogin = false,
+    bool? useLogin,
   }) {
-    return _innerTubeClient.buildContext(client, useLogin: useLogin);
+    return _innerTubeClient.buildContext(
+      client,
+      useLogin: useLogin ?? _innerTubeClient.useLoginForBrowse,
+    );
   }
 
   Map<String, String> _getHeaders({YouTubeClient client = YouTubeClient.webRemix, String? cookie}) {
@@ -99,7 +102,7 @@ class YouTubeService {
     }
 
     try {
-      final body = _buildContext(YouTubeClient.web);
+      final body = _buildContext(YouTubeClient.webRemix, useLogin: false);
       // InnerTubeX transcript requests omit visitor and signed-in account context.
       final requestContext = body['context'];
       if (requestContext is Map<String, dynamic>) {
@@ -401,7 +404,7 @@ class YouTubeService {
     bool recordSearchHistory = false,
   }) async {
     try {
-      final body = _buildContext()..['continuation'] = continuation;
+      final body = _buildContext(useLogin: recordSearchHistory)..['continuation'] = continuation;
       final response = await _dio.post(
         '/search',
         queryParameters: {
@@ -427,7 +430,7 @@ class YouTubeService {
 
   Future<Map<String, dynamic>?> getSearchSuggestionsResponse(String query) async {
     try {
-      final body = _buildContext()..['input'] = query;
+      final body = _buildContext(useLogin: false)..['input'] = query;
       final response = await _dio.post('/music/get_search_suggestions', data: body);
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         return Map<String, dynamic>.from(response.data);
@@ -1470,10 +1473,11 @@ class YouTubeService {
     String? browseId,
     String? params,
     String? continuation,
-    bool useLogin = false,
+    bool? useLogin,
   }) async {
     try {
-      final body = _buildContext();
+      final login = useLogin ?? _innerTubeClient.useLoginForBrowse;
+      final body = _buildContext(useLogin: login);
       if (browseId != null && browseId.isNotEmpty) body['browseId'] = browseId;
       if (params != null && params.isNotEmpty) body['params'] = params;
       if (continuation != null && continuation.isNotEmpty) {
@@ -1488,7 +1492,7 @@ class YouTubeService {
                 'ctoken': continuation,
               },
         data: body,
-        options: Options(headers: useLogin ? _getHeaders() : const {}),
+        options: Options(headers: login ? _getHeaders() : const {}),
       );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         return Map<String, dynamic>.from(response.data);
@@ -1502,7 +1506,7 @@ class YouTubeService {
     bool recordSearchHistory = false,
   }) async {
     try {
-      final body = _buildContext()..['query'] = query;
+      final body = _buildContext(useLogin: recordSearchHistory)..['query'] = query;
       final response = await _dio.post(
         '/search',
         data: body,
