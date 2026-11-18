@@ -7,6 +7,7 @@ enum YouTubeClientName {
     '67',
     'https://music.youtube.com/youtubei/v1',
     loginSupported: true,
+    useSignatureTimestamp: true,
   ),
   web(
     'WEB',
@@ -14,6 +15,7 @@ enum YouTubeClientName {
     '1',
     'https://www.youtube.com/youtubei/v1',
     loginSupported: true,
+    useSignatureTimestamp: true,
   ),
   androidMusic(
     'ANDROID_MUSIC',
@@ -43,6 +45,7 @@ enum YouTubeClientName {
     'https://www.youtube.com/youtubei/v1',
     loginSupported: true,
     includeUserAgentInContext: true,
+    useSignatureTimestamp: true,
   ),
   androidVr(
     'ANDROID_VR',
@@ -55,6 +58,7 @@ enum YouTubeClientName {
     deviceModel: 'Quest 3',
     androidSdkVersion: '32',
     includeUserAgentInContext: true,
+    useMusicPlayerEndpoint: true,
   );
 
   final String clientName;
@@ -68,6 +72,9 @@ enum YouTubeClientName {
   final String? androidSdkVersion;
   final bool loginSupported;
   final bool includeUserAgentInContext;
+  final bool useSignatureTimestamp;
+  final bool isEmbedded;
+  final bool useMusicPlayerEndpoint;
 
   const YouTubeClientName(
     this.clientName,
@@ -81,6 +88,9 @@ enum YouTubeClientName {
     this.androidSdkVersion,
     this.loginSupported = false,
     this.includeUserAgentInContext = false,
+    this.useSignatureTimestamp = false,
+    this.isEmbedded = false,
+    this.useMusicPlayerEndpoint = false,
   });
 }
 
