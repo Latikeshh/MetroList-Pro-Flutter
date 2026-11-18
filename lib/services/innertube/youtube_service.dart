@@ -55,12 +55,12 @@ class YouTubeService {
     _dio.httpClientAdapter = adapter;
   }
 
-  Map<String, dynamic> _buildContext(
-    [YouTubeClient client = YouTubeClient.webRemix], {
+  Map<String, dynamic> _buildContext({
+    YouTubeClient client = YouTubeClient.webRemix,
     bool? useLogin,
   }) {
     return _innerTubeClient.buildContext(
-      client,
+      client: client,
       useLogin: useLogin ?? _innerTubeClient.useLoginForBrowse,
     );
   }
@@ -116,7 +116,7 @@ class YouTubeService {
     }
 
     try {
-      final body = _buildContext(YouTubeClient.webRemix, useLogin: false);
+      final body = _buildContext(client: YouTubeClient.webRemix, useLogin: false);
       // InnerTubeX transcript requests omit visitor and signed-in account context.
       final requestContext = body['context'];
       if (requestContext is Map<String, dynamic>) {
@@ -1653,7 +1653,7 @@ class YouTubeService {
     YouTubeClient client = YouTubeClient.webRemix,
   }) async {
     try {
-      final body = _buildContext(client)
+      final body = _buildContext(client: client)
         ..['videoId'] = videoId
         ..['contentCheckOk'] = true
         ..['racyCheckOk'] = true;
@@ -2034,7 +2034,7 @@ class YouTubeService {
 
   Future<List<YouTubeAccount>> accountsList() async {
     try {
-      final body = _buildContext(YouTubeClient.web, useLogin: true)
+      final body = _buildContext(client: YouTubeClient.web, useLogin: true)
         ..['requestType'] = 'ACCOUNTS_LIST_REQUEST_TYPE_CHANNEL_SWITCHER'
         ..['callCircumstance'] = 'SWITCHING_USERS_FULL';
       final response = await _dio.post(
