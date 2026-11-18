@@ -722,13 +722,28 @@ class YouTubeService {
     );
   }
 
-  Future<ChartsPage> getChartsPage({String? params = 'ggMGCgQIgAQ%3D'}) async {
+  Future<ChartsPage> getChartsPage({
+    String? params = 'ggMGCgQIgAQ%3D',
+    String? continuation,
+  }) async {
     try {
       final body = _buildContext()..['browseId'] = 'FEmusic_charts';
       if (params != null && params.isNotEmpty) {
         body['params'] = params;
       }
-      final response = await _dio.post('/browse', data: body);
+      if (continuation != null && continuation.isNotEmpty) {
+        body['continuation'] = continuation;
+      }
+      final response = await _dio.post(
+        '/browse',
+        queryParameters: continuation == null
+            ? null
+            : {
+                'continuation': continuation,
+                'ctoken': continuation,
+              },
+        data: body,
+      );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         return ChartsPage.fromJson(response.data);
       }
