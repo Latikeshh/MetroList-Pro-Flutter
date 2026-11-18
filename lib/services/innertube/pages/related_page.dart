@@ -4,6 +4,7 @@ import '../models/renderers.dart';
 import '../models/runs.dart';
 import '../models/yt_item.dart';
 import 'page_helper.dart';
+import 'library_page.dart';
 
 class RelatedPageData {
   final List<SongItem> songs;
@@ -20,6 +21,56 @@ class RelatedPageData {
 }
 
 class RelatedPageParser {
+  static RelatedPageData parse(dynamic data) {
+    if (data is! Map) return const RelatedPageData();
+    final rawSections = data['contents']?['sectionListRenderer']?['contents'] ??
+        data['contents']?['singleColumnBrowseResultsRenderer']?['tabs']?[0]
+            ?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
+    if (rawSections is! List) return const RelatedPageData();
+
+    final songs = <SongItem>[];
+    final albums = <AlbumItem>[];
+    final artists = <ArtistItem>[];
+    final playlists = <PlaylistItem>[];
+
+    for (final section in rawSections) {
+      if (section is! Map) continue;
+      final carousel = section['musicCarouselShelfRenderer'];
+      final rawItems = carousel is Map ? carousel['contents'] : null;
+      if (rawItems is! List) continue;
+      for (final raw in rawItems) {
+        if (raw is! Map) continue;
+        final responsive = raw['musicResponsiveListItemRenderer'];
+        final twoRow = raw['musicTwoRowItemRenderer'];
+        YTItem? item;
+        if (responsive is Map<String, dynamic>) {
+          item = fromMusicResponsiveListItemRenderer(
+            MusicResponsiveListItemRenderer.fromJson(responsive),
+          );
+        } else if (twoRow is Map<String, dynamic>) {
+          item = LibraryPageParser.fromMusicTwoRowItemRenderer(
+            MusicTwoRowItemRenderer.fromJson(twoRow),
+          );
+        }
+        if (item is SongItem) {
+          if (item.musicVideoType == 'MUSIC_VIDEO_TYPE_ATV') songs.add(item);
+        } else if (item is AlbumItem) {
+          albums.add(item);
+        } else if (item is ArtistItem) {
+          artists.add(item);
+        } else if (item is PlaylistItem) {
+          playlists.add(item);
+        }
+      }
+    }
+    return RelatedPageData(
+      songs: songs,
+      albums: albums,
+      artists: artists,
+      playlists: playlists,
+    );
+  }
+
   static SongItem? fromMusicResponsiveListItemRenderer(MusicResponsiveListItemRenderer renderer) {
     final videoId = renderer.videoId;
     final title = renderer.flexColumns.firstOrNull?.text?.runs.firstOrNull?.text;

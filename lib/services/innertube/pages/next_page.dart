@@ -78,6 +78,14 @@ class NextPageParser {
     );
   }
 
+  static SongItem? parsePlaylistPanelVideoRenderer(
+    Map<String, dynamic> content,
+  ) {
+    final renderer = content['playlistPanelVideoRenderer'];
+    if (renderer is! Map) return null;
+    return _parsePlaylistVideo(renderer);
+  }
+
   static SongItem? _parsePlaylistVideo(Map renderer) {
     final navigation = renderer['navigationEndpoint'];
     final watch = navigation is Map ? navigation['watchEndpoint'] : null;
