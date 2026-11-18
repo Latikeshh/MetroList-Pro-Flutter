@@ -82,6 +82,7 @@ class AlbumPageParser {
       musicVideoType: renderer.musicVideoType,
       thumbnail: thumbUrl,
       explicit: isExplicit,
+      setVideoId: renderer.playlistItemData?.playlistSetVideoId,
       libraryAddToken: libraryTokens.addToken,
       libraryRemoveToken: libraryTokens.removeToken,
     );
