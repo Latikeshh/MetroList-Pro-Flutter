@@ -1,39 +1,37 @@
 # YouTube.kt dependency migration matrix
 
-## Current status on `kotlin-to-dart-migration`
+## Current implementation on `kotlin-to-dart-migration`
 
-| Kotlin dependency / behavior | Dart implementation | Status |
+| Kotlin dependency / behavior | Dart equivalent | Status |
 |---|---|---|
-| Models and enums | `models/yt_item.dart`, `models/renderers.dart`, client, locale, account and endpoint models | Ported across consolidated files; exhaustive field parity pending |
+| Models and enums | `models/yt_item.dart`, `models/renderers.dart`, account/client/locale/endpoint models | Ported across consolidated files; exhaustive field parity pending |
 | Response envelopes | Typed response models under `models/response/` | Ported; live fixture parity pending |
-| Page parsing | Parsers under `pages/` for search, browse, album, artist, playlist, podcast, history, charts, home, explore, related and continuations | Implemented; integration coverage pending |
+| Page parsing | Typed parsers under `pages/`, including artist, playlist, library and search continuations | Implemented; broader fixture coverage pending |
 | Ktor HTTP | Dio in `youtube_service.dart` and `innertube_client.dart` | Implemented; live request parity pending |
-| Client identity | WEB_REMIX, WEB, Android Music, iOS, TV HTML5 and Android VR profiles | Implemented; version drift must be monitored |
-| Locale / visitor data | Locale state and visitor-data refresh | Implemented; live refresh not verified |
-| Cookies / SAPISIDHASH | Cookie headers and origin-aware SAPISIDHASH | Implemented; authenticated account test pending |
+| Client identity | WEB_REMIX, WEB, Android Music, iOS, TV HTML5 and Android VR profiles | Implemented; client version drift must be monitored |
+| Locale and visitor data | Locale state and visitor-data refresh | Implemented; live refresh not verified |
+| Cookies and SAPISIDHASH | Cookie headers and origin-aware SAPISIDHASH | Implemented; authenticated account test pending |
 | Login context | Optional dataSyncId context and per-request login policy | Implemented; session-switch test pending |
-| Kotlin coroutines / Flow | Futures and streams; RxDart in player services | Ported where needed; cancellation semantics need tests |
-| Upload progress streams | Dio stream upload and progress callback | Implemented; live upload pending |
-| Java InputStream wrapper | Dart Stream and Dio progress callbacks | Equivalent behavior used; exact back-pressure parity not verified |
-| Java Proxy | No direct one-to-one mapping; Dio adapter injection and local loopback stream proxy | Platform-dependent |
-| Kotlin extraction transport | Dart audio source resolver, cipher engine and extractor adapter | Partial; no verified direct equivalent |
-| BotGuard / PO tokens | Token cache accepts real tokens only | Incomplete: no real cross-platform minting bridge |
+| Coroutines and Flow | Futures/async-await, Dart streams and RxDart where needed | Ported where used; cancellation semantics need tests |
+| Upload progress | Dio stream upload with progress callbacks | Implemented; live upload pending |
+| InputStream wrapper | Dart byte streams and Dio progress callbacks | Equivalent approach used; back-pressure parity unverified |
+| Java Proxy | Dio adapter injection and local range-aware HTTP proxy | Platform-dependent |
+| Extraction transport | InnerTube client rotation, cipher resolver, extractor adapter and local proxy | Partial; no direct verified equivalent |
+| BotGuard PO tokens | Video-bound token cache accepts real host-minted tokens only | Incomplete: no real BotGuard bridge |
 
 ## Playback notes
 
-- `AudioSourceResolver` tries InnerTube player clients, parses adaptive audio formats and cipher parameters, then falls back to the extractor adapter and public Piped instances.
-- The previous PO-token implementation generated fabricated strings from IDs. That was removed because such strings are not valid BotGuard tokens.
-- Without a real PO token, the resolver may still succeed through clients/adapters that do not require one; token-required playback is not guaranteed.
-- The local HTTP proxy forwards range requests and selected response headers for desktop seeking.
+- `AudioSourceResolver` rotates InnerTube player clients, parses adaptive audio formats and cipher parameters, then falls back to the extractor adapter and public Piped instances.
+- The previous PO-token implementation generated fabricated strings; this has been removed because those are not valid BotGuard tokens.
+- Without a real PO token, playback may still work through clients/adapters that do not require one, but token-required playback is not guaranteed.
+- The desktop proxy forwards range requests and selected response headers to support seeking.
 
-## Validation workflow
+## Validation status
 
-The GitHub workflow includes analyzer, tests and platform build jobs, including Windows. At the time of this update, branch runs were queued; no passing result is claimed.
+The GitHub platform workflow now includes `flutter analyze`, `flutter test` and platform build jobs, including Windows. At the time of this update, branch runs were queued and no passing result is claimed.
 
-Required before completion:
-- [ ] `flutter analyze` passes
-- [ ] InnerTube unit and fixture tests pass
-- [ ] Windows build passes
-- [ ] Windows audio playback, range seeking and proxy smoke tests pass
+Required before declaring the migration complete:
+- [ ] Analyzer and unit tests pass
+- [ ] Windows build and audio playback/range-seeking smoke tests pass
 - [ ] Authenticated browse, account switching and mutations are verified
-- [ ] Real BotGuard token bridge or documented fallback limitation is accepted
+- [ ] Real BotGuard token bridge or accepted fallback limitation is documented
