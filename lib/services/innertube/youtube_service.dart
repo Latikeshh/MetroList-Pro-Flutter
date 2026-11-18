@@ -81,8 +81,39 @@ class YouTubeService {
   }
 
   Future<GetTranscriptResponse?> getTranscript(String videoId) async {
-    // Match InnerTubeX's WEB transcript request: params encode newline + VT + video ID.
-    if (!RegExp(r'^[A-Za-z0-9_-]{1,64}
+    // InnerTubeX encodes newline + vertical-tab + video ID for the transcript endpoint.
+    if (!RegExp(r'^[A-Za-z0-9_-]{1,64}$').hasMatch(videoId)) {
+      return null;
+    }
+
+    try {
+      final body = _buildContext();
+      // Transcript requests are intentionally anonymous and omit visitor/account identity.
+      final clientContext = body['context']?['client'];
+      if (clientContext is Map<String, dynamic>) {
+        clientContext.remove('visitorData');
+      }
+      body['params'] = base64Encode(utf8.encode('\n\u000b$videoId'));
+
+      final response = await _dio.post(
+        'https://music.youtube.com/youtubei/v1/get_transcript',
+        queryParameters: const {
+          'key': 'AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30',
+        },
+        data: body,
+        options: Options(
+          headers: _getHeaders(client: YouTubeClient.webRemix),
+          responseType: ResponseType.json,
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return GetTranscriptResponse.fromJson(response.data);
+      }
+    } catch (_) {}
+    return null;
+  }
+
   Future<List<Map<String, dynamic>>> getQueue({required List<String> videoIds, String? playlistId}) async {
     try {
       final body = _buildContext()
