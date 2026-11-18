@@ -177,7 +177,12 @@ class YouTubeService {
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         final queue = GetQueueResponse.fromJson(response.data).queueDatas;
         return queue
-                ?.map(NextPageParser.fromPlaylistPanelVideoRenderer)
+                ?.map((entry) {
+                  final renderer = entry['playlistPanelVideoRenderer'];
+                  return NextPageParser.fromPlaylistPanelVideoRenderer(
+                    renderer is Map ? renderer : entry,
+                  );
+                })
                 .whereType<SongItem>()
                 .toList() ??
             const [];
