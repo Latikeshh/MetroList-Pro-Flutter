@@ -1,20 +1,25 @@
 # YouTube.kt → Dart migration audit
 
-- Source: `innertube/src/main/kotlin/com/metrolist/innertube/YouTube.kt`
-- Source revision: 3ec82c5ee36812b1d328e17f2185dd2b186dcd55
+## Source snapshot
+- Kotlin source: `innertube/src/main/kotlin/com/metrolist/innertube/YouTube.kt`
+- Kotlin blob: `3ec82c5ee36812b1d328e17f2185dd2b186dcd55`
+- Kotlin source size: 152,016 characters / 3,402 lines
 - Existing Dart target: `lib/services/innertube/youtube_service.dart`
-- Target revision before migration: e59ac01bd9a67f10cb5d995b4d9a500c0d9fcee3
-- Kotlin source size: 152,016 characters / 3402 lines
-- Existing Dart service size: 26,199 characters / 762 lines
-- Kotlin function declarations found (unique names): 66
-- Existing Dart method declarations detected: 152
-- Kotlin function names not detected in current Dart service: 48
+- Dart blob: `e59ac01bd9a67f10cb5d995b4d9a500c0d9fcee3`
+- Existing Dart size: 26,199 characters / 762 lines
 
-## Missing method names (initial regex-based audit)
+## Declaration coverage check
+A name-based declaration scan found:
+- Kotlin function declarations: 72 unique names
+- Dart method declarations detected: 39
+- Kotlin names not detected in the Dart file: 55
 
+The missing names are:
 - `extractionTransport`
 - `searchSuggestions`
 - `searchSummary`
+- `groupItemsByType`
+- `search`
 - `searchContinuation`
 - `album`
 - `albumSongs`
@@ -27,12 +32,16 @@
 - `podcast`
 - `podcastWithDebug`
 - `home`
+- `homeContinuation`
 - `explore`
 - `newReleaseAlbums`
 - `moodAndGenres`
 - `browse`
 - `library`
 - `libraryContinuation`
+- `determineChartType`
+- `convertToChartItem`
+- `convertMusicTwoRowItem`
 - `musicHistory`
 - `libraryPodcastChannels`
 - `libraryPodcastEpisodes`
@@ -60,15 +69,36 @@
 - `deleteUploadedSong`
 - `resolveArtistIds`
 - `resolveArtistIdMap`
+- `reportBytesRead`
 
-## Important conversion constraints
+This is a regex/name-based comparison, not proof of semantic absence: names may differ between Kotlin and Dart, and some methods may be implemented under another name. Conversely, matching names do not prove equivalent behavior.
 
-This is not a complete semantic comparison. A method can exist in Dart and still have different behavior. The Kotlin service imports many types from separate `models`, `response`, `pages`, and `utils` packages, plus the `InnerTube` transport. A faithful port requires translating those dependencies and preserving the typed parsing logic, coroutine behavior, proxy/cookie/auth state, and error semantics.
+## Major dependency groups in Kotlin
+The source imports types and helpers from:
+- `com.metrolist.innertube.models.*`
+- `com.metrolist.innertube.models.response.*`
+- `com.metrolist.innertube.pages.*`
+- `com.metrolist.innertube.utils.parseTime`
+- `com.metrolist.innertubex.models.YouTubeClient`
+- Ktor HTTP client/response APIs
+- Kotlin coroutines
+- Kotlin serialization
+- Timber logging
+- Java InputStream / FilterInputStream / Proxy
+- Kotlin Random
 
-## Migration policy
+The existing Dart service imports Dio, `innertube_client.dart`, selected models, response types and page parsers. The Kotlin dependency surface is broader than the imports visible in the existing Dart service.
 
-- Preserve original Kotlin files.
-- Work only on branch `kotlin-to-dart-migration`.
-- Do not replace real implementations with TODOs, stubs, empty lists, or generic raw JSON responses.
-- Treat each operation as complete only after its dependencies and behavior have been ported and verified.
-- Run Dart formatting, static analysis, and targeted tests after each group of changes.
+## Migration acceptance criteria
+1. Port each public operation and preserve behavior, parameters, defaults, return semantics and errors.
+2. Port all referenced model, response, page and utility types or map them to existing Dart equivalents.
+3. Replace Ktor/coroutines/Java stream/proxy behavior with tested Dart equivalents.
+4. Preserve authentication, visitor data, cookies, locale, continuation tokens, upload and playback behavior.
+5. Run `dart format`, `flutter analyze`, unit tests and targeted integration tests.
+6. Verify search, suggestions, albums, artists, playlists, podcasts, library, history, playback, queue, lyrics/transcript, account and upload paths.
+
+## Current verified status
+- Repository and source files inspected.
+- Migration branch exists: `kotlin-to-dart-migration`.
+- No full semantic conversion or build verification has been completed.
+- Do not treat this audit as a completed migration.
