@@ -82,6 +82,7 @@ class AlbumPageParser {
       musicVideoType: renderer.musicVideoType,
       thumbnail: thumbUrl,
       explicit: isExplicit,
+      setVideoId: renderer.playlistItemData?.playlistSetVideoId,
       libraryAddToken: libraryTokens.addToken,
       libraryRemoveToken: libraryTokens.removeToken,
     );
@@ -109,10 +110,32 @@ class AlbumPageParser {
       }
     }
 
+    final twoColumnSections = data['contents']?['twoColumnBrowseResultsRenderer']
+        ?['secondaryContents']?['sectionListRenderer']?['contents'];
+    if (twoColumnSections is List) {
+      for (final section in twoColumnSections) {
+        parseSection(section);
+      }
+    }
+
     final sectionList = data['contents']?['singleColumnBrowseResultsRenderer']?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
     if (sectionList is List) {
       for (final s in sectionList) {
         parseSection(s);
+      }
+    }
+
+    final continuationItems = data['continuationContents']?['musicPlaylistShelfContinuation']?['contents'] ??
+        data['continuationContents']?['musicShelfContinuation']?['contents'];
+    if (continuationItems is List) {
+      for (final item in continuationItems) {
+        if (item is Map<String, dynamic>) {
+          final renderer = item['musicResponsiveListItemRenderer'];
+          if (renderer is Map<String, dynamic>) {
+            final song = getSong(MusicResponsiveListItemRenderer.fromJson(renderer));
+            if (song != null) items.add(song);
+          }
+        }
       }
     }
 

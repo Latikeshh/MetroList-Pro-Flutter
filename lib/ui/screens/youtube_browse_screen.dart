@@ -31,7 +31,7 @@ class _YouTubeBrowseScreenState extends State<YouTubeBrowseScreen> {
       (index) => SongItem(
         id: 'browse_${widget.browseId}_$index',
         title: '${widget.title} Item #${index + 1}',
-        artists: ['YouTube InnerTube Browse'],
+        artists: const [Artist(name: 'YouTube InnerTube Browse')],
         thumbnailUrl:
             'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
       ),

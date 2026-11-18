@@ -85,7 +85,7 @@ void main() {
 
       // Assertions
       expect(song.title, 'Casa Tupka Anthem');
-      expect(song.artists, contains('Casa Tupka'));
+      expect(song.artists.map((artist) => artist.name), contains('Casa Tupka'));
       expect(song.id, 'K_x1Z8x4e0A');
       expect(song.durationSeconds, 165); // 2 mins 45 secs = 165 seconds
       expect(song.thumbnailUrl, 'https://i.ytimg.com/vi/K_x1Z8x4e0A/hqdefault.jpg');
@@ -114,7 +114,7 @@ extension YouTubeServiceCasaTupkaExtension on YouTubeService {
                     '';
                 final flexRuns = renderer['flexColumns']?[1]
                     ?['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
-                final List<String> artists = [];
+                final List<Artist> artists = [];
                 int? durationSec;
 
                 if (flexRuns is List) {
@@ -128,7 +128,7 @@ extension YouTubeServiceCasaTupkaExtension on YouTubeService {
                         durationSec = (mins * 60) + secs;
                       }
                     } else if (txt.isNotEmpty && txt != ' • ' && txt != 'Single') {
-                      artists.add(txt);
+                      artists.add(Artist(name: txt));
                     }
                   }
                 }

@@ -1,7 +1,8 @@
 library;
 
 enum YouTubeClientName {
-  webRemix('WEB_REMIX', '1.20250122.01.00', '67', 'https://music.youtube.com/youtubei/v1'),
+  webRemix('WEB_REMIX', '1.20260707.12.00', '67', 'https://music.youtube.com/youtubei/v1'),
+  web('WEB', '2.20260708.00.00', '1', 'https://www.youtube.com/youtubei/v1'),
   androidMusic('ANDROID_MUSIC', '6.42.52', '61', 'https://music.youtube.com/youtubei/v1'),
   ios('IOS', '19.29.1', '5', 'https://www.youtube.com/youtubei/v1'),
   tvHtml5('TVHTML5_SIMPLY_EMBEDDED_PLAYER', '2.0', '85', 'https://www.youtube.com/youtubei/v1'),
@@ -32,7 +33,13 @@ class YouTubeClient {
   static const YouTubeClient webRemix = YouTubeClient(
     client: YouTubeClientName.webRemix,
     userAgent:
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0',
+  );
+
+  static const YouTubeClient web = YouTubeClient(
+    client: YouTubeClientName.web,
+    userAgent:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0',
   );
 
   static const YouTubeClient androidMusic = YouTubeClient(
