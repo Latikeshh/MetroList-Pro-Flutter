@@ -790,8 +790,9 @@ class YouTubeService {
   }) async {
     try {
       final endpoint = subscribe ? '/subscription/subscribe' : '/subscription/unsubscribe';
-      final body = _buildContext(useLogin: true)..['channelIds'] = [channelId];
-      if (params != null && params.isNotEmpty) body['params'] = params;
+      final body = _buildContext(useLogin: true)
+        ..['channelIds'] = [channelId]
+        ..['params'] = params ?? 'EgIIAhgA';
       final response = await _dio.post(
         endpoint,
         data: body,
