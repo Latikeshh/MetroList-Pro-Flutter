@@ -499,13 +499,14 @@ class YouTubeService {
       final cardJson = rawSection['musicCardShelfRenderer'];
       if (cardJson is Map<String, dynamic>) {
         final card = MusicCardShelfRenderer.fromJson(cardJson);
-        final items = <YTItem>[
-          if (SearchSummaryPageData.fromMusicCardShelfRenderer(card) case final item?)
-            item,
-          ...card.contents
+        final items = <YTItem>[];
+        final cardItem = SearchSummaryPageData.fromMusicCardShelfRenderer(card);
+        if (cardItem != null) items.add(cardItem);
+        items.addAll(
+          card.contents
               .map(LibraryPageParser.fromMusicResponsiveListItemRenderer)
               .whereType<YTItem>(),
-        ];
+        );
         if (items.isNotEmpty) {
           summaries.add(
             SearchSummary(
