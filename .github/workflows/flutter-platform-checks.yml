@@ -2,7 +2,7 @@ name: Flutter platform checks
 
 on:
   push:
-    branches: [main, kotlin-to-dart-migration]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: flutter-checks-${{ github.ref }}
+  group: flutter-checks-${{ github.event.pull_request.head.ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
