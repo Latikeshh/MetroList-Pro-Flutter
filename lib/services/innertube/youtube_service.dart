@@ -1191,7 +1191,9 @@ class YouTubeService {
     String? continuation,
   }) async {
     try {
-      final body = _buildContext();
+      final body = _buildContext()
+        ..['contentCheckOk'] = true
+        ..['racyCheckOk'] = true;
       if (videoId != null) body['videoId'] = videoId;
       if (playlistId != null) body['playlistId'] = playlistId;
       if (playlistSetVideoId != null) body['playlistSetVideoId'] = playlistSetVideoId;
@@ -1601,7 +1603,10 @@ class YouTubeService {
     YouTubeClient client = YouTubeClient.web,
   }) async {
     try {
-      final body = _buildContext(client)..['videoId'] = videoId;
+      final body = _buildContext(client)
+        ..['videoId'] = videoId
+        ..['contentCheckOk'] = true
+        ..['racyCheckOk'] = true;
       if (playlistId != null) body['playlistId'] = playlistId;
       if (playlistSetVideoId != null) {
         body['playlistSetVideoId'] = playlistSetVideoId;
