@@ -22,6 +22,7 @@ import 'pages/artist_items_continuation_page.dart';
 import 'pages/charts_page.dart';
 import 'pages/explore_page.dart';
 import 'pages/home_page.dart';
+import 'pages/history_page.dart';
 import 'pages/library_page.dart';
 import 'pages/next_page.dart';
 import 'pages/podcast_page.dart';
@@ -1815,14 +1816,12 @@ class YouTubeService {
         : removeSongFromLibrary(videoId);
   }
 
-  Future<LibraryPageData> getMusicHistory() async {
+  Future<HistoryPageData> getMusicHistory() async {
     final response = await browseResponse(
       browseId: 'FEmusic_history',
       useLogin: true,
     );
-    return response == null
-        ? const LibraryPageData(items: [])
-        : LibraryPageParser.parseLibraryPage(response);
+    return HistoryPageParser.parseHistoryPage(response);
   }
 
   Future<List<AlbumItem>> getNewReleaseAlbums() async {
@@ -2358,7 +2357,7 @@ class YouTubeService {
   Future<LibraryPageData> libraryContinuation(String continuation) =>
       getLibraryContinuation(continuation);
 
-  Future<LibraryPageData> musicHistory() => getMusicHistory();
+  Future<HistoryPageData> musicHistory() => getMusicHistory();
 
   Future<LibraryPageData> libraryPodcastChannels() =>
       getPodcastLibraryPage(channels: true);
