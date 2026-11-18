@@ -77,6 +77,12 @@ class YouTubeService {
     );
   }
 
+  Options _browseOptions() => Options(
+        headers: _innerTubeClient.useLoginForBrowse
+            ? _getHeaders()
+            : const {},
+      );
+
   Future<AccountMenuResponse?> getAccountMenu(String cookie) async {
     try {
       final body = _buildContext(useLogin: true);
@@ -183,6 +189,7 @@ class YouTubeService {
             'ctoken': continuation,
           },
           data: body,
+          options: _browseOptions(),
         );
         if (response.statusCode == 200) {
           return _parseHomePage(response.data);
@@ -192,7 +199,11 @@ class YouTubeService {
         if (params != null && params.isNotEmpty) {
           body['params'] = params;
         }
-        final response = await _dio.post('/browse', data: body);
+        final response = await _dio.post(
+        '/browse',
+        data: body,
+        options: _browseOptions(),
+      );
         if (response.statusCode == 200) {
           return _parseHomePage(response.data);
         }
@@ -618,7 +629,11 @@ class YouTubeService {
   Future<ExplorePageData> getExplorePage() async {
     try {
       final body = _buildContext()..['browseId'] = 'FEmusic_explore';
-      final response = await _dio.post('/browse', data: body);
+      final response = await _dio.post(
+        '/browse',
+        data: body,
+        options: _browseOptions(),
+      );
       if (response.statusCode == 200) {
         return _parseExplorePage(response.data);
       }
@@ -656,7 +671,11 @@ class YouTubeService {
   Future<ArtistPageData> getArtistPage(String artistId) async {
     try {
       final body = _buildContext()..['browseId'] = artistId;
-      final response = await _dio.post('/browse', data: body);
+      final response = await _dio.post(
+        '/browse',
+        data: body,
+        options: _browseOptions(),
+      );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         return ArtistPageParser.parseArtistPage(response.data, artistId);
       }
@@ -672,7 +691,11 @@ class YouTubeService {
       final body = _buildContext()
         ..['browseId'] = 'FEmusic_artist_detail'
         ..['params'] = params;
-      final response = await _dio.post('/browse', data: body);
+      final response = await _dio.post(
+        '/browse',
+        data: body,
+        options: _browseOptions(),
+      );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         final contents = response.data['contents']?['singleColumnBrowseResultsRenderer']?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
         if (contents is List && contents.isNotEmpty) {
@@ -699,6 +722,7 @@ class YouTubeService {
           'ctoken': continuation,
         },
         data: body,
+        options: _browseOptions(),
       );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         final continuationContents = response.data['continuationContents']?['musicShelfContinuation'];
@@ -713,7 +737,11 @@ class YouTubeService {
   Future<AlbumPageData> getAlbumPage(String browseId) async {
     try {
       final body = _buildContext()..['browseId'] = browseId;
-      final response = await _dio.post('/browse', data: body);
+      final response = await _dio.post(
+        '/browse',
+        data: body,
+        options: _browseOptions(),
+      );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         return AlbumPageParser.parseAlbumPage(response.data, browseId);
       }
@@ -745,6 +773,7 @@ class YouTubeService {
                 'ctoken': continuation,
               },
         data: body,
+        options: _browseOptions(),
       );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         return ChartsPage.fromJson(response.data);
@@ -1407,7 +1436,11 @@ class YouTubeService {
       if (endpoint.params != null && endpoint.params!.isNotEmpty) {
         body['params'] = endpoint.params;
       }
-      final response = await _dio.post('/browse', data: body);
+      final response = await _dio.post(
+        '/browse',
+        data: body,
+        options: _browseOptions(),
+      );
       if (response.statusCode == 200 && response.data is Map) {
         final description = response.data['contents']?['sectionListRenderer']
             ?['contents']?[0]?['musicDescriptionShelfRenderer']?['description']?['runs'];
