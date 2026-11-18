@@ -72,7 +72,9 @@ class ArtistItemsContinuationPageParser {
     String? nextToken;
     if (rawContinuations is List) {
       for (final entry in rawContinuations) {
-        final token = entry?['nextContinuationData']?['continuation']?.toString();
+        final token = entry?['nextContinuationData']?['continuation']?.toString() ??
+            entry?['continuationItemRenderer']?['continuationEndpoint']
+                ?['continuationCommand']?['token']?.toString();
         if (token != null && token.isNotEmpty) {
           nextToken = token;
           break;
