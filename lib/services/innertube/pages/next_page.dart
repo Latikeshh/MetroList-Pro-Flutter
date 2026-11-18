@@ -127,6 +127,8 @@ class NextPageParser {
           ) ??
           false,
       endpoint: endpoint,
+      setVideoId: renderer['playlistItemData']?['playlistSetVideoId']?.toString() ??
+          renderer['playlistSetVideoId']?.toString(),
       libraryAddToken: tokens.addToken,
       libraryRemoveToken: tokens.removeToken,
     );
