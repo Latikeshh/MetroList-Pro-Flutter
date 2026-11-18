@@ -69,7 +69,10 @@ class InnerTubeClient {
     }
   }
 
-  Map<String, dynamic> buildContext([YouTubeClient client = YouTubeClient.webRemix]) {
+  Map<String, dynamic> buildContext(
+    [YouTubeClient client = YouTubeClient.webRemix], {
+    bool useLogin = false,
+  }) {
     final profile = client.client;
     return {
       'context': {
@@ -87,7 +90,7 @@ class InnerTubeClient {
           if (profile.androidSdkVersion != null)
             'androidSdkVersion': profile.androidSdkVersion,
         },
-        if (profile.loginSupported && dataSyncId != null)
+        if (useLogin && profile.loginSupported && dataSyncId != null)
           'user': {
             'onBehalfOfUser': dataSyncId,
           },
