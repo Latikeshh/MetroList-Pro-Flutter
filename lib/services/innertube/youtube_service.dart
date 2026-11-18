@@ -29,6 +29,7 @@ import 'pages/podcast_page.dart';
 import 'pages/playlist_page.dart';
 import 'pages/playlist_continuation_page.dart';
 import 'pages/search_summary_page.dart';
+import 'pages/related_page.dart';
 import 'pages/search_suggestion_page.dart';
 import 'pages/page_helper.dart';
 
@@ -2397,40 +2398,12 @@ class YouTubeService {
         continuation: continuation,
       );
 
-  Future<List<YTItem>> related(BrowseEndpoint endpoint) async {
+  Future<RelatedPageData> related(BrowseEndpoint endpoint) async {
     final response = await browseResponse(
       browseId: endpoint.browseId,
       params: endpoint.params,
     );
-    if (response == null) return const [];
-    final sections = response['contents']?['sectionListRenderer']?['contents'] ??
-        response['contents']?['singleColumnBrowseResultsRenderer']?['tabs']?[0]
-            ?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
-    if (sections is! List) return const [];
-    final items = <YTItem>[];
-    for (final section in sections) {
-      if (section is! Map) continue;
-      final carousel = section['musicCarouselShelfRenderer'];
-      final rawItems = carousel is Map ? carousel['contents'] : null;
-      if (rawItems is! List) continue;
-      for (final raw in rawItems) {
-        if (raw is! Map) continue;
-        final twoRow = raw['musicTwoRowItemRenderer'];
-        final responsive = raw['musicResponsiveListItemRenderer'];
-        if (twoRow is Map<String, dynamic>) {
-          final item = LibraryPageParser.fromMusicTwoRowItemRenderer(
-            MusicTwoRowItemRenderer.fromJson(twoRow),
-          );
-          if (item != null) items.add(item);
-        } else if (responsive is Map<String, dynamic>) {
-          final item = LibraryPageParser.fromMusicResponsiveListItemRenderer(
-            MusicResponsiveListItemRenderer.fromJson(responsive),
-          );
-          if (item != null) items.add(item);
-        }
-      }
-    }
-    return items;
+    return RelatedPageParser.parse(response);
   }
 
   Future<String?> transcript(String videoId) async {
