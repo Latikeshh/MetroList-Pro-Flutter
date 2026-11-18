@@ -65,7 +65,7 @@ class YouTubeService {
 
   Future<AccountMenuResponse?> getAccountMenu(String cookie) async {
     try {
-      final body = _buildContext();
+      final body = _buildContext(useLogin: true);
       final response = await _dio.post(
         '/account/account_menu',
         data: body,
@@ -618,7 +618,7 @@ class YouTubeService {
   Future<List<SongItem>> getPlaylistPage(String playlistId) async {
     final cleanId = playlistId.startsWith('VL') ? playlistId : 'VL$playlistId';
     try {
-      final body = _buildContext()..['browseId'] = cleanId;
+      final body = _buildContext(useLogin: true)..['browseId'] = cleanId;
       final response = await _dio.post(
         '/browse',
         data: body,
@@ -719,7 +719,7 @@ class YouTubeService {
   Future<bool> likeVideo(String videoId, bool like) async {
     try {
       final endpoint = like ? '/like/like' : '/like/indifferent';
-      final body = _buildContext()..['target'] = {'videoId': videoId};
+      final body = _buildContext(useLogin: true)..['target'] = {'videoId': videoId};
       final response = await _dio.post(
         endpoint,
         data: body,
@@ -734,7 +734,7 @@ class YouTubeService {
   Future<bool> likePlaylist(String playlistId, bool like) async {
     try {
       final endpoint = like ? '/like/like' : '/like/indifferent';
-      final body = _buildContext()..['target'] = {'playlistId': playlistId};
+      final body = _buildContext(useLogin: true)..['target'] = {'playlistId': playlistId};
       final response = await _dio.post(
         endpoint,
         data: body,
@@ -753,7 +753,7 @@ class YouTubeService {
   }) async {
     try {
       final endpoint = subscribe ? '/subscription/subscribe' : '/subscription/unsubscribe';
-      final body = _buildContext()..['channelIds'] = [channelId];
+      final body = _buildContext(useLogin: true)..['channelIds'] = [channelId];
       if (params != null && params.isNotEmpty) body['params'] = params;
       final response = await _dio.post(
         endpoint,
@@ -768,7 +768,7 @@ class YouTubeService {
 
   Future<String?> createPlaylist(String title) async {
     try {
-      final body = _buildContext()..['title'] = title;
+      final body = _buildContext(useLogin: true)..['title'] = title;
       final response = await _dio.post(
         '/playlist/create',
         data: body,
@@ -783,7 +783,7 @@ class YouTubeService {
 
   Future<bool> deletePlaylist(String playlistId) async {
     try {
-      final body = _buildContext()..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '');
+      final body = _buildContext(useLogin: true)..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '');
       final response = await _dio.post(
         '/playlist/delete',
         data: body,
@@ -797,7 +797,7 @@ class YouTubeService {
 
   Future<bool> renamePlaylist(String playlistId, String newTitle) async {
     try {
-      final body = _buildContext()
+      final body = _buildContext(useLogin: true)
         ..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '')
         ..['actions'] = [
           {
@@ -824,7 +824,7 @@ class YouTubeService {
                 'addedVideoId': id,
               })
           .toList();
-      final body = _buildContext()
+      final body = _buildContext(useLogin: true)
         ..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '')
         ..['actions'] = actions;
       final response = await _dio.post(
@@ -840,7 +840,7 @@ class YouTubeService {
 
   Future<bool> addPlaylistToPlaylist(String targetPlaylistId, String sourcePlaylistId) async {
     try {
-      final body = _buildContext()
+      final body = _buildContext(useLogin: true)
         ..['playlistId'] = targetPlaylistId.replaceFirst(RegExp(r'^VL'), '')
         ..['actions'] = [
           {
@@ -861,7 +861,7 @@ class YouTubeService {
 
   Future<bool> removeFromPlaylist(String playlistId, String videoId, String setVideoId) async {
     try {
-      final body = _buildContext()
+      final body = _buildContext(useLogin: true)
         ..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '')
         ..['actions'] = [
           {
@@ -883,7 +883,7 @@ class YouTubeService {
 
   Future<LibraryPageData> getLibraryPage({String? browseId, String? params}) async {
     try {
-      final body = _buildContext()..['browseId'] = browseId ?? 'FEmusic_library_landing';
+      final body = _buildContext(useLogin: true)..['browseId'] = browseId ?? 'FEmusic_library_landing';
       if (params != null && params.isNotEmpty) {
         body['params'] = params;
       }
@@ -901,7 +901,7 @@ class YouTubeService {
 
   Future<LibraryPageData> getLibraryContinuation(String continuation) async {
     try {
-      final body = _buildContext()..['continuation'] = continuation;
+      final body = _buildContext(useLogin: true)..['continuation'] = continuation;
       final response = await _dio.post(
         '/browse',
         queryParameters: {
@@ -921,7 +921,7 @@ class YouTubeService {
   Future<bool> feedback(List<String> tokens) async {
     if (tokens.isEmpty) return false;
     try {
-      final body = _buildContext()..['feedbackTokens'] = tokens;
+      final body = _buildContext(useLogin: true)..['feedbackTokens'] = tokens;
       final response = await _dio.post(
         '/feedback',
         data: body,
@@ -964,7 +964,7 @@ class YouTubeService {
 
   Future<PodcastPageData> getPodcastPage(String podcastId) async {
     try {
-      final body = _buildContext()..['browseId'] = podcastId;
+      final body = _buildContext(useLogin: true)..['browseId'] = podcastId;
       final response = await _dio.post(
         '/browse',
         data: body,
@@ -989,7 +989,7 @@ class YouTubeService {
 
   Future<bool> addEpisodeToSavedEpisodes(String videoId) async {
     try {
-      final body = _buildContext()
+      final body = _buildContext(useLogin: true)
         ..['playlistId'] = 'SE'
         ..['actions'] = [
           {'action': 'ACTION_ADD_VIDEO', 'addedVideoId': videoId}
@@ -1041,7 +1041,7 @@ class YouTubeService {
 
   Future<List<SongItem>> getNewEpisodes() async {
     try {
-      final body = _buildContext()..['browseId'] = 'VLRDPN';
+      final body = _buildContext(useLogin: true)..['browseId'] = 'VLRDPN';
       final response = await _dio.post(
         '/browse',
         data: body,
@@ -1271,7 +1271,7 @@ class YouTubeService {
         'setVideoId': setVideoId,
         'movedSetVideoIdSuccessor': nextSetVideoId,
       };
-      final body = _buildContext()
+      final body = _buildContext(useLogin: true)
         ..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '')
         ..['actions'] = [actionMap];
       final response = await _dio.post(
@@ -1901,7 +1901,7 @@ class YouTubeService {
   Future<bool> deleteUploadedSong(String entityId) async {
     if (entityId.isEmpty) return false;
     try {
-      final body = _buildContext()..['entityId'] = entityId;
+      final body = _buildContext(useLogin: true)..['entityId'] = entityId;
       final response = await _dio.post(
         '/music/delete_privately_owned_entity',
         data: body,
@@ -2052,7 +2052,7 @@ class YouTubeService {
           uploaded.data['encryptedBlobId']?.toString();
       if (encryptedBlobId == null || encryptedBlobId.isEmpty) return false;
 
-      final body = _buildContext()
+      final body = _buildContext(useLogin: true)
         ..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '')
         ..['actions'] = [
           {
@@ -2077,7 +2077,7 @@ class YouTubeService {
 
   Future<bool> removeThumbnailPlaylist(String playlistId) async {
     try {
-      final body = _buildContext()
+      final body = _buildContext(useLogin: true)
         ..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '')
         ..['actions'] = [
           {'action': 'ACTION_REMOVE_CUSTOM_THUMBNAIL'}
