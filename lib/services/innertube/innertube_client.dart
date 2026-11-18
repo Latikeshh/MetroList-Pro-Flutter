@@ -70,8 +70,8 @@ class InnerTubeClient {
     }
   }
 
-  Map<String, dynamic> buildContext(
-    [YouTubeClient client = YouTubeClient.webRemix], {
+  Map<String, dynamic> buildContext({
+    YouTubeClient client = YouTubeClient.webRemix,
     bool useLogin = false,
   }) {
     final profile = client.client;
