@@ -89,9 +89,37 @@ class ChartsPage {
       }
     } catch (_) {}
 
+    final continuationContents =
+        json['continuationContents']?['musicShelfContinuation'] ??
+            json['continuationContents']?['musicCarouselShelfContinuation'];
+    final continuationItems = continuationContents?['contents'];
+    if (continuationItems is List) {
+      final items = <YTItem>[];
+      for (final rawItem in continuationItems) {
+        if (rawItem is! Map<String, dynamic>) continue;
+        final responsive = rawItem['musicResponsiveListItemRenderer'];
+        final twoRow = rawItem['musicTwoRowItemRenderer'];
+        if (responsive is Map<String, dynamic>) {
+          final item = LibraryPageParser.fromMusicResponsiveListItemRenderer(
+            MusicResponsiveListItemRenderer.fromJson(responsive),
+          );
+          if (item != null) items.add(item);
+        } else if (twoRow is Map<String, dynamic>) {
+          final item = LibraryPageParser.fromMusicTwoRowItemRenderer(
+            MusicTwoRowItemRenderer.fromJson(twoRow),
+          );
+          if (item != null) items.add(item);
+        }
+      }
+      if (items.isNotEmpty) {
+        sections.add(ChartSection(title: 'More', items: items));
+      }
+    }
+
     final sectionList = json['contents']?['singleColumnBrowseResultsRenderer']
         ?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer'];
-    final continuations = sectionList?['continuations'];
+    final continuations = sectionList?['continuations'] ??
+        continuationContents?['continuations'];
     if (continuations is List && continuations.isNotEmpty) {
       continuationToken = continuations.first?['nextContinuationData']?['continuation']
           ?.toString();
