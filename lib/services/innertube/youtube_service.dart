@@ -1531,13 +1531,13 @@ class YouTubeService {
 
   Future<Map<String, dynamic>?> accountsList() async {
     try {
-      final body = _buildContext()
+      final body = _buildContext(YouTubeClient.web)
         ..['requestType'] = 'ACCOUNTS_LIST_REQUEST_TYPE_CHANNEL_SWITCHER'
         ..['callCircumstance'] = 'SWITCHING_USERS_FULL';
       final response = await _dio.post(
-        '/account/accounts_list',
+        'https://www.youtube.com/youtubei/v1/account/accounts_list',
         data: body,
-        options: Options(headers: _getHeaders()),
+        options: Options(headers: _getHeaders(client: YouTubeClient.web)),
       );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         return Map<String, dynamic>.from(response.data);
