@@ -78,6 +78,9 @@ class NextPageParser {
     );
   }
 
+  static SongItem? parsePlaylistPanelVideoRenderer(Map<String, dynamic> renderer) =>
+      _parsePlaylistVideo(renderer);
+
   static SongItem? _parsePlaylistVideo(Map renderer) {
     final navigation = renderer['navigationEndpoint'];
     final watch = navigation is Map ? navigation['watchEndpoint'] : null;
