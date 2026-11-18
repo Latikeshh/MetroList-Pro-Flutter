@@ -944,4 +944,131 @@ class YouTubeService {
     } catch (_) {}
     return items;
   }
+
+  /// Low-level browse parity for Kotlin YouTube.browse and continuation calls.
+  Future<Map<String, dynamic>?> browseResponse({
+    String? browseId,
+    String? params,
+    String? continuation,
+    bool useLogin = false,
+  }) async {
+    try {
+      final body = _buildContext();
+      if (browseId != null && browseId.isNotEmpty) body['browseId'] = browseId;
+      if (params != null && params.isNotEmpty) body['params'] = params;
+      if (continuation != null && continuation.isNotEmpty) {
+        body['continuation'] = continuation;
+      }
+      final path = continuation == null
+          ? '/browse'
+          : '/browse?continuation=$continuation&ctoken=$continuation';
+      final response = await _dio.post(
+        path,
+        data: body,
+        options: Options(headers: useLogin ? _getHeaders() : const {}),
+      );
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(response.data);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getSearchSummaryResponse(
+    String query, {
+    bool recordSearchHistory = false,
+  }) async {
+    try {
+      final body = _buildContext()..['query'] = query;
+      final response = await _dio.post(
+        '/search',
+        data: body,
+        options: Options(
+          headers: recordSearchHistory ? _getHeaders() : const {},
+        ),
+      );
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(response.data);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getPlayerResponse({
+    required String videoId,
+    String? playlistId,
+    YouTubeClient client = YouTubeClient.webRemix,
+    int? signatureTimestamp,
+    String? poToken,
+  }) async {
+    try {
+      final body = _buildContext(client)..['videoId'] = videoId;
+      if (playlistId != null && playlistId.isNotEmpty) {
+        body['playlistId'] = playlistId;
+      }
+      if (signatureTimestamp != null) {
+        body['playbackContext'] = {
+          'contentPlaybackContext': {
+            'signatureTimestamp': signatureTimestamp,
+          },
+        };
+      }
+      if (poToken != null && poToken.isNotEmpty) {
+        body['serviceIntegrityDimensions'] = {'poToken': poToken};
+      }
+      final response = await _dio.post(
+        '/player',
+        data: body,
+        options: Options(headers: _getHeaders(client: client)),
+      );
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(response.data);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getMediaInfoResponse(String videoId) {
+    return getPlayerResponse(videoId: videoId);
+  }
+
+  Future<bool> toggleSongLibrary(String videoId, {required bool addToLibrary}) {
+    return addToLibrary
+        ? addSongToLibrary(videoId)
+        : removeSongFromLibrary(videoId);
+  }
+
+  Future<LibraryPageData> getMusicHistory() async {
+    final response = await browseResponse(
+      browseId: 'FEmusic_history',
+      useLogin: true,
+    );
+    return response == null
+        ? const LibraryPageData(items: [])
+        : LibraryPageParser.parseLibraryPage(response);
+  }
+
+  Future<List<AlbumItem>> getNewReleaseAlbums() async {
+    return (await getExplorePage()).newReleaseAlbums;
+  }
+
+  Future<List<MoodAndGenreItem>> getMoodAndGenres() async {
+    return (await getExplorePage()).moodsAndGenres;
+  }
+
+  Future<AlbumPageData> getAlbumSongs(String browseId) => getAlbumPage(browseId);
+
+  Future<ArtistPageData> getArtist(String browseId) => getArtistPage(browseId);
+
+  Future<List<SongItem>> getPlaylistContinuation(String continuation) async {
+    try {
+      final response = await browseResponse(continuation: continuation);
+      if (response != null) return AlbumPageParser.parseTracks(response);
+    } catch (_) {}
+    return const [];
+  }
+
+  Future<List<SongItem>> getEpisodesForLater() => getPlaylistPage('SE');
+
+
 }
