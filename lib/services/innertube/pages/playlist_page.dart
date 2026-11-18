@@ -199,7 +199,9 @@ class PlaylistPageParser {
     String? continuationFrom(dynamic values) {
       if (values is! List) return null;
       for (final entry in values) {
-        final token = entry?['nextContinuationData']?['continuation']?.toString();
+        final token = entry?['nextContinuationData']?['continuation']?.toString() ??
+            entry?['continuationItemRenderer']?['continuationEndpoint']
+                ?['continuationCommand']?['token']?.toString();
         if (token != null && token.isNotEmpty) return token;
       }
       return null;
@@ -232,47 +234,73 @@ class PlaylistPageParser {
     if (data is! Map) {
       return const PlaylistContinuationPage(songs: []);
     }
-    final continuationContents = data['continuationContents'];
-    final shelf = continuationContents?['musicPlaylistShelfContinuation'] ??
-        continuationContents?['musicShelfContinuation'];
-    dynamic rawItems = shelf is Map ? shelf['contents'] : null;
-    dynamic rawContinuations = shelf is Map ? shelf['continuations'] : null;
-    if (rawItems is! List) {
-      final actions = data['onResponseReceivedActions'];
-      if (actions is List && actions.isNotEmpty) {
-        final append = actions.first?['appendContinuationItemsAction'];
-        rawItems = append?['continuationItems'];
-        rawContinuations = rawItems;
+
+    final contents = data['continuationContents'];
+    final allRawItems = <dynamic>[];
+
+    final sectionList = contents?['sectionListContinuation'];
+    final sections = sectionList is Map ? sectionList['contents'] : null;
+    if (sections is List) {
+      for (final section in sections) {
+        if (section is! Map) continue;
+        final shelf = section['musicPlaylistShelfRenderer'] ??
+            section['musicShelfRenderer'];
+        final items = shelf is Map ? shelf['contents'] : null;
+        if (items is List) allRawItems.addAll(items);
+      }
+    }
+
+    for (final key in [
+      'musicPlaylistShelfContinuation',
+      'musicShelfContinuation',
+    ]) {
+      final shelf = contents is Map ? contents[key] : null;
+      final items = shelf is Map ? shelf['contents'] : null;
+      if (items is List) allRawItems.addAll(items);
+    }
+
+    final actions = data['onResponseReceivedActions'];
+    if (actions is List) {
+      for (final action in actions) {
+        final appended = action?['appendContinuationItemsAction']?['continuationItems'];
+        if (appended is List) allRawItems.addAll(appended);
       }
     }
 
     final songs = <SongItem>[];
-    if (rawItems is List) {
-      for (final raw in rawItems) {
-        if (raw is! Map) continue;
-        final renderer = raw['musicResponsiveListItemRenderer'];
-        if (renderer is Map<String, dynamic>) {
-          final song = ArtistItemsPage.fromMusicResponsiveListItemRenderer(MusicResponsiveListItemRenderer.fromJson(renderer));
-          if (song != null) songs.add(song);
-        }
+    for (final raw in allRawItems) {
+      if (raw is! Map) continue;
+      final renderer = raw['musicResponsiveListItemRenderer'];
+      if (renderer is Map<String, dynamic>) {
+        final song = ArtistItemsPage.fromMusicResponsiveListItemRenderer(
+          MusicResponsiveListItemRenderer.fromJson(renderer),
+        );
+        if (song != null && song.setVideoId != null) songs.add(song);
       }
     }
 
-    String? continuation;
-    if (rawContinuations is List) {
-      for (final entry in rawContinuations) {
+    String? nextContinuation(dynamic values) {
+      if (values is! List) return null;
+      for (final entry in values) {
         final token = entry?['nextContinuationData']?['continuation']?.toString() ??
             entry?['continuationItemRenderer']?['continuationEndpoint']
                 ?['continuationCommand']?['token']?.toString();
-        if (token != null && token.isNotEmpty) {
-          continuation = token;
-          break;
-        }
+        if (token != null && token.isNotEmpty) return token;
       }
+      return null;
     }
+
+    final continuation = nextContinuation(sectionList?['continuations']) ??
+        nextContinuation(contents?['musicPlaylistShelfContinuation']?['continuations']) ??
+        nextContinuation(contents?['musicShelfContinuation']?['continuations']) ??
+        nextContinuation(actions?.expand((action) {
+          final appended = action?['appendContinuationItemsAction']?['continuationItems'];
+          return appended is List ? appended : const [];
+        }).toList());
+
     return PlaylistContinuationPage(
       songs: songs,
-      continuation: songs.isEmpty ? null : continuation,
+      continuation: continuation,
     );
   }
 
