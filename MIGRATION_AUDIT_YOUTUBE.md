@@ -1,44 +1,43 @@
 # YouTube.kt → Dart migration audit
 
-## Scope and branch
+## Scope
 - Repository: `Latikeshh/MetroList-Pro-Flutter`
-- Working branch: `kotlin-to-dart-migration`
+- Branch: `kotlin-to-dart-migration`
 - Kotlin facade: `innertube/src/main/kotlin/com/metrolist/innertube/YouTube.kt`
-- Kotlin facade snapshot: `3ec82c5ee36812b1d328e17f2185dd2b186dcd55`
+- Kotlin source snapshot: `3ec82c5ee36812b1d328e17f2185dd2b186dcd55`
 - Dart service: `lib/services/innertube/youtube_service.dart`
-- Dart service at this audit: 2,457 lines
-- Kotlin facade at this audit: 3,402 lines
+- Dart service at this audit: approximately 2,500 lines
 
-## Work implemented
+## Implemented migration areas
 
-| Area | Current implementation | Status |
+| Area | Dart work now present | Verification |
 |---|---|---|
-| YouTube service facade | Search/suggestions/summary, browse/home/explore, album/artist/playlist/podcast, library/history, player/next/related/queue, transcript, feedback and account operations | Implemented in Dart |
-| Models and responses | Existing models consolidated across `renderers.dart`, `yt_item.dart`, typed response files and client/account models | Ported; exhaustive field parity still needs test coverage |
-| Page parsers | Album, artist, artist continuation, playlist and playlist continuation, podcast, history, related, search, home, library, charts and explore parsers | Implemented; representative parser tests added |
-| HTTP client | Dio transport, client-specific endpoints, request context, query-parameter continuation encoding, timeouts and injectable adapter | Implemented; runtime parity not yet verified |
-| Authentication | Cookie headers, SAPISIDHASH, account origin, dataSyncId context, account menu/list and visitor-data retrieval | Implemented; live authenticated session not verified |
-| Playback | Player response, stream URL extraction, cipher handling, extractor adapter, range-aware local proxy and playback tracking | Partial; see limitations |
-| Playlists and podcasts | Create/edit/delete, add/remove/move, library feedback, saved episodes, podcast shelves and custom thumbnail upload | Implemented; live mutation/upload not verified |
-| Windows | Windows build job added to platform workflow; stream proxy uses Dart IO | Build result pending |
-| Tests | Added InnerTube parity, queue/continuation, podcast, client-login and PO-token cache tests; workflow now runs `flutter analyze` and `flutter test` | CI pending |
+| Service facade | Search/search pages, suggestions, browse/home/explore, albums, artists and artist shelves, playlists and continuations, podcasts, library/history, player/next/related/queue, transcript, feedback, account and upload operations | Implemented; live endpoint parity pending |
+| Models/responses | Consolidated renderer, YT item, account, client, locale, media and typed response models | Ported into Dart files; exhaustive field-by-field fixtures pending |
+| Page parsers | Search, search summary/suggestions, album, artist, artist continuation, playlist, playlist continuation, library, library continuation, podcast, history, related, charts, home and explore | Implemented; representative unit tests added |
+| HTTP transport | Dio, client-specific endpoint URLs, context construction, continuation query encoding, timeouts and injectable adapter | Implemented; live request parity pending |
+| Authentication | Cookie handling, origin-aware SAPISIDHASH, dataSyncId login context, account menu/list and visitor-data refresh | Implemented; live authenticated session not verified |
+| Playback | Player request builder, media info, playback tracking, cipher resolver, extractor adapter, range-aware desktop proxy | Partial; see PO-token limitation |
+| Mutations/uploads | Playlist create/edit/delete/move, feedback/library tokens, subscription, saved episodes, upload and custom thumbnails | Implemented; live mutations/uploads not verified |
+| Windows | Windows build job in platform workflow; Dart IO stream proxy for desktop seeking | Workflow queued; no passing build claimed |
+| Tests | Added client-login, queue, artist/playlist/library/search continuation, podcast and playlist-header parser tests; CI runs analyzer and tests | CI queued; results pending |
 
-## Important limitations
+## Remaining limitations
 
-1. A valid YouTube PO token must be minted by BotGuard. The previous placeholder token generation was removed; the service now accepts only real tokens supplied by a platform bridge and otherwise returns null. No working BotGuard bridge is currently wired for Windows.
-2. The Kotlin extraction transport does not have a direct, verified Dart equivalent. Audio playback currently uses the Dart player resolver, cipher support, `youtube_explode_dart` adapter and a local range proxy as fallbacks.
-3. No live YouTube authenticated mutation, upload, or playback integration test has been completed.
-4. GitHub Actions runs for this branch were queued at the time of this audit; no successful build/test result is claimed.
+1. **BotGuard PO tokens:** a valid token must be minted by YouTube's BotGuard VM. Fabricated ID-derived token strings were removed. `PoTokenService` now accepts only real tokens supplied by a host bridge and returns null when none exists. No real cross-platform BotGuard bridge is wired, so token-required playback is not guaranteed.
+2. **Extraction transport:** the Kotlin extraction transport has no direct verified Dart equivalent. The Flutter player uses its own InnerTube client rotation, cipher handling, `youtube_explode_dart` adapter and range-aware local proxy.
+3. **Live verification:** no authenticated account, playlist mutation, upload, transcript or playback integration test has been completed.
+4. **CI:** GitHub Actions runs for this branch were queued at the time of the audit. No successful analyzer, test or platform build result is claimed.
 
-## Remaining acceptance checks
+## Acceptance checks still required
 
-- [ ] Complete a real BotGuard PO-token bridge for supported targets, or explicitly keep token-required playback as a documented limitation
-- [ ] Verify every renderer/response field against Kotlin fixtures, including unknown and nullable fields
-- [ ] Verify account switching, visitor data refresh, cookies and SAPISIDHASH with a real test account
-- [ ] Verify search, album, artist, playlist, podcast, history and continuation results against captured Kotlin fixtures
-- [ ] Verify player, queue, transcript, media info, playback tracking and stream seeking
-- [ ] Verify playlist mutations, feedback tokens and uploads against live responses
-- [ ] Obtain successful `flutter analyze`, unit tests, Windows build and platform builds
-- [ ] Run a Windows playback smoke test
+- [ ] Real BotGuard bridge for supported targets, or explicit acceptance of fallback-only behavior
+- [ ] Field-by-field renderer/response parity fixtures, including nullable and unknown fields
+- [ ] Live cookie, SAPISIDHASH, visitor-data refresh and account-switch verification
+- [ ] Live search, browse, continuation, history and podcast checks
+- [ ] Player, queue, transcript, media info, playback tracking and range-seeking checks
+- [ ] Live playlist mutation and upload checks
+- [ ] Successful `flutter analyze`, unit tests and Windows build
+- [ ] Windows playback smoke test
 
-This branch contains substantial Dart migration work, but the migration must not be described as fully complete until the remaining checks above pass.
+The branch contains substantial service, model, parser, authentication and playback migration work. It is not yet safe to call the entire migration complete until the outstanding checks above pass.
