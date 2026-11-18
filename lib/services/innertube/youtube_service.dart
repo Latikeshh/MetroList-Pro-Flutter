@@ -31,6 +31,7 @@ import 'pages/podcast_page.dart';
 import 'pages/playlist_page.dart';
 import 'pages/playlist_continuation_page.dart';
 import 'pages/search_summary_page.dart';
+import 'pages/search_page.dart';
 import 'pages/related_page.dart';
 import 'pages/search_suggestion_page.dart';
 import 'pages/page_helper.dart';
@@ -2308,14 +2309,28 @@ class YouTubeService {
   }) =>
       getSearchSummary(query, recordSearchHistory: recordSearchHistory);
 
-  Future<Map<String, dynamic>?> searchContinuation(
+  Future<SearchResult> searchPage(
+    String query, {
+    String? filter,
+    bool recordSearchHistory = false,
+  }) async {
+    final response = await getSearchSummaryResponse(
+      query,
+      recordSearchHistory: recordSearchHistory,
+    );
+    return SearchPageParser.parseResult(response);
+  }
+
+  Future<SearchResult> searchContinuation(
     String continuation, {
     bool recordSearchHistory = false,
-  }) =>
-      searchContinuationResponse(
-        continuation,
-        recordSearchHistory: recordSearchHistory,
-      );
+  }) async {
+    final response = await searchContinuationResponse(
+      continuation,
+      recordSearchHistory: recordSearchHistory,
+    );
+    return SearchPageParser.parseResult(response);
+  }
 
   Future<AlbumPageData> album(String browseId, {bool withSongs = true}) =>
       getAlbumPage(browseId);
