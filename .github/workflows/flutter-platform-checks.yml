@@ -2,7 +2,7 @@ name: Flutter platform checks
 
 on:
   push:
-    branches: [main]
+    branches: [main, kotlin-to-dart-migration]
   pull_request:
     branches: [main]
   workflow_dispatch:
