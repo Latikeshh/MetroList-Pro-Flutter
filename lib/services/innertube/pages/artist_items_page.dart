@@ -42,6 +42,7 @@ class ArtistItemsPage {
       thumbnail: renderer.thumbnail?.getThumbnailUrl() ?? '',
       musicVideoType: renderer.musicVideoType,
       endpoint: renderer.overlay?.playNavigationEndpoint?.watchEndpoint,
+      setVideoId: renderer.playlistSetVideoId,
       isEpisode: renderer.isEpisode,
     );
   }
