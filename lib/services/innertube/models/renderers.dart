@@ -507,3 +507,280 @@ class AutomixPreviewVideoRenderer {
   }
 }
 
+
+
+class MusicMultiRowListItemRenderer {
+  final Runs? title;
+  final Runs? subtitle;
+  final Runs? secondSubtitle;
+  final Runs? secondarySubtitle;
+  final ThumbnailRenderer? thumbnail;
+  final NavigationEndpoint? onTap;
+  final double? playbackProgress;
+  final String? displayStyle;
+  final Menu? menu;
+
+  const MusicMultiRowListItemRenderer({
+    this.title,
+    this.subtitle,
+    this.secondSubtitle,
+    this.secondarySubtitle,
+    this.thumbnail,
+    this.onTap,
+    this.playbackProgress,
+    this.displayStyle,
+    this.menu,
+  });
+
+  factory MusicMultiRowListItemRenderer.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const MusicMultiRowListItemRenderer();
+    final progress = json['playbackProgress'];
+    return MusicMultiRowListItemRenderer(
+      title: json['title'] is Map<String, dynamic> ? Runs.fromJson(json['title']) : null,
+      subtitle: json['subtitle'] is Map<String, dynamic> ? Runs.fromJson(json['subtitle']) : null,
+      secondSubtitle: json['secondSubtitle'] is Map<String, dynamic>
+          ? Runs.fromJson(json['secondSubtitle'])
+          : null,
+      secondarySubtitle: json['secondarySubtitle'] is Map<String, dynamic>
+          ? Runs.fromJson(json['secondarySubtitle'])
+          : null,
+      thumbnail: json['thumbnail'] is Map<String, dynamic>
+          ? ThumbnailRenderer.fromJson(json['thumbnail'])
+          : null,
+      onTap: json['onTap'] is Map<String, dynamic>
+          ? NavigationEndpoint.fromJson(json['onTap'])
+          : null,
+      playbackProgress: progress is Map
+          ? (progress['value'] as num?)?.toDouble()
+          : null,
+      displayStyle: json['displayStyle']?.toString(),
+      menu: json['menu'] is Map<String, dynamic> ? Menu.fromJson(json['menu']) : null,
+    );
+  }
+}
+
+class MusicCardShelfRenderer {
+  final Runs? title;
+  final Runs? subtitle;
+  final ThumbnailRenderer? thumbnail;
+  final Map<String, dynamic>? header;
+  final List<MusicResponsiveListItemRenderer> contents;
+  final List<Map<String, dynamic>> buttons;
+  final NavigationEndpoint? onTap;
+  final List<Badges>? subtitleBadges;
+
+  const MusicCardShelfRenderer({
+    this.title,
+    this.subtitle,
+    this.thumbnail,
+    this.header,
+    this.contents = const [],
+    this.buttons = const [],
+    this.onTap,
+    this.subtitleBadges,
+  });
+
+  factory MusicCardShelfRenderer.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const MusicCardShelfRenderer();
+    final rawContents = json['contents'];
+    final rawButtons = json['buttons'];
+    final rawBadges = json['subtitleBadges'];
+    return MusicCardShelfRenderer(
+      title: json['title'] is Map<String, dynamic> ? Runs.fromJson(json['title']) : null,
+      subtitle: json['subtitle'] is Map<String, dynamic> ? Runs.fromJson(json['subtitle']) : null,
+      thumbnail: json['thumbnail'] is Map<String, dynamic>
+          ? ThumbnailRenderer.fromJson(json['thumbnail'])
+          : null,
+      header: json['header'] is Map<String, dynamic>
+          ? Map<String, dynamic>.from(json['header'])
+          : null,
+      contents: rawContents is List
+          ? rawContents
+              .whereType<Map<String, dynamic>>()
+              .map((item) => MusicResponsiveListItemRenderer.fromJson(
+                    item['musicResponsiveListItemRenderer'] is Map<String, dynamic>
+                        ? item['musicResponsiveListItemRenderer']
+                        : null,
+                  ))
+              .toList()
+          : const [],
+      buttons: rawButtons is List
+          ? rawButtons.whereType<Map<String, dynamic>>().toList()
+          : const [],
+      onTap: json['onTap'] is Map<String, dynamic>
+          ? NavigationEndpoint.fromJson(json['onTap'])
+          : null,
+      subtitleBadges: rawBadges is List
+          ? rawBadges.whereType<Map<String, dynamic>>().map(Badges.fromJson).toList()
+          : null,
+    );
+  }
+
+  String? get headerTitle {
+    final runs = header?['musicCardShelfHeaderBasicRenderer']?['title']?['runs'];
+    if (runs is List) {
+      return runs.map((run) => run['text']?.toString() ?? '').join();
+    }
+    return null;
+  }
+}
+
+class PlaylistPanelVideoRenderer {
+  final Runs? title;
+  final Runs? lengthText;
+  final Runs? longBylineText;
+  final Runs? shortBylineText;
+  final List<Badges>? badges;
+  final String? videoId;
+  final String? playlistSetVideoId;
+  final bool selected;
+  final Thumbnails? thumbnail;
+  final Runs? unplayableText;
+  final Menu? menu;
+  final NavigationEndpoint? navigationEndpoint;
+
+  const PlaylistPanelVideoRenderer({
+    this.title,
+    this.lengthText,
+    this.longBylineText,
+    this.shortBylineText,
+    this.badges,
+    this.videoId,
+    this.playlistSetVideoId,
+    this.selected = false,
+    this.thumbnail,
+    this.unplayableText,
+    this.menu,
+    this.navigationEndpoint,
+  });
+
+  factory PlaylistPanelVideoRenderer.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const PlaylistPanelVideoRenderer();
+    final rawBadges = json['badges'];
+    return PlaylistPanelVideoRenderer(
+      title: json['title'] is Map<String, dynamic> ? Runs.fromJson(json['title']) : null,
+      lengthText: json['lengthText'] is Map<String, dynamic> ? Runs.fromJson(json['lengthText']) : null,
+      longBylineText: json['longBylineText'] is Map<String, dynamic>
+          ? Runs.fromJson(json['longBylineText'])
+          : null,
+      shortBylineText: json['shortBylineText'] is Map<String, dynamic>
+          ? Runs.fromJson(json['shortBylineText'])
+          : null,
+      badges: rawBadges is List
+          ? rawBadges.whereType<Map<String, dynamic>>().map(Badges.fromJson).toList()
+          : null,
+      videoId: json['videoId']?.toString(),
+      playlistSetVideoId: json['playlistSetVideoId']?.toString(),
+      selected: json['selected'] == true,
+      thumbnail: json['thumbnail'] is Map<String, dynamic>
+          ? Thumbnails.fromJson(json['thumbnail'])
+          : null,
+      unplayableText: json['unplayableText'] is Map<String, dynamic>
+          ? Runs.fromJson(json['unplayableText'])
+          : null,
+      menu: json['menu'] is Map<String, dynamic> ? Menu.fromJson(json['menu']) : null,
+      navigationEndpoint: json['navigationEndpoint'] is Map<String, dynamic>
+          ? NavigationEndpoint.fromJson(json['navigationEndpoint'])
+          : null,
+    );
+  }
+}
+
+class PlaylistPanelRenderer {
+  final String? title;
+  final Runs? titleText;
+  final Runs? shortBylineText;
+  final List<PlaylistPanelVideoRenderer> contents;
+  final bool? isInfinite;
+  final int? numItemsToShow;
+  final String? playlistId;
+  final List<Continuation>? continuations;
+
+  const PlaylistPanelRenderer({
+    this.title,
+    this.titleText,
+    this.shortBylineText,
+    this.contents = const [],
+    this.isInfinite,
+    this.numItemsToShow,
+    this.playlistId,
+    this.continuations,
+  });
+
+  factory PlaylistPanelRenderer.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const PlaylistPanelRenderer();
+    final rawContents = json['contents'];
+    final rawContinuations = json['continuations'];
+    return PlaylistPanelRenderer(
+      title: json['title']?.toString(),
+      titleText: json['titleText'] is Map<String, dynamic> ? Runs.fromJson(json['titleText']) : null,
+      shortBylineText: json['shortBylineText'] is Map<String, dynamic>
+          ? Runs.fromJson(json['shortBylineText'])
+          : null,
+      contents: rawContents is List
+          ? rawContents
+              .whereType<Map<String, dynamic>>()
+              .map((item) => PlaylistPanelVideoRenderer.fromJson(
+                    item['playlistPanelVideoRenderer'] is Map<String, dynamic>
+                        ? item['playlistPanelVideoRenderer']
+                        : null,
+                  ))
+              .toList()
+          : const [],
+      isInfinite: json['isInfinite'] == true,
+      numItemsToShow: (json['numItemsToShow'] as num?)?.toInt(),
+      playlistId: json['playlistId']?.toString(),
+      continuations: rawContinuations is List
+          ? rawContinuations
+              .whereType<Map<String, dynamic>>()
+              .map(Continuation.fromJson)
+              .toList()
+          : null,
+    );
+  }
+}
+
+class MusicQueueRenderer {
+  final PlaylistPanelRenderer? playlistPanelRenderer;
+  final Runs? title;
+  final Runs? subtitle;
+
+  const MusicQueueRenderer({
+    this.playlistPanelRenderer,
+    this.title,
+    this.subtitle,
+  });
+
+  factory MusicQueueRenderer.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const MusicQueueRenderer();
+    final content = json['content'];
+    final header = json['header']?['musicQueueHeaderRenderer'];
+    return MusicQueueRenderer(
+      playlistPanelRenderer: content is Map &&
+              content['playlistPanelRenderer'] is Map<String, dynamic>
+          ? PlaylistPanelRenderer.fromJson(content['playlistPanelRenderer'])
+          : null,
+      title: header is Map && header['title'] is Map<String, dynamic>
+          ? Runs.fromJson(header['title'])
+          : null,
+      subtitle: header is Map && header['subtitle'] is Map<String, dynamic>
+          ? Runs.fromJson(header['subtitle'])
+          : null,
+    );
+  }
+}
+
+class SearchSuggestionsSectionRenderer {
+  final List<Map<String, dynamic>> contents;
+
+  const SearchSuggestionsSectionRenderer({this.contents = const []});
+
+  factory SearchSuggestionsSectionRenderer.fromJson(Map<String, dynamic>? json) {
+    final raw = json?['contents'];
+    return SearchSuggestionsSectionRenderer(
+      contents: raw is List
+          ? raw.whereType<Map<String, dynamic>>().toList()
+          : const [],
+    );
+  }
+}
