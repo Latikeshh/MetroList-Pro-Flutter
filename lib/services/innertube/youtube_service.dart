@@ -95,7 +95,7 @@ class YouTubeService {
     }
 
     try {
-      final body = _buildContext();
+      final body = _buildContext(YouTubeClient.web);
       // InnerTubeX transcript requests omit visitor and signed-in account context.
       final requestContext = body['context'];
       if (requestContext is Map<String, dynamic>) {
