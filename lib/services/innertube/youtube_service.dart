@@ -49,8 +49,11 @@ class YouTubeService {
     _dio.httpClientAdapter = adapter;
   }
 
-  Map<String, dynamic> _buildContext([YouTubeClient client = YouTubeClient.webRemix]) {
-    return _innerTubeClient.buildContext(client);
+  Map<String, dynamic> _buildContext(
+    [YouTubeClient client = YouTubeClient.webRemix], {
+    bool useLogin = false,
+  }) {
+    return _innerTubeClient.buildContext(client, useLogin: useLogin);
   }
 
   Map<String, String> _getHeaders({YouTubeClient client = YouTubeClient.webRemix, String? cookie}) {
