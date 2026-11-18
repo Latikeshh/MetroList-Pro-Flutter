@@ -67,7 +67,7 @@ class SearchSummaryPageData {
     final watch = endpoint?.watchEndpoint;
     final title = renderer.title?.runs.firstOrNull?.text;
     final thumbnail = renderer.thumbnail?.getThumbnailUrl();
-    if (title == null || title.isEmpty || thumbnail == null) return null;
+    if (title == null || title.isEmpty) return null;
 
     WatchEndpoint? buttonEndpoint(String iconType) {
       for (final button in renderer.buttons) {
