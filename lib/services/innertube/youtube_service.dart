@@ -59,8 +59,16 @@ class YouTubeService {
     );
   }
 
-  Map<String, String> _getHeaders({YouTubeClient client = YouTubeClient.webRemix, String? cookie}) {
-    return _innerTubeClient.getHeaders(client: client, pageCookie: cookie);
+  Map<String, String> _getHeaders({
+    YouTubeClient client = YouTubeClient.webRemix,
+    String? cookie,
+    bool includeAccountCookies = true,
+  }) {
+    return _innerTubeClient.getHeaders(
+      client: client,
+      pageCookie: cookie,
+      includeAccountCookies: includeAccountCookies,
+    );
   }
 
   Future<AccountMenuResponse?> getAccountMenu(String cookie) async {
@@ -138,7 +146,15 @@ class YouTubeService {
       final body = _buildContext()
         ..['videoIds'] = videoIds
         ..['playlistId'] = playlistId;
-      final response = await _dio.post('/music/get_queue', data: body);
+      final response = await _dio.post(
+        '/music/get_queue',
+        data: body,
+        options: Options(
+          headers: _getHeaders(
+            includeAccountCookies: _innerTubeClient.useLoginForBrowse,
+          ),
+        ),
+      );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         final queueDatas = response.data['queueDatas'] as List?;
         if (queueDatas != null) {
@@ -1191,7 +1207,15 @@ class YouTubeService {
       if (params != null) body['params'] = params;
       if (continuation != null) body['continuation'] = continuation;
 
-      final response = await _dio.post('/next', data: body);
+      final response = await _dio.post(
+        '/next',
+        data: body,
+        options: Options(
+          headers: _getHeaders(
+            includeAccountCookies: _innerTubeClient.useLoginForBrowse,
+          ),
+        ),
+      );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         return NextPageParser.parse(response.data);
       }
@@ -1542,7 +1566,13 @@ class YouTubeService {
       final response = await _dio.post(
         client.client.endpointUrl + '/next',
         data: body,
-        options: Options(headers: _getHeaders(client: client)),
+        options: Options(
+          headers: _getHeaders(
+            client: client,
+            includeAccountCookies: _innerTubeClient.useLoginForBrowse &&
+                client.client.loginSupported,
+          ),
+        ),
       );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         return Map<String, dynamic>.from(response.data);
