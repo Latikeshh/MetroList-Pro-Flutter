@@ -25,6 +25,8 @@ import 'pages/home_page.dart';
 import 'pages/library_page.dart';
 import 'pages/next_page.dart';
 import 'pages/podcast_page.dart';
+import 'pages/playlist_page.dart';
+import 'pages/playlist_continuation_page.dart';
 import 'pages/search_summary_page.dart';
 import 'pages/search_suggestion_page.dart';
 import 'pages/page_helper.dart';
