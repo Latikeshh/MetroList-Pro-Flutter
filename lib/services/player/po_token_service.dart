@@ -32,6 +32,7 @@ class PoTokenService {
   String? _cachedVisitorData;
   PoTokenResult? _cachedPoToken;
   DateTime? _cachedAt;
+  String? _cachedVideoId;
 
   static const Duration _tokenTtl = Duration(minutes: 45);
 
@@ -51,45 +52,41 @@ class PoTokenService {
     }
   }
 
-  /// Generates or retrieves an original PO token result for [videoId] and [visitorData].
+  /// Returns a real token previously supplied by a platform BotGuard bridge.
+  ///
+  /// A PO token cannot be derived from a video ID or visitor ID. If no native or
+  /// browser BotGuard bridge has minted one, this returns null so callers can
+  /// continue with clients that do not require a PO token.
   Future<PoTokenResult?> getPoToken(String videoId, String visitorData) async {
-    if (visitorData.isEmpty) {
-      return null;
-    }
-
+    if (videoId.isEmpty || visitorData.isEmpty) return null;
     if (_cachedPoToken != null &&
+        _cachedVideoId == videoId &&
         _cachedVisitorData == visitorData &&
         !isExpired) {
       return _cachedPoToken;
     }
+    return null;
+  }
 
-    try {
-      await loadBotGuardHtml();
-
-      final bytes = utf8.encode('$videoId:$visitorData:${DateTime.now().millisecondsSinceEpoch}');
-      final playerToken = 'Mn${base64Url.encode(bytes).replaceAll('=', '')}';
-      final streamingToken = 'Mn${base64Url.encode(utf8.encode('stream:$videoId:$visitorData')).replaceAll('=', '')}';
-
-      final result = PoTokenResult(
-        playerRequestPoToken: playerToken,
-        streamingDataPoToken: streamingToken,
-        visitorData: visitorData,
-      );
-
-      _cachedPoToken = result;
-      _cachedVisitorData = visitorData;
-      _cachedAt = DateTime.now();
-
-      return result;
-    } catch (e) {
-      debugPrint('PoTokenService execution error: $e');
-      return null;
+  /// Stores tokens minted by a real BotGuard implementation on a supported host.
+  void cacheToken(String videoId, PoTokenResult result) {
+    if (videoId.isEmpty ||
+        result.visitorData == null ||
+        result.visitorData!.isEmpty ||
+        result.playerRequestPoToken.isEmpty ||
+        result.streamingDataPoToken.isEmpty) {
+      throw ArgumentError('A valid video-bound BotGuard token is required.');
     }
+    _cachedPoToken = result;
+    _cachedVideoId = videoId;
+    _cachedVisitorData = result.visitorData;
+    _cachedAt = DateTime.now();
   }
 
   void clearCache() {
     _cachedPoToken = null;
     _cachedVisitorData = null;
     _cachedAt = null;
+    _cachedVideoId = null;
   }
 }
