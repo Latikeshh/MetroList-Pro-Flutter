@@ -182,6 +182,7 @@ class PodcastPageParser {
       author: author,
       episodeCountText: episodeCountText,
       thumbnail: thumbnail,
+      channelId: author?.id,
     );
 
     dynamic episodeContents;
