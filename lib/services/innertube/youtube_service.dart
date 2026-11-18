@@ -124,7 +124,7 @@ class YouTubeService {
       final body = _buildContext()
         ..['videoIds'] = videoIds
         ..['playlistId'] = playlistId;
-      final response = await _dio.post('/get_queue', data: body);
+      final response = await _dio.post('/music/get_queue', data: body);
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         final queueDatas = response.data['queueDatas'] as List?;
         if (queueDatas != null) {
@@ -576,7 +576,7 @@ class YouTubeService {
 
   Future<bool> deletePlaylist(String playlistId) async {
     try {
-      final body = _buildContext()..['playlistId'] = playlistId;
+      final body = _buildContext()..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '');
       final response = await _dio.post('/playlist/delete', data: body);
       return response.statusCode == 200;
     } catch (_) {
@@ -587,7 +587,7 @@ class YouTubeService {
   Future<bool> renamePlaylist(String playlistId, String newTitle) async {
     try {
       final body = _buildContext()
-        ..['playlistId'] = playlistId
+        ..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '')
         ..['actions'] = [
           {
             'action': 'ACTION_SET_PLAYLIST_NAME',
@@ -610,7 +610,7 @@ class YouTubeService {
               })
           .toList();
       final body = _buildContext()
-        ..['playlistId'] = playlistId
+        ..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '')
         ..['actions'] = actions;
       final response = await _dio.post('/browse/edit_playlist', data: body);
       return response.statusCode == 200;
@@ -622,7 +622,7 @@ class YouTubeService {
   Future<bool> addPlaylistToPlaylist(String targetPlaylistId, String sourcePlaylistId) async {
     try {
       final body = _buildContext()
-        ..['playlistId'] = targetPlaylistId
+        ..['playlistId'] = targetPlaylistId.replaceFirst(RegExp(r'^VL'), '')
         ..['actions'] = [
           {
             'action': 'ACTION_ADD_PLAYLIST',
@@ -639,7 +639,7 @@ class YouTubeService {
   Future<bool> removeFromPlaylist(String playlistId, String videoId, String setVideoId) async {
     try {
       final body = _buildContext()
-        ..['playlistId'] = playlistId
+        ..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '')
         ..['actions'] = [
           {
             'action': 'ACTION_REMOVE_VIDEO',
@@ -951,14 +951,12 @@ class YouTubeService {
   Future<bool> moveSongInPlaylist(String playlistId, String setVideoId, String? nextSetVideoId) async {
     try {
       final actionMap = <String, dynamic>{
-        'action': 'ACTION_MOVE_VIDEO',
+        'action': 'ACTION_MOVE_VIDEO_BEFORE',
         'setVideoId': setVideoId,
+        'movedSetVideoIdSuccessor': nextSetVideoId,
       };
-      if (nextSetVideoId != null) {
-        actionMap['movedSetVideoIdPreceding'] = nextSetVideoId;
-      }
       final body = _buildContext()
-        ..['playlistId'] = playlistId
+        ..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '')
         ..['actions'] = [actionMap];
       final response = await _dio.post('/browse/edit_playlist', data: body);
       return response.statusCode == 200;
