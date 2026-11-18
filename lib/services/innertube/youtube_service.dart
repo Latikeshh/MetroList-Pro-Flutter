@@ -578,13 +578,12 @@ class YouTubeService {
   Future<bool> subscribeChannel(
     String channelId,
     bool subscribe, {
-    String params = 'EgIIAhgA',
+    String? params,
   }) async {
     try {
       final endpoint = subscribe ? '/subscription/subscribe' : '/subscription/unsubscribe';
-      final body = _buildContext()
-        ..['channelIds'] = [channelId]
-        ..['params'] = params;
+      final body = _buildContext()..['channelIds'] = [channelId];
+      if (params != null && params.isNotEmpty) body['params'] = params;
       final response = await _dio.post(
         endpoint,
         data: body,
