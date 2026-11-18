@@ -44,7 +44,7 @@ class NextPageParser {
         if (item is! Map) continue;
         final renderer = item['playlistPanelVideoRenderer'];
         if (renderer is! Map) continue;
-        final song = _parsePlaylistVideo(renderer);
+        final song = fromPlaylistPanelVideoRenderer(renderer);
         if (song == null) continue;
         if (renderer['selected'] == true) currentIndex = queue.length;
         queue.add(song);
@@ -86,7 +86,7 @@ class NextPageParser {
     return _parsePlaylistVideo(renderer);
   }
 
-  static SongItem? _parsePlaylistVideo(Map renderer) {
+  static SongItem? fromPlaylistPanelVideoRenderer(Map renderer) {
     final navigation = renderer['navigationEndpoint'];
     final watch = navigation is Map ? navigation['watchEndpoint'] : null;
     final videoId = renderer['videoId']?.toString() ??
