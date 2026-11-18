@@ -8,6 +8,8 @@ import 'package:metrolist_pro/services/innertube/pages/artist_page.dart';
 import 'package:metrolist_pro/services/innertube/pages/artist_items_continuation_page.dart';
 import 'package:metrolist_pro/services/innertube/pages/playlist_page.dart';
 import 'package:metrolist_pro/services/innertube/pages/library_page.dart';
+import 'package:metrolist_pro/services/innertube/pages/library_continuation_page.dart';
+import 'package:metrolist_pro/services/innertube/pages/search_page.dart';
 import 'package:metrolist_pro/services/innertube/pages/podcast_page.dart';
 import 'package:metrolist_pro/services/innertube/youtube_service.dart';
 
@@ -299,6 +301,91 @@ void main() {
       expect(parsed.episodes.single.id, 'episode-1');
       expect(parsed.episodes.single.title, 'Episode One');
       expect(parsed.episodes.single.podcast?.name, 'Test Podcast');
+    });
+
+    test('Library grid continuation parses items and token', () {
+      final page = LibraryContinuationPageParser.parse({
+        'continuationContents': {
+          'gridContinuation': {
+            'items': [
+              {
+                'musicTwoRowItemRenderer': {
+                  'title': {
+                    'runs': [{'text': 'Library Album'}]
+                  },
+                  'navigationEndpoint': {
+                    'browseEndpoint': {
+                      'browseId': 'MPRE-library',
+                      'browseEndpointContextSupportedConfigs': {
+                        'browseEndpointContextMusicConfig': {
+                          'pageType': 'MUSIC_PAGE_TYPE_ALBUM'
+                        }
+                      }
+                    }
+                  },
+                  'thumbnailRenderer': {
+                    'musicThumbnailRenderer': {
+                      'thumbnail': {
+                        'thumbnails': [
+                          {'url': 'https://example.com/library.jpg'}
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            'continuations': [
+              {'nextContinuationData': {'continuation': 'library-next'}}
+            ]
+          }
+        }
+      });
+
+      expect(page.items, hasLength(1));
+      expect(page.items.single, isA<AlbumItem>());
+      expect(page.continuation, 'library-next');
+    });
+
+    test('Search continuation parses responsive items and next token', () {
+      final page = SearchPageParser.parseResult({
+        'continuationContents': {
+          'musicShelfContinuation': {
+            'contents': [
+              {
+                'musicResponsiveListItemRenderer': {
+                  'playlistItemData': {'videoId': 'search-next-song'},
+                  'flexColumns': [
+                    {
+                      'musicResponsiveListItemFlexColumnRenderer': {
+                        'text': {
+                          'runs': [{'text': 'Search Next Song'}]
+                        }
+                      }
+                    }
+                  ],
+                  'thumbnail': {
+                    'musicThumbnailRenderer': {
+                      'thumbnail': {
+                        'thumbnails': [
+                          {'url': 'https://example.com/search.jpg'}
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            'continuations': [
+              {'nextContinuationData': {'continuation': 'search-next-token'}}
+            ]
+          }
+        }
+      });
+
+      expect(page.items, hasLength(1));
+      expect(page.items.single.id, 'search-next-song');
+      expect(page.continuation, 'search-next-token');
     });
 
     test('Playlist page parses header, owner and initial shelf songs', () {
