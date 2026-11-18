@@ -549,7 +549,11 @@ class YouTubeService {
     try {
       final endpoint = like ? '/like/like' : '/like/indifferent';
       final body = _buildContext()..['target'] = {'videoId': videoId};
-      final response = await _dio.post(endpoint, data: body);
+      final response = await _dio.post(
+        endpoint,
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -560,7 +564,11 @@ class YouTubeService {
     try {
       final endpoint = like ? '/like/like' : '/like/indifferent';
       final body = _buildContext()..['target'] = {'playlistId': playlistId};
-      final response = await _dio.post(endpoint, data: body);
+      final response = await _dio.post(
+        endpoint,
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -577,7 +585,11 @@ class YouTubeService {
       final body = _buildContext()
         ..['channelIds'] = [channelId]
         ..['params'] = params;
-      final response = await _dio.post(endpoint, data: body);
+      final response = await _dio.post(
+        endpoint,
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -587,7 +599,11 @@ class YouTubeService {
   Future<String?> createPlaylist(String title) async {
     try {
       final body = _buildContext()..['title'] = title;
-      final response = await _dio.post('/playlist/create', data: body);
+      final response = await _dio.post(
+        '/playlist/create',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       if (response.statusCode == 200 && response.data is Map) {
         return response.data['playlistId']?.toString();
       }
@@ -598,7 +614,11 @@ class YouTubeService {
   Future<bool> deletePlaylist(String playlistId) async {
     try {
       final body = _buildContext()..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '');
-      final response = await _dio.post('/playlist/delete', data: body);
+      final response = await _dio.post(
+        '/playlist/delete',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -615,7 +635,11 @@ class YouTubeService {
             'playlistName': newTitle,
           }
         ];
-      final response = await _dio.post('/browse/edit_playlist', data: body);
+      final response = await _dio.post(
+        '/browse/edit_playlist',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -633,7 +657,11 @@ class YouTubeService {
       final body = _buildContext()
         ..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '')
         ..['actions'] = actions;
-      final response = await _dio.post('/browse/edit_playlist', data: body);
+      final response = await _dio.post(
+        '/browse/edit_playlist',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -650,7 +678,11 @@ class YouTubeService {
             'addedFullListId': sourcePlaylistId,
           }
         ];
-      final response = await _dio.post('/browse/edit_playlist', data: body);
+      final response = await _dio.post(
+        '/browse/edit_playlist',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -668,7 +700,11 @@ class YouTubeService {
             'removedVideoId': videoId,
           }
         ];
-      final response = await _dio.post('/browse/edit_playlist', data: body);
+      final response = await _dio.post(
+        '/browse/edit_playlist',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -716,7 +752,11 @@ class YouTubeService {
     if (tokens.isEmpty) return false;
     try {
       final body = _buildContext()..['feedbackTokens'] = tokens;
-      final response = await _dio.post('/feedback', data: body);
+      final response = await _dio.post(
+        '/feedback',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       if (response.statusCode != 200 || response.data is! Map) return false;
       final feedbackResponses = response.data['feedbackResponses'];
       if (feedbackResponses is List) {
@@ -784,7 +824,11 @@ class YouTubeService {
         ..['actions'] = [
           {'action': 'ACTION_ADD_VIDEO', 'addedVideoId': videoId}
         ];
-      final response = await _dio.post('/browse/edit_playlist', data: body);
+      final response = await _dio.post(
+        '/browse/edit_playlist',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -1067,7 +1111,11 @@ class YouTubeService {
       final body = _buildContext()
         ..['playlistId'] = playlistId.replaceFirst(RegExp(r'^VL'), '')
         ..['actions'] = [actionMap];
-      final response = await _dio.post('/browse/edit_playlist', data: body);
+      final response = await _dio.post(
+        '/browse/edit_playlist',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       return response.statusCode == 200;
     } catch (_) {
       return false;
