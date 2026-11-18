@@ -24,6 +24,7 @@ import 'pages/library_page.dart';
 import 'pages/next_page.dart';
 import 'pages/podcast_page.dart';
 import 'pages/search_summary_page.dart';
+import 'pages/search_suggestion_page.dart';
 import 'pages/page_helper.dart';
 
 class YouTubeService {
@@ -414,6 +415,11 @@ class YouTubeService {
       }
     } catch (_) {}
     return null;
+  }
+
+  Future<SearchSuggestionPageData> getSearchSuggestions(String query) async {
+    final response = await getSearchSuggestionsResponse(query);
+    return SearchSuggestionPageData.parse(response);
   }
 
   Future<Map<String, dynamic>?> getSearchSuggestionsResponse(String query) async {
