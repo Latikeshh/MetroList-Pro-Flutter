@@ -1,104 +1,44 @@
 # YouTube.kt → Dart migration audit
 
-## Source snapshot
-- Kotlin source: `innertube/src/main/kotlin/com/metrolist/innertube/YouTube.kt`
-- Kotlin blob: `3ec82c5ee36812b1d328e17f2185dd2b186dcd55`
-- Kotlin source size: 152,016 characters / 3,402 lines
-- Existing Dart target: `lib/services/innertube/youtube_service.dart`
-- Dart blob: `e59ac01bd9a67f10cb5d995b4d9a500c0d9fcee3`
-- Existing Dart size: 26,199 characters / 762 lines
+## Scope and branch
+- Repository: `Latikeshh/MetroList-Pro-Flutter`
+- Working branch: `kotlin-to-dart-migration`
+- Kotlin facade: `innertube/src/main/kotlin/com/metrolist/innertube/YouTube.kt`
+- Kotlin facade snapshot: `3ec82c5ee36812b1d328e17f2185dd2b186dcd55`
+- Dart service: `lib/services/innertube/youtube_service.dart`
+- Dart service at this audit: 2,457 lines
+- Kotlin facade at this audit: 3,402 lines
 
-## Declaration coverage check
-A name-based declaration scan found:
-- Kotlin function declarations: 72 unique names
-- Dart method declarations detected: 39
-- Kotlin names not detected in the Dart file: 55
+## Work implemented
 
-The missing names are:
-- `extractionTransport`
-- `searchSuggestions`
-- `searchSummary`
-- `groupItemsByType`
-- `search`
-- `searchContinuation`
-- `album`
-- `albumSongs`
-- `artist`
-- `mapRuns`
-- `artistItems`
-- `artistItemsContinuation`
-- `playlist`
-- `playlistContinuation`
-- `podcast`
-- `podcastWithDebug`
-- `home`
-- `homeContinuation`
-- `explore`
-- `newReleaseAlbums`
-- `moodAndGenres`
-- `browse`
-- `library`
-- `libraryContinuation`
-- `determineChartType`
-- `convertToChartItem`
-- `convertMusicTwoRowItem`
-- `musicHistory`
-- `libraryPodcastChannels`
-- `libraryPodcastEpisodes`
-- `savedPodcastShows`
-- `newEpisodes`
-- `processShelf`
-- `newEpisodesPlaylistInfo`
-- `episodesForLater`
-- `getChannelId`
-- `moveSongPlaylist`
-- `uploadCustomThumbnailLink`
-- `removeThumbnailPlaylist`
-- `player`
-- `next`
-- `related`
-- `queue`
-- `transcript`
-- `visitorData`
-- `accountInfo`
-- `accountsList`
-- `feedback`
-- `toggleSongLibrary`
-- `getMediaInfo`
-- `uploadSong`
-- `deleteUploadedSong`
-- `resolveArtistIds`
-- `resolveArtistIdMap`
-- `reportBytesRead`
+| Area | Current implementation | Status |
+|---|---|---|
+| YouTube service facade | Search/suggestions/summary, browse/home/explore, album/artist/playlist/podcast, library/history, player/next/related/queue, transcript, feedback and account operations | Implemented in Dart |
+| Models and responses | Existing models consolidated across `renderers.dart`, `yt_item.dart`, typed response files and client/account models | Ported; exhaustive field parity still needs test coverage |
+| Page parsers | Album, artist, artist continuation, playlist and playlist continuation, podcast, history, related, search, home, library, charts and explore parsers | Implemented; representative parser tests added |
+| HTTP client | Dio transport, client-specific endpoints, request context, query-parameter continuation encoding, timeouts and injectable adapter | Implemented; runtime parity not yet verified |
+| Authentication | Cookie headers, SAPISIDHASH, account origin, dataSyncId context, account menu/list and visitor-data retrieval | Implemented; live authenticated session not verified |
+| Playback | Player response, stream URL extraction, cipher handling, extractor adapter, range-aware local proxy and playback tracking | Partial; see limitations |
+| Playlists and podcasts | Create/edit/delete, add/remove/move, library feedback, saved episodes, podcast shelves and custom thumbnail upload | Implemented; live mutation/upload not verified |
+| Windows | Windows build job added to platform workflow; stream proxy uses Dart IO | Build result pending |
+| Tests | Added InnerTube parity, queue/continuation, podcast, client-login and PO-token cache tests; workflow now runs `flutter analyze` and `flutter test` | CI pending |
 
-This is a regex/name-based comparison, not proof of semantic absence: names may differ between Kotlin and Dart, and some methods may be implemented under another name. Conversely, matching names do not prove equivalent behavior.
+## Important limitations
 
-## Major dependency groups in Kotlin
-The source imports types and helpers from:
-- `com.metrolist.innertube.models.*`
-- `com.metrolist.innertube.models.response.*`
-- `com.metrolist.innertube.pages.*`
-- `com.metrolist.innertube.utils.parseTime`
-- `com.metrolist.innertubex.models.YouTubeClient`
-- Ktor HTTP client/response APIs
-- Kotlin coroutines
-- Kotlin serialization
-- Timber logging
-- Java InputStream / FilterInputStream / Proxy
-- Kotlin Random
+1. A valid YouTube PO token must be minted by BotGuard. The previous placeholder token generation was removed; the service now accepts only real tokens supplied by a platform bridge and otherwise returns null. No working BotGuard bridge is currently wired for Windows.
+2. The Kotlin extraction transport does not have a direct, verified Dart equivalent. Audio playback currently uses the Dart player resolver, cipher support, `youtube_explode_dart` adapter and a local range proxy as fallbacks.
+3. No live YouTube authenticated mutation, upload, or playback integration test has been completed.
+4. GitHub Actions runs for this branch were queued at the time of this audit; no successful build/test result is claimed.
 
-The existing Dart service imports Dio, `innertube_client.dart`, selected models, response types and page parsers. The Kotlin dependency surface is broader than the imports visible in the existing Dart service.
+## Remaining acceptance checks
 
-## Migration acceptance criteria
-1. Port each public operation and preserve behavior, parameters, defaults, return semantics and errors.
-2. Port all referenced model, response, page and utility types or map them to existing Dart equivalents.
-3. Replace Ktor/coroutines/Java stream/proxy behavior with tested Dart equivalents.
-4. Preserve authentication, visitor data, cookies, locale, continuation tokens, upload and playback behavior.
-5. Run `dart format`, `flutter analyze`, unit tests and targeted integration tests.
-6. Verify search, suggestions, albums, artists, playlists, podcasts, library, history, playback, queue, lyrics/transcript, account and upload paths.
+- [ ] Complete a real BotGuard PO-token bridge for supported targets, or explicitly keep token-required playback as a documented limitation
+- [ ] Verify every renderer/response field against Kotlin fixtures, including unknown and nullable fields
+- [ ] Verify account switching, visitor data refresh, cookies and SAPISIDHASH with a real test account
+- [ ] Verify search, album, artist, playlist, podcast, history and continuation results against captured Kotlin fixtures
+- [ ] Verify player, queue, transcript, media info, playback tracking and stream seeking
+- [ ] Verify playlist mutations, feedback tokens and uploads against live responses
+- [ ] Obtain successful `flutter analyze`, unit tests, Windows build and platform builds
+- [ ] Run a Windows playback smoke test
 
-## Current verified status
-- Repository and source files inspected.
-- Migration branch exists: `kotlin-to-dart-migration`.
-- No full semantic conversion or build verification has been completed.
-- Do not treat this audit as a completed migration.
+This branch contains substantial Dart migration work, but the migration must not be described as fully complete until the remaining checks above pass.
