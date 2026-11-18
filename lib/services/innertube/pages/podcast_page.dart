@@ -185,21 +185,38 @@ class PodcastPageParser {
     );
 
     dynamic episodeContents;
+    dynamic episodeShelf;
     if (twoColumnSections is List && twoColumnSections.isNotEmpty) {
       final first = twoColumnSections.first;
       if (first is Map) {
-        episodeContents = first['musicShelfRenderer']?['contents'] ??
-            first['musicPlaylistShelfRenderer']?['contents'];
+        episodeShelf = first['musicShelfRenderer'] ??
+            first['musicPlaylistShelfRenderer'];
+        episodeContents = episodeShelf?['contents'];
       }
     }
     if (episodeContents == null && singleColumnSections is List) {
       for (final section in singleColumnSections) {
         if (section is! Map) continue;
-        episodeContents = section['musicShelfRenderer']?['contents'] ??
-            section['musicPlaylistShelfRenderer']?['contents'];
+        episodeShelf = section['musicShelfRenderer'] ??
+            section['musicPlaylistShelfRenderer'];
+        episodeContents = episodeShelf?['contents'];
         if (episodeContents is List) break;
       }
     }
+
+    String? continuation;
+    final continuationList = episodeShelf?['continuations'];
+    if (continuationList is List && continuationList.isNotEmpty) {
+      continuation = continuationList.first?['nextContinuationData']?['continuation']
+          ?.toString();
+    }
+    final subscribed = header?['subscriptionButton']?['subscribeButtonRenderer']
+            ?['subscribed'] == true ||
+        header?['buttons']?.any(
+              (button) =>
+                  button['subscribeButtonRenderer']?['subscribed'] == true,
+            ) ==
+            true;
 
     final episodes = <EpisodeItem>[];
     if (episodeContents is List) {
@@ -228,6 +245,41 @@ class PodcastPageParser {
     return PodcastPageData(
       podcast: podcastItem,
       episodes: episodes,
+      continuation: continuation,
+      isChannelSubscribed: subscribed,
     );
   }
+
+  static List<EpisodeItem> parsePodcastContinuation(
+    dynamic data, {
+    PodcastItem? podcast,
+  }) {
+    if (data is! Map) return const [];
+    final rawItems = data['continuationContents']?['musicShelfContinuation']?['contents'] ??
+        data['continuationContents']?['musicPlaylistShelfContinuation']?['contents'];
+    if (rawItems is! List) return const [];
+    final episodes = <EpisodeItem>[];
+    for (final raw in rawItems) {
+      if (raw is! Map) continue;
+      final responsive = raw['musicResponsiveListItemRenderer'];
+      if (responsive is Map<String, dynamic>) {
+        final episode = fromMusicResponsiveListItemRenderer(
+          MusicResponsiveListItemRenderer.fromJson(responsive),
+          podcast: podcast,
+        );
+        if (episode != null) episodes.add(episode);
+        continue;
+      }
+      final multiRow = raw['musicMultiRowListItemRenderer'];
+      if (multiRow is Map<String, dynamic>) {
+        final episode = fromMusicMultiRowListItemRenderer(
+          multiRow,
+          podcast: podcast,
+        );
+        if (episode != null) episodes.add(episode);
+      }
+    }
+    return episodes;
+  }
+
 }
