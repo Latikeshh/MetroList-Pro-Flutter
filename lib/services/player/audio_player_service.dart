@@ -244,26 +244,7 @@ class AudioPlayerService {
 
   Future<void> fetchRemoteQueue(List<String> videoIds) async {
     try {
-      final queueMaps = await YouTubeService().getQueue(videoIds: videoIds);
-      final List<SongItem> newSongs = [];
-      for (final map in queueMaps) {
-        final renderer = map['playlistPanelVideoRenderer'];
-        if (renderer != null) {
-          final videoId = renderer['videoId'] as String?;
-          final titleRuns = renderer['title']?['runs'] as List?;
-          final title = (titleRuns != null && titleRuns.isNotEmpty) ? titleRuns.first['text'] as String? : '';
-          final thumbs = renderer['thumbnail']?['thumbnails'] as List?;
-          final thumb = (thumbs != null && thumbs.isNotEmpty) ? thumbs.last['url'] as String? : '';
-          if (videoId != null && videoId.isNotEmpty) {
-            newSongs.add(SongItem(
-              id: videoId,
-              title: title ?? '',
-              thumbnail: thumb ?? '',
-              artists: const [Artist(name: 'YouTube Music')],
-            ));
-          }
-        }
-      }
+      final newSongs = await YouTubeService().getQueue(videoIds: videoIds);
       if (newSongs.isNotEmpty) {
         _queue.addAll(newSongs);
         _queueSubject.add(List.unmodifiable(_queue));
