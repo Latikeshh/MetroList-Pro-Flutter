@@ -1600,7 +1600,7 @@ class YouTubeService {
     int? index,
     String? params,
     String? continuation,
-    YouTubeClient client = YouTubeClient.web,
+    YouTubeClient client = YouTubeClient.webRemix,
   }) async {
     try {
       final body = _buildContext(client)
