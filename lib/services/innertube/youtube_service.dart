@@ -1771,7 +1771,7 @@ class YouTubeService {
   }) async {
     try {
       final profile = client.client;
-      final body = _buildContext(client)..['videoId'] = videoId;
+      final body = _buildContext(client: client)..['videoId'] = videoId;
       body['contentCheckOk'] = true;
       body['racyCheckOk'] = true;
       if (!profile.useMusicPlayerEndpoint) body['videoCheckOk'] = true;
