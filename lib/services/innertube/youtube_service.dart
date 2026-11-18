@@ -403,7 +403,7 @@ class YouTubeService {
     bool recordSearchHistory = false,
   }) async {
     try {
-      final body = _buildContext()
+      final body = _buildContext(useLogin: recordSearchHistory)
         ..['query'] = query;
       if (filter != null && filter.isNotEmpty) body['params'] = filter;
       final response = await _dio.post(
