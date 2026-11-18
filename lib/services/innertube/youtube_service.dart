@@ -2377,8 +2377,13 @@ class YouTubeService {
     return ArtistItemsContinuationPageParser.parse(response);
   }
 
-  Future<List<SongItem>> playlist(String playlistId) =>
-      getPlaylistPage(playlistId);
+  Future<PlaylistPageData> playlist(String playlistId) async {
+    final response = await browseResponse(
+      browseId: playlistId.startsWith('VL') ? playlistId : 'VL$playlistId',
+      useLogin: true,
+    );
+    return PlaylistPageParser.parsePlaylistPage(response, playlistId);
+  }
 
   Future<PlaylistContinuationPage> playlistContinuation(
     String continuation,
