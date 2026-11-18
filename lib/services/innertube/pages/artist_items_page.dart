@@ -93,3 +93,115 @@ class ArtistItemsPage {
   }
 }
 
+
+
+class ArtistItemsPageParser {
+  static ArtistItemsPage parse(dynamic data) {
+    if (data is! Map) return const ArtistItemsPage(title: '', items: []);
+    final root = data['contents']?['singleColumnBrowseResultsRenderer']
+        ?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
+    final section = root is List && root.isNotEmpty ? root.first : null;
+    if (section is! Map) return const ArtistItemsPage(title: '', items: []);
+
+    String readTitle(dynamic runs) {
+      if (runs is List && runs.isNotEmpty) {
+        return runs.first['text']?.toString() ?? '';
+      }
+      return '';
+    }
+
+    String? readContinuation(dynamic values) {
+      if (values is! List) return null;
+      for (final value in values) {
+        final token = value?['nextContinuationData']?['continuation']?.toString();
+        if (token != null && token.isNotEmpty) return token;
+      }
+      return null;
+    }
+
+    final grid = section['gridRenderer'];
+    if (grid is Map) {
+      final items = <YTItem>[];
+      final rawItems = grid['items'];
+      if (rawItems is List) {
+        for (final raw in rawItems) {
+          if (raw is! Map) continue;
+          final renderer = raw['musicTwoRowItemRenderer'];
+          if (renderer is Map<String, dynamic>) {
+            final item = fromMusicTwoRowItemRenderer(
+              MusicTwoRowItemRenderer.fromJson(renderer),
+            );
+            if (item != null) items.add(item);
+          }
+        }
+      }
+      return ArtistItemsPage(
+        title: readTitle(grid['header']?['gridHeaderRenderer']?['title']?['runs']),
+        items: items,
+        continuation: readContinuation(grid['continuations']),
+      );
+    }
+
+    final carousel = section['musicCarouselShelfRenderer'];
+    if (carousel is Map) {
+      final items = <YTItem>[];
+      final rawItems = carousel['contents'];
+      if (rawItems is List) {
+        for (final raw in rawItems) {
+          if (raw is! Map) continue;
+          final twoRow = raw['musicTwoRowItemRenderer'];
+          final responsive = raw['musicResponsiveListItemRenderer'];
+          YTItem? item;
+          if (twoRow is Map<String, dynamic>) {
+            item = fromMusicTwoRowItemRenderer(
+              MusicTwoRowItemRenderer.fromJson(twoRow),
+            );
+          } else if (responsive is Map<String, dynamic>) {
+            item = fromMusicResponsiveListItemRenderer(
+              MusicResponsiveListItemRenderer.fromJson(responsive),
+            );
+          }
+          if (item != null) items.add(item);
+        }
+      }
+      return ArtistItemsPage(
+        title: readTitle(
+          carousel['header']?['musicCarouselShelfBasicHeaderRenderer']?['title']?['runs'],
+        ),
+        items: items,
+      );
+    }
+
+    final shelf = section['musicShelfRenderer'] ??
+        section['musicPlaylistShelfRenderer'];
+    if (shelf is Map) {
+      final items = <YTItem>[];
+      final rawItems = shelf['contents'];
+      if (rawItems is List) {
+        for (final raw in rawItems) {
+          if (raw is! Map) continue;
+          final renderer = raw['musicResponsiveListItemRenderer'];
+          if (renderer is Map<String, dynamic>) {
+            final item = fromMusicResponsiveListItemRenderer(
+              MusicResponsiveListItemRenderer.fromJson(renderer),
+            );
+            if (item != null) items.add(item);
+          }
+        }
+      }
+      final headerTitle = data['header']?['musicHeaderRenderer']?['title']?['runs'];
+      return ArtistItemsPage(
+        title: readTitle(shelf['title']?['runs']).isNotEmpty
+            ? readTitle(shelf['title']?['runs'])
+            : readTitle(headerTitle),
+        items: items,
+        continuation: readContinuation(shelf['continuations']),
+      );
+    }
+
+    return ArtistItemsPage(
+      title: readTitle(data['header']?['musicHeaderRenderer']?['title']?['runs']),
+      items: const [],
+    );
+  }
+}
