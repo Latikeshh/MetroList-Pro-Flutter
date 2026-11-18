@@ -25,7 +25,7 @@ void main() {
       const song = SongItem(
         id: 'fav_song_1',
         title: 'Favorite Track',
-        artists: ['Fav Artist'],
+        artists: [Artist(name: 'Fav Artist')],
       );
 
       expect(playerService.isFavorite('fav_song_1'), isFalse);
@@ -113,7 +113,7 @@ void main() {
       const localSong = SongItem(
         id: 'local:C:/Music/test_track.mp3',
         title: 'Local Test Track',
-        artists: ['Local Artist'],
+        artists: [Artist(name: 'Local Artist')],
       );
 
       final urls = await resolver.resolveAudioStreamUrls(localSong);
