@@ -1400,20 +1400,26 @@ class YouTubeService {
     }
   }
 
-  Future<String?> lyrics(String browseId) async {
+  Future<String?> lyrics(BrowseEndpoint endpoint) async {
     try {
-      final body = _buildContext()..['browseId'] = browseId;
+      final body = _buildContext()..['browseId'] = endpoint.browseId;
+      if (endpoint.params != null && endpoint.params!.isNotEmpty) {
+        body['params'] = endpoint.params;
+      }
       final response = await _dio.post('/browse', data: body);
       if (response.statusCode == 200 && response.data is Map) {
         final description = response.data['contents']?['sectionListRenderer']
             ?['contents']?[0]?['musicDescriptionShelfRenderer']?['description']?['runs'];
         if (description is List && description.isNotEmpty) {
-          return description.map((r) => r['text']).join();
+          return description.map((run) => run['text'] ?? '').join();
         }
       }
     } catch (_) {}
     return null;
   }
+
+  Future<String?> lyricsByBrowseId(String browseId, {String? params}) =>
+      lyrics(BrowseEndpoint(browseId: browseId, params: params));
 
   List<YTItem> _parseSearchResults(dynamic data) {
     final items = <YTItem>[];
