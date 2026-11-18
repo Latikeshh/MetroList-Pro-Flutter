@@ -12,6 +12,7 @@ import 'models/runs.dart';
 import 'models/response/account_menu_response.dart';
 import 'models/response/get_transcript_response.dart';
 import 'models/youtube_client.dart';
+import 'models/navigation_endpoint.dart';
 import 'models/youtube_account.dart';
 import 'models/yt_item.dart';
 import 'pages/album_page.dart';
@@ -2120,6 +2121,187 @@ class YouTubeService {
     String? successorSetVideoId,
   ) =>
       moveSongInPlaylist(playlistId, setVideoId, successorSetVideoId);
+
+  // Kotlin YouTube facade parity aliases. These preserve the same endpoint semantics
+  // while exposing typed Dart page data where the current Flutter models support it.
+  Future<Map<String, dynamic>?> searchSuggestions(String query) =>
+      getSearchSuggestionsResponse(query);
+
+  Future<SearchSummaryPageData> searchSummary(
+    String query, {
+    bool recordSearchHistory = false,
+  }) =>
+      getSearchSummary(query, recordSearchHistory: recordSearchHistory);
+
+  Future<Map<String, dynamic>?> searchContinuation(
+    String continuation, {
+    bool recordSearchHistory = false,
+  }) =>
+      searchContinuationResponse(
+        continuation,
+        recordSearchHistory: recordSearchHistory,
+      );
+
+  Future<AlbumPageData> album(String browseId, {bool withSongs = true}) =>
+      getAlbumPage(browseId);
+
+  Future<AlbumPageData> albumSongs(String browseId) => getAlbumPage(browseId);
+
+  Future<ArtistPageData> artist(String browseId) => getArtistPage(browseId);
+
+  Future<ArtistSection?> artistItems(BrowseEndpoint endpoint) =>
+      getArtistItems(endpoint.params ?? '');
+
+  Future<Map<String, dynamic>?> artistItemsContinuation(String continuation) =>
+      browseResponse(continuation: continuation);
+
+  Future<List<SongItem>> playlist(String playlistId) =>
+      getPlaylistPage(playlistId);
+
+  Future<List<SongItem>> playlistContinuation(String continuation) =>
+      getPlaylistContinuation(continuation);
+
+  Future<PodcastPageData> podcast(String podcastId) =>
+      getPodcastPage(podcastId);
+
+  Future<HomePageData> home({String? continuation, String? params}) =>
+      getHomePage(continuation: continuation, params: params);
+
+  Future<HomePageData> homeContinuation(String continuation) =>
+      getHomePage(continuation: continuation);
+
+  Future<ExplorePageData> explore() => getExplorePage();
+
+  Future<List<AlbumItem>> newReleaseAlbums() => getNewReleaseAlbums();
+
+  Future<List<MoodAndGenreItem>> moodAndGenres() => getMoodAndGenres();
+
+  Future<Map<String, dynamic>?> browse({
+    String? browseId,
+    String? params,
+    String? continuation,
+    bool useLogin = false,
+  }) =>
+      browseResponse(
+        browseId: browseId,
+        params: params,
+        continuation: continuation,
+        useLogin: useLogin,
+      );
+
+  Future<LibraryPageData> library({
+    String? browseId,
+    String? params,
+    bool useLogin = true,
+  }) async {
+    if (browseId == null || browseId.isEmpty) {
+      return const LibraryPageData(items: []);
+    }
+    return getLibraryPage(browseId: browseId);
+  }
+
+  Future<LibraryPageData> libraryContinuation(String continuation) =>
+      getLibraryContinuation(continuation);
+
+  Future<LibraryPageData> musicHistory() => getMusicHistory();
+
+  Future<List<PodcastItem>> libraryPodcastChannels() => getPodcastChannels();
+
+  Future<List<EpisodeItem>> libraryPodcastEpisodes() =>
+      getPodcastLibraryEpisodes();
+
+  Future<List<PodcastItem>> savedPodcastShows() => getSavedPodcasts();
+
+  Future<List<EpisodeItem>> newEpisodes() async =>
+      (await getNewEpisodes()).whereType<EpisodeItem>().toList();
+
+  Future<Map<String, dynamic>?> player({
+    required String videoId,
+    String? playlistId,
+    YouTubeClient client = YouTubeClient.webRemix,
+    int? signatureTimestamp,
+    String? poToken,
+  }) =>
+      getPlayerResponse(
+        videoId: videoId,
+        playlistId: playlistId,
+        client: client,
+        signatureTimestamp: signatureTimestamp,
+        poToken: poToken,
+      );
+
+  Future<NextPageData> next(
+    WatchEndpoint endpoint, {
+    String? continuation,
+  }) =>
+      getNextPage(
+        videoId: endpoint.videoId,
+        playlistId: endpoint.playlistId,
+        playlistSetVideoId: endpoint.playlistSetVideoId,
+        index: endpoint.index,
+        params: endpoint.params,
+        continuation: continuation,
+      );
+
+  Future<List<YTItem>> related(BrowseEndpoint endpoint) async {
+    final response = await browseResponse(
+      browseId: endpoint.browseId,
+      params: endpoint.params,
+    );
+    if (response == null) return const [];
+    final sections = response['contents']?['sectionListRenderer']?['contents'] ??
+        response['contents']?['singleColumnBrowseResultsRenderer']?['tabs']?[0]
+            ?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
+    if (sections is! List) return const [];
+    final items = <YTItem>[];
+    for (final section in sections) {
+      if (section is! Map) continue;
+      final carousel = section['musicCarouselShelfRenderer'];
+      final rawItems = carousel is Map ? carousel['contents'] : null;
+      if (rawItems is! List) continue;
+      for (final raw in rawItems) {
+        if (raw is! Map) continue;
+        final twoRow = raw['musicTwoRowItemRenderer'];
+        final responsive = raw['musicResponsiveListItemRenderer'];
+        if (twoRow is Map<String, dynamic>) {
+          final item = LibraryPageParser.fromMusicTwoRowItemRenderer(
+            MusicTwoRowItemRenderer.fromJson(twoRow),
+          );
+          if (item != null) items.add(item);
+        } else if (responsive is Map<String, dynamic>) {
+          final item = LibraryPageParser.fromMusicResponsiveListItemRenderer(
+            MusicResponsiveListItemRenderer.fromJson(responsive),
+          );
+          if (item != null) items.add(item);
+        }
+      }
+    }
+    return items;
+  }
+
+  Future<String?> transcript(String videoId) async {
+    final response = await getTranscript(videoId);
+    if (response == null || response.cues.isEmpty) return null;
+    return response.cues.map((cue) {
+      final start = cue.startOffsetMs;
+      final minutes = (start ~/ 60000).toString().padLeft(2, '0');
+      final seconds = ((start ~/ 1000) % 60).toString().padLeft(2, '0');
+      final millis = (start % 1000).toString().padLeft(3, '0');
+      final text = cue.text.replaceAll('♪', '').trim();
+      return '[$minutes:$seconds.$millis]$text';
+    }).join('\n');
+  }
+
+  Future<Map<String, String>?> accountInfo() async {
+    final cookie = _innerTubeClient.cookie;
+    if (cookie == null || cookie.isEmpty) return null;
+    return verifySession(cookie);
+  }
+
+  Future<Map<String, dynamic>?> getMediaInfo(String videoId) =>
+      getMediaInfoResponse(videoId);
+
+  Future<List<SongItem>> episodesForLater() => getEpisodesForLater();
 
 
 }
