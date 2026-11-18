@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metrolist_pro/services/innertube/innertube_client.dart';
+import 'package:metrolist_pro/services/innertube/models/yt_item.dart';
 import 'package:metrolist_pro/services/innertube/pages/album_page.dart';
 import 'package:metrolist_pro/services/innertube/pages/next_page.dart';
 import 'package:metrolist_pro/services/innertube/models/youtube_client.dart';
