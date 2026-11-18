@@ -2323,11 +2323,16 @@ class YouTubeService {
     }).join('\n');
   }
 
-  Future<Map<String, String>?> accountInfo() async {
-    final cookie = _innerTubeClient.cookie;
-    if (cookie == null || cookie.isEmpty) return null;
-    return verifySession(cookie);
-  }
+  Future<AccountInfo?> accountInfo() => getAccountInfo();
+
+  Future<PodcastPageData> podcastWithDebug(
+    String podcastId, {
+    void Function(String message)? log,
+  }) =>
+      getPodcastPageWithDebug(podcastId, log: log);
+
+  Future<PlaylistItem?> newEpisodesPlaylistInfo() =>
+      getNewEpisodesPlaylistInfo();
 
   Future<List<SongItem>> episodesForLater() => getEpisodesForLater();
 
