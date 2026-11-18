@@ -7,16 +7,16 @@ void main() {
       const song = SongItem(
         id: 'test_song_1',
         title: 'Test Title',
-        artists: ['Artist A', 'Artist B'],
-        album: 'Test Album',
+        artists: [Artist(name: 'Artist A'), Artist(name: 'Artist B')],
+        album: Album(name: 'Test Album', id: ''),
         durationSeconds: 180,
         thumbnailUrl: 'https://example.com/thumb.jpg',
       );
 
       expect(song.id, 'test_song_1');
       expect(song.title, 'Test Title');
-      expect(song.artists, ['Artist A', 'Artist B']);
-      expect(song.album, 'Test Album');
+      expect(song.artists.map((artist) => artist.name), ['Artist A', 'Artist B']);
+      expect(song.album?.name, 'Test Album');
       expect(song.durationSeconds, 180);
       expect(song.thumbnailUrl, 'https://example.com/thumb.jpg');
     });
