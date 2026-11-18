@@ -1019,55 +1019,22 @@ class YouTubeService {
     }
   }
 
-  Future<List<PodcastItem>> getSavedPodcasts() async {
-    final page = await getLibraryPage(
-      browseId: 'FEmusic_library_non_music_audio_list',
-    );
-    return page.items.whereType<PodcastItem>().toList();
-  }
-
-  Future<List<PodcastItem>> getPodcastChannels() async {
-    final page = await getLibraryPage(
-      browseId: 'FEmusic_library_non_music_audio_channels_list',
-    );
-    return page.items.whereType<PodcastItem>().toList();
-  }
-
-  Future<List<EpisodeItem>> getPodcastLibraryEpisodes() async {
-    try {
-      final response = await browseResponse(
-        browseId: 'FEmusic_library_non_music_audio_list',
-        useLogin: true,
+  Future<LibraryPageData> getPodcastLibraryPage({bool channels = false}) =>
+      getLibraryPage(
+        browseId: channels
+            ? 'FEmusic_library_non_music_audio_channels_list'
+            : 'FEmusic_library_non_music_audio_list',
       );
-      if (response == null) return const [];
-      final sectionContents = response['contents']
-              ?['singleColumnBrowseResultsRenderer']?['tabs']?[0]
-              ?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
-      if (sectionContents is! List) return const [];
 
-      final episodes = <EpisodeItem>[];
-      for (final section in sectionContents) {
-        if (section is! Map) continue;
-        final shelfItems = section['musicShelfRenderer']?['contents'];
-        final gridItems = section['gridRenderer']?['items'];
-        final rawItems = shelfItems is List ? shelfItems : gridItems;
-        if (rawItems is! List) continue;
-        for (final rawItem in rawItems) {
-          if (rawItem is! Map) continue;
-          final renderer = rawItem['musicResponsiveListItemRenderer'];
-          if (renderer is Map<String, dynamic>) {
-            final episode = PodcastPageParser.fromMusicResponsiveListItemRenderer(
-              MusicResponsiveListItemRenderer.fromJson(renderer),
-            );
-            if (episode != null) episodes.add(episode);
-          }
-        }
-      }
-      return episodes;
-    } catch (_) {
-      return const [];
-    }
-  }
+  Future<List<PodcastItem>> getSavedPodcasts() async =>
+      (await getPodcastLibraryPage()).items.whereType<PodcastItem>().toList();
+
+  Future<List<PodcastItem>> getPodcastChannels() async =>
+      (await getPodcastLibraryPage(channels: true))
+          .items.whereType<PodcastItem>().toList();
+
+  Future<List<EpisodeItem>> getPodcastLibraryEpisodes() async =>
+      (await getPodcastLibraryPage()).items.whereType<EpisodeItem>().toList();
 
   Future<List<SongItem>> getNewEpisodes() async {
     try {
@@ -2237,10 +2204,11 @@ class YouTubeService {
 
   Future<LibraryPageData> musicHistory() => getMusicHistory();
 
-  Future<List<PodcastItem>> libraryPodcastChannels() => getPodcastChannels();
+  Future<LibraryPageData> libraryPodcastChannels() =>
+      getPodcastLibraryPage(channels: true);
 
-  Future<List<EpisodeItem>> libraryPodcastEpisodes() =>
-      getPodcastLibraryEpisodes();
+  Future<LibraryPageData> libraryPodcastEpisodes() =>
+      getPodcastLibraryPage();
 
   Future<List<PodcastItem>> savedPodcastShows() => getSavedPodcasts();
 
