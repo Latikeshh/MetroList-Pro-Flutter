@@ -212,7 +212,7 @@ void main() {
       expect(item, isA<SongItem>());
       expect((item as SongItem).id, 'pod_ep_999');
       expect(item.title, 'Tech News Episode 101');
-      expect(item.artists.first, 'Podcast Episode');
+      expect(item.artists.first.name, 'Podcast Episode');
     });
 
     test('Extracts sectionList continuation tokens correctly', () {
