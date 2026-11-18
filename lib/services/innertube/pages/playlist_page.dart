@@ -1,5 +1,6 @@
 library;
 
+import '../models/navigation_endpoint.dart';
 import '../models/renderers.dart';
 import '../models/yt_item.dart';
 import 'artist_items_page.dart';
@@ -32,14 +33,24 @@ class PlaylistPageParser {
     }
 
     final twoColumn = data['contents']?['twoColumnBrowseResultsRenderer'];
+    final primarySections = twoColumn?['tabs']?[0]?['tabRenderer']?['content']
+        ?['sectionListRenderer']?['contents'];
     final secondarySections = twoColumn?['secondaryContents']
         ?['sectionListRenderer']?['contents'];
     final singleSections = data['contents']
         ?['singleColumnBrowseResultsRenderer']?['tabs']?[0]
         ?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
-    final base = secondarySections is List && secondarySections.isNotEmpty
-        ? secondarySections.first
+    final base = primarySections is List && primarySections.isNotEmpty
+        ? primarySections.first
         : singleSections is List && singleSections.isNotEmpty
+            ? singleSections.first
+            : null;
+    final secondaryShelfSection =
+        secondarySections is List && secondarySections.isNotEmpty
+            ? secondarySections.first
+            : null;
+    final singleShelfSection =
+        singleSections is List && singleSections.isNotEmpty
             ? singleSections.first
             : null;
 
@@ -166,13 +177,10 @@ class PlaylistPageParser {
       }
     }
 
-    final shelf = secondarySections is List && secondarySections.isNotEmpty
-        ? secondarySections.first?['musicPlaylistShelfRenderer'] ??
-            secondarySections.first?['musicShelfRenderer']
-        : singleSections is List && singleSections.isNotEmpty
-            ? singleSections.first?['musicPlaylistShelfRenderer'] ??
-                singleSections.first?['musicShelfRenderer']
-            : null;
+    final shelf = secondaryShelfSection?['musicPlaylistShelfRenderer'] ??
+        secondaryShelfSection?['musicShelfRenderer'] ??
+        singleShelfSection?['musicPlaylistShelfRenderer'] ??
+        singleShelfSection?['musicShelfRenderer'];
     final rawSongs = shelf is Map ? shelf['contents'] : null;
     final songs = <SongItem>[];
     if (rawSongs is List) {
