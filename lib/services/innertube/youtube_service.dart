@@ -448,7 +448,11 @@ class YouTubeService {
     final cleanId = playlistId.startsWith('VL') ? playlistId : 'VL$playlistId';
     try {
       final body = _buildContext()..['browseId'] = cleanId;
-      final response = await _dio.post('/browse', data: body);
+      final response = await _dio.post(
+        '/browse',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       if (response.statusCode == 200 && response.data is Map) {
         return AlbumPageParser.parseTracks(response.data);
       }
@@ -677,7 +681,11 @@ class YouTubeService {
       if (params != null && params.isNotEmpty) {
         body['params'] = params;
       }
-      final response = await _dio.post('/browse', data: body);
+      final response = await _dio.post(
+        '/browse',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         return LibraryPageParser.parseLibraryPage(response.data);
       }
@@ -695,6 +703,7 @@ class YouTubeService {
           'ctoken': continuation,
         },
         data: body,
+        options: Options(headers: _getHeaders()),
       );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         return LibraryPageParser.parseLibraryPage(response.data);
@@ -746,7 +755,11 @@ class YouTubeService {
   Future<PodcastPageData> getPodcastPage(String podcastId) async {
     try {
       final body = _buildContext()..['browseId'] = podcastId;
-      final response = await _dio.post('/browse', data: body);
+      final response = await _dio.post(
+        '/browse',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         return PodcastPageParser.parsePodcastPage(response.data, podcastId);
       }
@@ -848,7 +861,11 @@ class YouTubeService {
   Future<List<SongItem>> getNewEpisodes() async {
     try {
       final body = _buildContext()..['browseId'] = 'VLRDPN';
-      final response = await _dio.post('/browse', data: body);
+      final response = await _dio.post(
+        '/browse',
+        data: body,
+        options: Options(headers: _getHeaders()),
+      );
       if (response.statusCode != 200 || response.data is! Map) return const [];
       final data = response.data as Map;
       final sections = <dynamic>[];
