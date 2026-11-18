@@ -13,7 +13,7 @@ void main() {
       const song = SongItem(
         id: 'd6C4uP9wHBA', // YouTube Media ID
         title: 'So Swaezy',
-        artists: ['Hommie Dilliwala'],
+        artists: [Artist(name: 'Hommie Dilliwala')],
         durationSeconds: 192,
       );
 
