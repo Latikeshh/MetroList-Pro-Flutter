@@ -12,6 +12,7 @@ import 'models/runs.dart';
 import 'models/response/account_menu_response.dart';
 import 'models/response/get_transcript_response.dart';
 import 'models/response/get_queue_response.dart';
+import 'models/response/player_response.dart';
 import 'models/youtube_client.dart';
 import 'models/navigation_endpoint.dart';
 import 'models/youtube_account.dart';
@@ -1859,6 +1860,25 @@ class YouTubeService {
       }
     } catch (_) {}
     return null;
+  }
+
+  Future<PlayerResponse?> getPlayer({
+    required String videoId,
+    String? playlistId,
+    YouTubeClient client = YouTubeClient.webRemix,
+    int? signatureTimestamp,
+    String? poToken,
+    String? encryptedHostFlags,
+  }) async {
+    final response = await getPlayerResponse(
+      videoId: videoId,
+      playlistId: playlistId,
+      client: client,
+      signatureTimestamp: signatureTimestamp,
+      poToken: poToken,
+      encryptedHostFlags: encryptedHostFlags,
+    );
+    return response == null ? null : PlayerResponse.fromJson(response);
   }
 
   Future<Map<String, dynamic>?> getMediaInfoResponse(String videoId) {
