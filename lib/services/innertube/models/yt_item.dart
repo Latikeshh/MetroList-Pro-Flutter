@@ -196,7 +196,7 @@ class ArtistItem extends YTItem {
   final bool isProfile;
   final String? subscribers;
 
-  ArtistItem({
+  const ArtistItem({
     required super.id,
     required super.title,
     String? thumbnail,
