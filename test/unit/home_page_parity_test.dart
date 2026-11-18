@@ -15,7 +15,7 @@ void main() {
           HomeSection(
             title: 'Quick Picks',
             items: [
-              SongItem(id: 'song_1', title: 'Song 1', artists: ['Artist 1']),
+              SongItem(id: 'song_1', title: 'Song 1', artists: [Artist(name: 'Artist 1')]),
               AlbumItem(id: 'album_1', title: 'Album 1', artist: 'Artist 1'),
             ],
           ),
@@ -140,7 +140,7 @@ void main() {
       expect(item, isA<SongItem>());
       expect((item as SongItem).id, '4NRXx6U8ABQ');
       expect(item.title, 'Blinding Lights');
-      expect(item.artists.first, 'The Weeknd');
+      expect(item.artists.first.name, 'The Weeknd');
     });
 
     test('Parses musicMultiRowListItemRenderer podcast and episode items', () {
