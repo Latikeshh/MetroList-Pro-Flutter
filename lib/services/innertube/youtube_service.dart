@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:dio/dio.dart';
 
@@ -352,17 +353,59 @@ class YouTubeService {
     return null;
   }
 
-  Future<List<YTItem>> search(String query) async {
+  Future<List<YTItem>> search(
+    String query, {
+    String? filter,
+    bool recordSearchHistory = false,
+  }) async {
     try {
-      final body = _buildContext()..['query'] = query;
-      final response = await _dio.post('/search', data: body);
+      final body = _buildContext()
+        ..['query'] = query;
+      if (filter != null && filter.isNotEmpty) body['params'] = filter;
+      final response = await _dio.post(
+        '/search',
+        data: body,
+        options: Options(
+          headers: recordSearchHistory ? _getHeaders() : const {},
+        ),
+      );
       if (response.statusCode == 200) {
-        final results = _parseSearchResults(response.data);
-        if (results.isNotEmpty) return results;
+        return _parseSearchResults(response.data);
       }
     } catch (_) {}
-
     return const [];
+  }
+
+  /// Fetches a filtered-search continuation response without losing its next token.
+  Future<Map<String, dynamic>?> searchContinuationResponse(
+    String continuation, {
+    bool recordSearchHistory = false,
+  }) async {
+    try {
+      final body = _buildContext()..['continuation'] = continuation;
+      final response = await _dio.post(
+        '/search?continuation=$continuation&ctoken=$continuation',
+        data: body,
+        options: Options(
+          headers: recordSearchHistory ? _getHeaders() : const {},
+        ),
+      );
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(response.data);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getSearchSuggestionsResponse(String query) async {
+    try {
+      final body = _buildContext()..['input'] = query;
+      final response = await _dio.post('/music/get_search_suggestions', data: body);
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(response.data);
+      }
+    } catch (_) {}
+    return null;
   }
 
   Future<ExplorePageData> getExplorePage() async {
@@ -499,10 +542,16 @@ class YouTubeService {
     }
   }
 
-  Future<bool> subscribeChannel(String channelId, bool subscribe) async {
+  Future<bool> subscribeChannel(
+    String channelId,
+    bool subscribe, {
+    String params = 'EgIIAhgA',
+  }) async {
     try {
       final endpoint = subscribe ? '/subscription/subscribe' : '/subscription/unsubscribe';
-      final body = _buildContext()..['channelIds'] = [channelId];
+      final body = _buildContext()
+        ..['channelIds'] = [channelId]
+        ..['params'] = params;
       final response = await _dio.post(endpoint, data: body);
       return response.statusCode == 200;
     } catch (_) {
@@ -583,7 +632,7 @@ class YouTubeService {
     }
   }
 
-  Future<bool> removeFromPlaylist(String playlistId, String setVideoId, String videoId) async {
+  Future<bool> removeFromPlaylist(String playlistId, String videoId, String setVideoId) async {
     try {
       final body = _buildContext()
         ..['playlistId'] = playlistId
@@ -626,11 +675,30 @@ class YouTubeService {
     return const LibraryPageData(items: []);
   }
 
+  Future<bool> feedback(List<String> tokens) async {
+    if (tokens.isEmpty) return false;
+    try {
+      final body = _buildContext()..['feedbackTokens'] = tokens;
+      final response = await _dio.post('/feedback', data: body);
+      if (response.statusCode != 200 || response.data is! Map) return false;
+      final feedbackResponses = response.data['feedbackResponses'];
+      if (feedbackResponses is List) {
+        return feedbackResponses.every(
+          (item) => item is Map && item['isProcessed'] == true,
+        );
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<bool> addSongToLibrary(String videoId) async {
     try {
-      final body = _buildContext()..['feedbackTokens'] = ['add_to_library'];
-      final response = await _dio.post('/feedback', data: body);
-      return response.statusCode == 200;
+      final next = await getNextPage(videoId: videoId);
+      final song = next.queue.where((item) => item.id == videoId).firstOrNull;
+      final token = song?.libraryAddToken;
+      return token != null && token.isNotEmpty ? feedback([token]) : false;
     } catch (_) {
       return false;
     }
@@ -638,9 +706,10 @@ class YouTubeService {
 
   Future<bool> removeSongFromLibrary(String videoId) async {
     try {
-      final body = _buildContext()..['feedbackTokens'] = ['remove_from_library'];
-      final response = await _dio.post('/feedback', data: body);
-      return response.statusCode == 200;
+      final next = await getNextPage(videoId: videoId);
+      final song = next.queue.where((item) => item.id == videoId).firstOrNull;
+      final token = song?.libraryRemoveToken;
+      return token != null && token.isNotEmpty ? feedback([token]) : false;
     } catch (_) {
       return false;
     }
@@ -661,25 +730,99 @@ class YouTubeService {
   }
 
   Future<bool> savePodcast(String podcastId, bool save) async {
-    return subscribeChannel(podcastId, save);
+    final playlistId = podcastId.startsWith('MPSP')
+        ? podcastId.substring(4)
+        : podcastId;
+    return likePlaylist(playlistId, save);
   }
 
   Future<bool> addEpisodeToSavedEpisodes(String videoId) async {
-    return likeVideo(videoId, true);
+    try {
+      final body = _buildContext()
+        ..['playlistId'] = 'SE'
+        ..['actions'] = [
+          {'action': 'ACTION_ADD_VIDEO', 'addedVideoId': videoId}
+        ];
+      final response = await _dio.post('/browse/edit_playlist', data: body);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
   }
 
-  Future<bool> removeEpisodeFromSavedEpisodes(String videoId) async {
-    return likeVideo(videoId, false);
+  Future<bool> removeEpisodeFromSavedEpisodes(
+    String videoId, {
+    String? setVideoId,
+  }) async {
+    try {
+      final resolvedSetVideoId = setVideoId ??
+          (await getPlaylistPage('SE'))
+              .where((song) => song.id == videoId)
+              .map((song) => song.setVideoId)
+              .firstOrNull;
+      if (resolvedSetVideoId == null || resolvedSetVideoId.isEmpty) return false;
+      return removeFromPlaylist('SE', videoId, resolvedSetVideoId);
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<List<PodcastItem>> getSavedPodcasts() async {
-    final page = await getLibraryPage(browseId: 'FEmusic_liked_podcasts');
+    final page = await getLibraryPage(
+      browseId: 'FEmusic_library_non_music_audio_list',
+    );
     return page.items.whereType<PodcastItem>().toList();
   }
 
+  Future<List<PodcastItem>> getPodcastChannels() async {
+    final page = await getLibraryPage(
+      browseId: 'FEmusic_library_non_music_audio_channels_list',
+    );
+    return page.items.whereType<PodcastItem>().toList();
+  }
+
+  Future<List<EpisodeItem>> getPodcastLibraryEpisodes() async {
+    final page = await getLibraryPage(
+      browseId: 'FEmusic_library_non_music_audio_list',
+    );
+    return page.items.whereType<EpisodeItem>().toList();
+  }
+
   Future<List<EpisodeItem>> getNewEpisodes() async {
-    final page = await getPodcastPage('FEmusic_new_episodes');
-    return page.episodes;
+    try {
+      final body = _buildContext()..['browseId'] = 'VLRDPN';
+      final response = await _dio.post('/browse', data: body);
+      if (response.statusCode != 200 || response.data is! Map) return const [];
+      final data = response.data as Map;
+      final sections = <dynamic>[];
+      final twoColumn = data['contents']?['twoColumnBrowseResultsRenderer'];
+      final tabs = twoColumn?['tabs'];
+      if (tabs is List && tabs.isNotEmpty) {
+        final tabContents = tabs.first?['tabRenderer']?['content']
+            ?['sectionListRenderer']?['contents'];
+        if (tabContents is List) sections.addAll(tabContents);
+      }
+      final secondary = twoColumn?['secondaryContents']?['sectionListRenderer']?['contents'];
+      if (secondary is List) sections.addAll(secondary);
+      final episodes = <EpisodeItem>[];
+      for (final section in sections) {
+        final shelf = section is Map ? section['musicShelfRenderer'] : null;
+        final items = shelf is Map ? shelf['contents'] : null;
+        if (items is! List) continue;
+        for (final item in items) {
+          final renderer = item is Map ? item['musicResponsiveListItemRenderer'] : null;
+          if (renderer is Map<String, dynamic>) {
+            final episode = PodcastPageParser.fromMusicResponsiveListItemRenderer(
+              MusicResponsiveListItemRenderer.fromJson(renderer),
+            );
+            if (episode != null) episodes.add(episode);
+          }
+        }
+      }
+      return episodes;
+    } catch (_) {
+      return const [];
+    }
   }
 
   Future<NextPageData> getNextPage({
@@ -718,9 +861,27 @@ class YouTubeService {
     return const [];
   }
 
-  Future<bool> registerPlayback(String playbackUrl) async {
+  Future<bool> registerPlayback(
+    String playbackUrl, {
+    String? playlistId,
+  }) async {
     try {
-      final response = await _dio.get(playbackUrl);
+      const alphabet =
+          'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
+      final random = Random.secure();
+      final cpn = List.generate(
+        16,
+        (_) => alphabet[random.nextInt(alphabet.length)],
+      ).join();
+      final uri = Uri.parse(playbackUrl);
+      final query = <String, String>{
+        ...uri.queryParameters,
+        'cpn': cpn,
+        if (playlistId != null && playlistId.isNotEmpty) 'list': playlistId,
+      };
+      final response = await _dio.get(
+        uri.replace(queryParameters: query).toString(),
+      );
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (_) {
       return false;
