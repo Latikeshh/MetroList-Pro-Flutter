@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:dio/dio.dart';
 
 import 'innertube_client.dart';
+import 'models/account_info.dart';
 import 'models/explore_models.dart';
 import 'models/renderers.dart';
 import 'models/runs.dart';
@@ -1584,10 +1585,24 @@ class YouTubeService {
     return page;
   }
 
-  Future<Map<String, String>?> getAccountInfo() async {
+  Future<AccountInfo?> getAccountInfo() async {
     final cookie = _innerTubeClient.cookie;
     if (cookie == null || cookie.isEmpty) return null;
-    return verifySession(cookie);
+    try {
+      final menu = await getAccountMenu(cookie);
+      final header = menu?.actions?.firstOrNull?.openPopupAction?.popup
+          ?.multiPageMenuRenderer?.header?.activeAccountHeaderRenderer;
+      final accountName = header?.accountName;
+      if (accountName == null || accountName.isEmpty) return null;
+      return AccountInfo(
+        name: accountName,
+        email: header?.email,
+        channelHandle: header?.channelHandle,
+        thumbnailUrl: header?.thumbnailUrl,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<List<PodcastItem>> getSavedPodcastShows() => getSavedPodcasts();
