@@ -1260,7 +1260,7 @@ class YouTubeService {
     String? endTimes,
     String? currentMediaTime,
     String? realTime,
-    bool? final,
+    bool? isFinal,
     int? format,
     YouTubeClient client = YouTubeClient.webRemix,
   }) async {
@@ -1302,7 +1302,7 @@ class YouTubeService {
         if (endTimes != null) 'et': endTimes,
         if (currentMediaTime != null) 'cmt': currentMediaTime,
         if (realTime != null) 'rt': realTime,
-        if (final != null) 'final': final ? '1' : '0',
+        if (isFinal != null) 'final': isFinal ? '1' : '0',
         if (format != null) 'fmt': format.toString(),
         if (playlistId != null && playlistId.isNotEmpty) 'list': playlistId,
       };
