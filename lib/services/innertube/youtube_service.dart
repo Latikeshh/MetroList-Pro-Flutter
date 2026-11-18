@@ -2137,7 +2137,7 @@ class YouTubeService {
     required Stream<List<int>> content,
     void Function(double progress)? onProgress,
   }) async {
-    if (contentLength <= 0 || contentLength >= 314572800) return false;
+    if (contentLength <= 0) return false;
     onProgress?.call(0);
     try {
       final start = await _dio.post(
