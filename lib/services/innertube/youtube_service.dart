@@ -1365,8 +1365,67 @@ class YouTubeService {
     return items;
   }
 
-  Future<Map<String, dynamic>?> getNewEpisodesPlaylistInfo() =>
-      browseResponse(browseId: 'VLRDPN', useLogin: true);
+  Future<PlaylistItem?> getNewEpisodesPlaylistInfo() async {
+    final response = await browseResponse(
+      browseId: 'VLRDPN',
+      useLogin: true,
+    );
+    if (response == null) return null;
+
+    final header = response['header'];
+    final immersive = header?['musicImmersiveHeaderRenderer'];
+    final visual = header?['musicVisualHeaderRenderer'];
+    final detail = header?['musicDetailHeaderRenderer'];
+
+    String? firstThumbnail(dynamic thumbs) {
+      if (thumbs is List && thumbs.isNotEmpty) {
+        return thumbs.last['url']?.toString();
+      }
+      return null;
+    }
+
+    final thumbnail = firstThumbnail(
+          immersive?['thumbnail']?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'],
+        ) ??
+        firstThumbnail(
+          visual?['thumbnail']?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'],
+        ) ??
+        firstThumbnail(
+          detail?['thumbnail']?['croppedSquareThumbnailRenderer']?['thumbnail']?['thumbnails'],
+        ) ??
+        firstThumbnail(
+          response['contents']?['twoColumnBrowseResultsRenderer']
+              ?['secondaryContents']?['sectionListRenderer']?['contents']?[0]
+              ?['musicShelfRenderer']?['contents']?[0]
+              ?['musicMultiRowListItemRenderer']?['thumbnail']
+              ?['musicThumbnailRenderer']?['thumbnail']?['thumbnails'],
+        );
+
+    String readTitle(dynamic renderer) {
+      final runs = renderer?['title']?['runs'];
+      if (runs is List && runs.isNotEmpty) {
+        return runs.map((run) => run['text']?.toString() ?? '').join();
+      }
+      return '';
+    }
+
+    final title = readTitle(immersive).isNotEmpty
+        ? readTitle(immersive)
+        : readTitle(visual).isNotEmpty
+            ? readTitle(visual)
+            : 'New Episodes';
+
+    return PlaylistItem(
+      id: 'RDPN',
+      title: title,
+      thumbnail: thumbnail,
+      author: null,
+      songCountText: null,
+      playEndpoint: null,
+      shuffleEndpoint: null,
+      radioEndpoint: null,
+    );
+  }
 
   Future<String> getChannelId(String browseId) async {
     try {
