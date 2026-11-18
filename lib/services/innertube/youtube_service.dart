@@ -1054,7 +1054,8 @@ class YouTubeService {
         }
       }
 
-      return resolveArtistIds(episodes);
+      final resolved = await resolveArtistIds(episodes);
+      return resolved.whereType<SongItem>().toList();
     } catch (_) {
       return const [];
     }
