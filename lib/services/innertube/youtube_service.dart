@@ -688,7 +688,14 @@ class YouTubeService {
   Future<LibraryPageData> getLibraryContinuation(String continuation) async {
     try {
       final body = _buildContext()..['continuation'] = continuation;
-      final response = await _dio.post('/browse?continuation=$continuation&ctoken=$continuation', data: body);
+      final response = await _dio.post(
+        '/browse',
+        queryParameters: {
+          'continuation': continuation,
+          'ctoken': continuation,
+        },
+        data: body,
+      );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         return LibraryPageParser.parseLibraryPage(response.data);
       }
