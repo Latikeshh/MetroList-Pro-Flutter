@@ -1256,8 +1256,34 @@ class YouTubeService {
   Future<bool> registerPlayback(
     String playbackUrl, {
     String? playlistId,
+    String? startTimes,
+    String? endTimes,
+    String? currentMediaTime,
+    String? realTime,
+    bool? final,
+    int? format,
+    YouTubeClient client = YouTubeClient.webRemix,
   }) async {
     try {
+      final uri = Uri.tryParse(playbackUrl);
+      const statsHosts = {
+        's.youtube.com',
+        'www.youtube.com',
+        'music.youtube.com',
+      };
+      const statsPaths = {
+        '/api/stats/playback',
+        '/api/stats/watchtime',
+      };
+      if (uri == null ||
+          uri.scheme != 'https' ||
+          uri.port != 443 ||
+          !statsHosts.contains(uri.host) ||
+          !statsPaths.contains(uri.path) ||
+          uri.userInfo.isNotEmpty) {
+        return false;
+      }
+
       const alphabet =
           'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
       final random = Random.secure();
@@ -1265,16 +1291,41 @@ class YouTubeService {
         16,
         (_) => alphabet[random.nextInt(alphabet.length)],
       ).join();
-      final uri = Uri.parse(playbackUrl);
+      final origin = Uri.parse(client.client.endpointUrl).origin;
       final query = <String, String>{
         ...uri.queryParameters,
+        'prettyPrint': 'false',
+        'ver': '2',
+        'c': client.client.clientName,
         'cpn': cpn,
+        if (startTimes != null) 'st': startTimes,
+        if (endTimes != null) 'et': endTimes,
+        if (currentMediaTime != null) 'cmt': currentMediaTime,
+        if (realTime != null) 'rt': realTime,
+        if (final != null) 'final': final ? '1' : '0',
+        if (format != null) 'fmt': format.toString(),
         if (playlistId != null && playlistId.isNotEmpty) 'list': playlistId,
+      };
+      final headers = {
+        ..._getHeaders(client: client),
+        'X-Goog-Api-Format-Version': '1',
+        'Origin': origin,
+        'X-Origin': origin,
+        'Referer': origin + '/',
+        'Cache-Control': 'no-cache',
       };
       final response = await _dio.get(
         uri.replace(queryParameters: query).toString(),
+        options: Options(
+          headers: headers,
+          followRedirects: false,
+          maxRedirects: 0,
+          responseType: ResponseType.plain,
+        ),
       );
-      return response.statusCode == 200 || response.statusCode == 204;
+      return response.statusCode != null &&
+          response.statusCode! >= 200 &&
+          response.statusCode! < 300;
     } catch (_) {
       return false;
     }
