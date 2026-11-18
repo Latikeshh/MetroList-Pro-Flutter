@@ -19,6 +19,7 @@ import 'pages/home_page.dart';
 import 'pages/library_page.dart';
 import 'pages/next_page.dart';
 import 'pages/podcast_page.dart';
+import 'pages/search_summary_page.dart';
 import 'pages/page_helper.dart';
 
 class YouTubeService {
@@ -420,6 +421,53 @@ class YouTubeService {
       }
     } catch (_) {}
     return null;
+  }
+
+  SearchSummaryPageData groupItemsByType(List<YTItem> items) {
+    final grouped = <String, List<YTItem>>{};
+    for (final item in items) {
+      final title = switch (item) {
+        EpisodeItem() => 'Episodes',
+        PodcastItem() => 'Podcasts',
+        AlbumItem() => 'Albums',
+        ArtistItem(:final isProfile) => isProfile ? 'Profiles' : 'Artists',
+        PlaylistItem() => 'Playlists',
+        SongItem(:final isEpisode, :final isVideoSong) =>
+          isEpisode ? 'Episodes' : isVideoSong ? 'Videos' : 'Songs',
+        _ => 'Other results',
+      };
+      grouped.putIfAbsent(title, () => []).add(item);
+    }
+
+    const order = [
+      'Songs',
+      'Videos',
+      'Albums',
+      'Artists',
+      'Playlists',
+      'Podcasts',
+      'Episodes',
+      'Profiles',
+      'Other results',
+    ];
+    return SearchSummaryPageData(
+      summaries: [
+        for (final title in order)
+          if (grouped[title]?.isNotEmpty == true)
+            SearchSummary(title: title, items: grouped[title]!),
+      ],
+    );
+  }
+
+  Future<SearchSummaryPageData> getSearchSummary(
+    String query, {
+    bool recordSearchHistory = false,
+  }) async {
+    final items = await search(
+      query,
+      recordSearchHistory: recordSearchHistory,
+    );
+    return groupItemsByType(items);
   }
 
   Future<ExplorePageData> getExplorePage() async {
