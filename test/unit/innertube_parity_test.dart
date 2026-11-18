@@ -114,11 +114,11 @@ void main() {
       final client = InnerTubeClient();
       client.dataSyncId = 'test-data-sync-id';
 
-      final anonymous = client.buildContext(YouTubeClient.webRemix);
+      final anonymous = client.buildContext(client: YouTubeClient.webRemix);
       expect(anonymous['context']['user'], isNull);
 
       final authenticated = client.buildContext(
-        YouTubeClient.webRemix,
+        client: YouTubeClient.webRemix,
         useLogin: true,
       );
       expect(
@@ -127,7 +127,7 @@ void main() {
       );
 
       final mobile = client.buildContext(
-        YouTubeClient.androidMusic,
+        client: YouTubeClient.androidMusic,
         useLogin: true,
       );
       expect(mobile['context']['user'], isNull);
