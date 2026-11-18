@@ -187,12 +187,13 @@ class PodcastPageParser {
 
     dynamic episodeContents;
     dynamic episodeShelf;
-    if (twoColumnSections is List && twoColumnSections.isNotEmpty) {
-      final first = twoColumnSections.first;
-      if (first is Map) {
-        episodeShelf = first['musicShelfRenderer'] ??
-            first['musicPlaylistShelfRenderer'];
+    if (twoColumnSections is List) {
+      for (final section in twoColumnSections) {
+        if (section is! Map) continue;
+        episodeShelf = section['musicShelfRenderer'] ??
+            section['musicPlaylistShelfRenderer'];
         episodeContents = episodeShelf?['contents'];
+        if (episodeContents is List) break;
       }
     }
     if (episodeContents == null && singleColumnSections is List) {
