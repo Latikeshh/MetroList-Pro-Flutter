@@ -4,6 +4,8 @@ import 'package:metrolist_pro/services/innertube/pages/album_page.dart';
 import 'package:metrolist_pro/services/innertube/pages/next_page.dart';
 import 'package:metrolist_pro/services/innertube/models/youtube_client.dart';
 import 'package:metrolist_pro/services/innertube/pages/artist_page.dart';
+import 'package:metrolist_pro/services/innertube/pages/artist_items_continuation_page.dart';
+import 'package:metrolist_pro/services/innertube/pages/playlist_page.dart';
 import 'package:metrolist_pro/services/innertube/pages/library_page.dart';
 import 'package:metrolist_pro/services/innertube/pages/podcast_page.dart';
 import 'package:metrolist_pro/services/innertube/youtube_service.dart';
@@ -296,6 +298,104 @@ void main() {
       expect(parsed.episodes.single.id, 'episode-1');
       expect(parsed.episodes.single.title, 'Episode One');
       expect(parsed.episodes.single.podcast?.name, 'Test Podcast');
+    });
+
+    test('Artist items continuation parses grid cards and next token', () {
+      final page = ArtistItemsContinuationPageParser.parse({
+        'continuationContents': {
+          'gridContinuation': {
+            'items': [
+              {
+                'musicTwoRowItemRenderer': {
+                  'title': {
+                    'runs': [{'text': 'Continuation Album'}]
+                  },
+                  'navigationEndpoint': {
+                    'browseEndpoint': {
+                      'browseId': 'MPRE-album',
+                      'browseEndpointContextSupportedConfigs': {
+                        'browseEndpointContextMusicConfig': {
+                          'pageType': 'MUSIC_PAGE_TYPE_ALBUM'
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            'continuations': [
+              {'nextContinuationData': {'continuation': 'artist-next'}}
+            ]
+          }
+        }
+      });
+
+      expect(page.items, hasLength(1));
+      expect(page.items.single, isA<AlbumItem>());
+      expect(page.continuation, 'artist-next');
+    });
+
+    test('Playlist continuation parses songs and continuation token', () {
+      final page = PlaylistPageParser.parseContinuation({
+        'continuationContents': {
+          'musicPlaylistShelfContinuation': {
+            'contents': [
+              {
+                'musicResponsiveListItemRenderer': {
+                  'videoId': 'song-cont-1',
+                  'flexColumns': [
+                    {
+                      'musicResponsiveListItemFlexColumnRenderer': {
+                        'text': {
+                          'runs': [{'text': 'Continuation Song'}]
+                        }
+                      }
+                    },
+                    {
+                      'musicResponsiveListItemFlexColumnRenderer': {
+                        'text': {
+                          'runs': [
+                            {
+                              'text': 'Continuation Artist',
+                              'navigationEndpoint': {
+                                'browseEndpoint': {
+                                  'browseId': 'UC-cont-artist',
+                                  'browseEndpointContextSupportedConfigs': {
+                                    'browseEndpointContextMusicConfig': {
+                                      'pageType': 'MUSIC_PAGE_TYPE_ARTIST'
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  'thumbnail': {
+                    'musicThumbnailRenderer': {
+                      'thumbnail': {
+                        'thumbnails': [
+                          {'url': 'https://example.com/continuation.jpg'}
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            'continuations': [
+              {'nextContinuationData': {'continuation': 'playlist-next'}}
+            ]
+          }
+        }
+      });
+
+      expect(page.songs, hasLength(1));
+      expect(page.songs.single.id, 'song-cont-1');
+      expect(page.songs.single.title, 'Continuation Song');
+      expect(page.continuation, 'playlist-next');
     });
 
     test('InnerTubeClient SAPISIDHASH computation works correctly', () {
