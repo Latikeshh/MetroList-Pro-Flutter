@@ -16,4 +16,43 @@ class SearchSummaryPageData {
   final List<SearchSummary> summaries;
 
   const SearchSummaryPageData({this.summaries = const []});
+
+  SearchSummaryPageData filterExplicit(bool enabled) {
+    if (!enabled) return this;
+    return SearchSummaryPageData(
+      summaries: summaries
+          .map((summary) => SearchSummary(
+                title: summary.title,
+                items: summary.items.filterExplicit(),
+              ))
+          .where((summary) => summary.items.isNotEmpty)
+          .toList(),
+    );
+  }
+
+  SearchSummaryPageData filterVideoSongs(bool disableVideos) {
+    if (!disableVideos) return this;
+    return SearchSummaryPageData(
+      summaries: summaries
+          .map((summary) => SearchSummary(
+                title: summary.title,
+                items: summary.items.filterVideoSongs(true),
+              ))
+          .where((summary) => summary.items.isNotEmpty)
+          .toList(),
+    );
+  }
+
+  SearchSummaryPageData filterYoutubeShorts([bool enabled = false]) {
+    if (!enabled) return this;
+    return SearchSummaryPageData(
+      summaries: summaries
+          .map((summary) => SearchSummary(
+                title: summary.title,
+                items: summary.items.filterYoutubeShorts(true),
+              ))
+          .where((summary) => summary.items.isNotEmpty)
+          .toList(),
+    );
+  }
 }
