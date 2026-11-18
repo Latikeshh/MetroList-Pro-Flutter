@@ -117,6 +117,20 @@ class AlbumPageParser {
       }
     }
 
+    final continuationItems = data['continuationContents']?['musicPlaylistShelfContinuation']?['contents'] ??
+        data['continuationContents']?['musicShelfContinuation']?['contents'];
+    if (continuationItems is List) {
+      for (final item in continuationItems) {
+        if (item is Map<String, dynamic>) {
+          final renderer = item['musicResponsiveListItemRenderer'];
+          if (renderer is Map<String, dynamic>) {
+            final song = getSong(MusicResponsiveListItemRenderer.fromJson(renderer));
+            if (song != null) items.add(song);
+          }
+        }
+      }
+    }
+
     return items;
   }
 
