@@ -24,6 +24,37 @@ class SearchPageParser {
     }
 
     try {
+      final continuationShelf = data['continuationContents']?['musicShelfContinuation'];
+      if (continuationShelf is Map) {
+        final rawItems = continuationShelf['contents'];
+        if (rawItems is List) {
+          for (final raw in rawItems) {
+            if (raw is! Map) continue;
+            final rendererJson = raw['musicResponsiveListItemRenderer'];
+            if (rendererJson is Map<String, dynamic>) {
+              final item = toYTItem(
+                MusicResponsiveListItemRenderer.fromJson(rendererJson),
+              );
+              if (item != null) items.add(item);
+            }
+          }
+        }
+        final continuations = continuationShelf['continuations'];
+        if (continuations is List) {
+          for (final entry in continuations) {
+            final token = entry?['nextContinuationData']?['continuation']?.toString();
+            if (token != null && token.isNotEmpty) {
+              continuationToken = token;
+              break;
+            }
+          }
+        }
+        return SearchResult(
+          items: items,
+          continuation: items.isEmpty ? null : continuationToken,
+        );
+      }
+
       final sectionList = data['contents']?['tabbedSearchResultsRenderer']?['tabs']
               ?[0]?['tabRenderer']?['content']?['sectionListRenderer'] ??
           data['contents']?['sectionListRenderer'];
