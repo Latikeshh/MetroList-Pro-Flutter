@@ -10,6 +10,7 @@ import 'models/runs.dart';
 import 'models/response/account_menu_response.dart';
 import 'models/response/get_transcript_response.dart';
 import 'models/youtube_client.dart';
+import 'models/youtube_account.dart';
 import 'models/yt_item.dart';
 import 'pages/album_page.dart';
 import 'pages/artist_page.dart';
@@ -1641,7 +1642,7 @@ class YouTubeService {
     return null;
   }
 
-  Future<Map<String, dynamic>?> accountsList() async {
+  Future<List<YouTubeAccount>> accountsList() async {
     try {
       final body = _buildContext(YouTubeClient.web)
         ..['requestType'] = 'ACCOUNTS_LIST_REQUEST_TYPE_CHANNEL_SWITCHER'
@@ -1651,11 +1652,11 @@ class YouTubeService {
         data: body,
         options: Options(headers: _getHeaders(client: YouTubeClient.web)),
       );
-      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-        return Map<String, dynamic>.from(response.data);
+      if (response.statusCode == 200) {
+        return YouTubeAccount.extractFromJson(response.data);
       }
     } catch (_) {}
-    return null;
+    return const [];
   }
 
   Future<bool> deleteUploadedSong(String entityId) async {
