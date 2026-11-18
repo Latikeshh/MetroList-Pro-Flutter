@@ -782,10 +782,39 @@ class YouTubeService {
   }
 
   Future<List<EpisodeItem>> getPodcastLibraryEpisodes() async {
-    final page = await getLibraryPage(
-      browseId: 'FEmusic_library_non_music_audio_list',
-    );
-    return page.items.whereType<EpisodeItem>().toList();
+    try {
+      final response = await browseResponse(
+        browseId: 'FEmusic_library_non_music_audio_list',
+        useLogin: true,
+      );
+      if (response == null) return const [];
+      final sectionContents = response['contents']
+              ?['singleColumnBrowseResultsRenderer']?['tabs']?[0]
+              ?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
+      if (sectionContents is! List) return const [];
+
+      final episodes = <EpisodeItem>[];
+      for (final section in sectionContents) {
+        if (section is! Map) continue;
+        final shelfItems = section['musicShelfRenderer']?['contents'];
+        final gridItems = section['gridRenderer']?['items'];
+        final rawItems = shelfItems is List ? shelfItems : gridItems;
+        if (rawItems is! List) continue;
+        for (final rawItem in rawItems) {
+          if (rawItem is! Map) continue;
+          final renderer = rawItem['musicResponsiveListItemRenderer'];
+          if (renderer is Map<String, dynamic>) {
+            final episode = PodcastPageParser.fromMusicResponsiveListItemRenderer(
+              MusicResponsiveListItemRenderer.fromJson(renderer),
+            );
+            if (episode != null) episodes.add(episode);
+          }
+        }
+      }
+      return episodes;
+    } catch (_) {
+      return const [];
+    }
   }
 
   Future<List<EpisodeItem>> getNewEpisodes() async {
