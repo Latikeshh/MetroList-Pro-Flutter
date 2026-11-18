@@ -1,7 +1,9 @@
 library;
 
+import '../models/renderers.dart';
 import '../models/yt_item.dart';
 import 'page_helper.dart';
+import 'artist_items_page.dart';
 import 'playlist_continuation_page.dart';
 
 class PlaylistPageParser {
@@ -29,7 +31,7 @@ class PlaylistPageParser {
         if (raw is! Map) continue;
         final renderer = raw['musicResponsiveListItemRenderer'];
         if (renderer is Map<String, dynamic>) {
-          final song = PageHelper.parseSongItemFromListItem(renderer);
+          final song = ArtistItemsPage.fromMusicResponsiveListItemRenderer(MusicResponsiveListItemRenderer.fromJson(renderer));
           if (song != null) songs.add(song);
         }
       }
@@ -66,7 +68,7 @@ class PlaylistPageParser {
             for (final rawItem in shelf['contents']) {
               final renderer = rawItem['musicResponsiveListItemRenderer'];
               if (renderer is Map<String, dynamic>) {
-                final song = PageHelper.parseSongItemFromListItem(renderer);
+                final song = ArtistItemsPage.fromMusicResponsiveListItemRenderer(MusicResponsiveListItemRenderer.fromJson(renderer));
                 if (song != null) songs.add(song);
               }
             }
