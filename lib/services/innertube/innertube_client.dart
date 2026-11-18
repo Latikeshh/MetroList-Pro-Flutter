@@ -21,6 +21,7 @@ class InnerTubeClient {
   Map<String, String> getHeaders({
     YouTubeClient client = YouTubeClient.webRemix,
     String? pageCookie,
+    bool includeAccountCookies = true,
   }) {
     final activeCookie = pageCookie ?? cookie;
     final headers = <String, String>{
@@ -32,7 +33,7 @@ class InnerTubeClient {
       'X-YouTube-Client-Version': client.client.clientVersion,
     };
 
-    if (activeCookie != null && activeCookie.isNotEmpty) {
+    if (includeAccountCookies && activeCookie != null && activeCookie.isNotEmpty) {
       headers['Cookie'] = activeCookie;
       final authorization = getSapisidHash(
         activeCookie,
