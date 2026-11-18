@@ -87,7 +87,7 @@ void main() {
       // Verify song metadata
       expect(song.id, 'd6C4uP9wHBA');
       expect(song.title, 'So Swaezy');
-      expect(song.artists, contains('Hommie Dilliwala'));
+      expect(song.artists.map((artist) => artist.name), contains('Hommie Dilliwala'));
       expect(song.thumbnailUrl, 'https://i.ytimg.com/vi/d6C4uP9wHBA/hqdefault.jpg');
       expect(song.durationSeconds, 192); // 3 minutes 12 seconds = 192 seconds
     });
@@ -115,7 +115,7 @@ extension YouTubeServiceTestExtension on YouTubeService {
                     '';
                 final flexRuns = renderer['flexColumns']?[1]
                     ?['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'];
-                final List<String> artists = [];
+                final List<Artist> artists = [];
                 int? durationSec;
 
                 if (flexRuns is List) {
@@ -129,7 +129,7 @@ extension YouTubeServiceTestExtension on YouTubeService {
                         durationSec = (mins * 60) + secs;
                       }
                     } else if (txt.isNotEmpty && txt != ' • ' && txt != 'Single') {
-                      artists.add(txt);
+                      artists.add(Artist(name: txt));
                     }
                   }
                 }
