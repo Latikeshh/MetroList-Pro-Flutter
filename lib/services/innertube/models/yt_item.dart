@@ -89,7 +89,8 @@ class SongItem extends YTItem {
     required super.title,
     required this.artists,
     this.album,
-    this.duration,
+    int? duration,
+    int? durationSeconds,
     this.musicVideoType,
     this.chartPosition,
     this.chartChange,
@@ -103,7 +104,8 @@ class SongItem extends YTItem {
     this.historyRemoveToken,
     this.isEpisode = false,
     this.uploadEntityId,
-  }) : super(thumbnail: thumbnail ?? thumbnailUrl ?? '');
+  })  : duration = duration ?? durationSeconds,
+        super(thumbnail: thumbnail ?? thumbnailUrl ?? '');
 
   bool get isVideoSong =>
       musicVideoType != null &&
@@ -121,7 +123,7 @@ class AlbumItem extends YTItem {
   final List<Artist>? artists;
   final int? year;
 
-  AlbumItem({
+  const AlbumItem({
     String? browseId,
     String? playlistId,
     String? id,
