@@ -161,13 +161,10 @@ class YouTubeService {
     List<String>? videoIds,
     String? playlistId,
   }) async {
-    if (videoIds != null && videoIds.length > 1000) {
-      throw ArgumentError.value(videoIds.length, 'videoIds', 'Maximum queue size is 1000');
-    }
     try {
-      final body = _buildContext()
-        ..['videoIds'] = videoIds
-        ..['playlistId'] = playlistId;
+      final body = _buildContext();
+      if (videoIds != null) body['videoIds'] = videoIds;
+      if (playlistId != null) body['playlistId'] = playlistId;
       final response = await _dio.post(
         '/music/get_queue',
         data: body,
