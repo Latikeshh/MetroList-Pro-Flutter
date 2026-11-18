@@ -301,6 +301,133 @@ void main() {
       expect(parsed.episodes.single.podcast?.name, 'Test Podcast');
     });
 
+    test('Playlist page parses header, owner and initial shelf songs', () {
+      final page = PlaylistPageParser.parsePlaylistPage(
+        {
+          'contents': {
+            'twoColumnBrowseResultsRenderer': {
+              'tabs': [
+                {
+                  'tabRenderer': {
+                    'content': {
+                      'sectionListRenderer': {
+                        'contents': [
+                          {
+                            'musicResponsiveHeaderRenderer': {
+                              'title': {
+                                'runs': [{'text': 'My Playlist'}]
+                              },
+                              'straplineTextOne': {
+                                'runs': [
+                                  {
+                                    'text': 'Playlist Owner',
+                                    'navigationEndpoint': {
+                                      'browseEndpoint': {'browseId': 'UC-owner'}
+                                    }
+                                  }
+                                ]
+                              },
+                              'secondSubtitle': {
+                                'runs': [{'text': '12 songs'}]
+                              },
+                              'thumbnail': {
+                                'musicThumbnailRenderer': {
+                                  'thumbnail': {
+                                    'thumbnails': [
+                                      {'url': 'https://example.com/playlist.jpg'}
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              ],
+              'secondaryContents': {
+                'sectionListRenderer': {
+                  'contents': [
+                    {
+                      'musicPlaylistShelfRenderer': {
+                        'contents': [
+                          {
+                            'musicResponsiveListItemRenderer': {
+                              'playlistItemData': {
+                                'videoId': 'playlist-song-1',
+                                'playlistSetVideoId': 'playlist-set-1'
+                              },
+                              'flexColumns': [
+                                {
+                                  'musicResponsiveListItemFlexColumnRenderer': {
+                                    'text': {
+                                      'runs': [{'text': 'Playlist Song'}]
+                                    }
+                                  }
+                                },
+                                {
+                                  'musicResponsiveListItemFlexColumnRenderer': {
+                                    'text': {
+                                      'runs': [
+                                        {
+                                          'text': 'Playlist Artist',
+                                          'navigationEndpoint': {
+                                            'browseEndpoint': {
+                                              'browseId': 'UC-song-artist',
+                                              'browseEndpointContextSupportedConfigs': {
+                                                'browseEndpointContextMusicConfig': {
+                                                  'pageType': 'MUSIC_PAGE_TYPE_ARTIST'
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ],
+                              'thumbnail': {
+                                'musicThumbnailRenderer': {
+                                  'thumbnail': {
+                                    'thumbnails': [
+                                      {'url': 'https://example.com/song.jpg'}
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ],
+                        'continuations': [
+                          {'nextContinuationData': {'continuation': 'songs-next'}}
+                        ]
+                      }
+                    }
+                  ],
+                  'continuations': [
+                    {'nextContinuationData': {'continuation': 'page-next'}}
+                  ]
+                }
+              }
+            }
+          }
+        },
+        'VLplaylist-1',
+      );
+
+      expect(page.playlist.title, 'My Playlist');
+      expect(page.playlist.author?.name, 'Playlist Owner');
+      expect(page.playlist.songCountText, '12 songs');
+      expect(page.songs, hasLength(1));
+      expect(page.songs.single.id, 'playlist-song-1');
+      expect(page.songs.single.setVideoId, 'playlist-set-1');
+      expect(page.songsContinuation, 'songs-next');
+      expect(page.continuation, 'page-next');
+    });
+
     test('Artist items continuation parses grid cards and next token', () {
       final page = ArtistItemsContinuationPageParser.parse({
         'continuationContents': {
