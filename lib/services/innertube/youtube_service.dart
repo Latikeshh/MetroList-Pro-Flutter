@@ -1685,7 +1685,13 @@ class YouTubeService {
       final response = await _dio.post(
         '${client.client.endpointUrl}/player',
         data: body,
-        options: Options(headers: _getHeaders(client: client)),
+        options: Options(
+          headers: _getHeaders(
+            client: client,
+            includeAccountCookies: _innerTubeClient.useLoginForBrowse &&
+                client.client.loginSupported,
+          ),
+        ),
       );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         return Map<String, dynamic>.from(response.data);
