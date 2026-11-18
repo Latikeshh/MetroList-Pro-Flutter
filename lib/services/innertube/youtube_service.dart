@@ -127,7 +127,7 @@ class YouTubeService {
     return null;
   }
 
-  Future<List<Map<String, dynamic>>> getQueue({required List<String> videoIds, String? playlistId}) async {
+  Future<List<Map<String, dynamic>>> getQueue({List<String>? videoIds, String? playlistId}) async {
     try {
       final body = _buildContext()
         ..['videoIds'] = videoIds
@@ -2327,6 +2327,20 @@ class YouTubeService {
   }
 
   Future<List<SongItem>> episodesForLater() => getEpisodesForLater();
+
+  Future<List<SongItem>> queue({
+    List<String>? videoIds,
+    String? playlistId,
+  }) async {
+    final queueMaps = await getQueue(
+      videoIds: videoIds,
+      playlistId: playlistId,
+    );
+    return queueMaps
+        .map(NextPageParser.parsePlaylistPanelVideoRenderer)
+        .whereType<SongItem>()
+        .toList();
+  }
 
 
 }
