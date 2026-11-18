@@ -102,7 +102,7 @@ class YouTubeService {
         },
         data: body,
         options: Options(
-          headers: _getHeaders(client: YouTubeClient.webRemix),
+          headers: const {'Content-Type': 'application/json'},
           responseType: ResponseType.json,
         ),
       );
