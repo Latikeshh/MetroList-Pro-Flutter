@@ -465,11 +465,117 @@ class YouTubeService {
     String query, {
     bool recordSearchHistory = false,
   }) async {
-    final items = await search(
+    final response = await getSearchSummaryResponse(
       query,
       recordSearchHistory: recordSearchHistory,
     );
-    return groupItemsByType(items);
+    if (response == null) return const SearchSummaryPageData();
+
+    final rawSections = response['contents']?['tabbedSearchResultsRenderer']
+        ?['tabs']?[0]?['tabRenderer']?['content']?['sectionListRenderer']?['contents'];
+    if (rawSections is! List) return const SearchSummaryPageData();
+
+    final summaries = <SearchSummary>[];
+
+    List<YTItem> parseResponsiveItems(dynamic rawItems) {
+      if (rawItems is! List) return const [];
+      final items = <YTItem>[];
+      for (final raw in rawItems) {
+        if (raw is! Map) continue;
+        final renderer = raw['musicResponsiveListItemRenderer'];
+        if (renderer is Map<String, dynamic>) {
+          final item = LibraryPageParser.fromMusicResponsiveListItemRenderer(
+            MusicResponsiveListItemRenderer.fromJson(renderer),
+          );
+          if (item != null) items.add(item);
+        }
+      }
+      return items;
+    }
+
+    for (final rawSection in rawSections) {
+      if (rawSection is! Map) continue;
+
+      final cardJson = rawSection['musicCardShelfRenderer'];
+      if (cardJson is Map<String, dynamic>) {
+        final card = MusicCardShelfRenderer.fromJson(cardJson);
+        final items = <YTItem>[
+          if (SearchSummaryPageData.fromMusicCardShelfRenderer(card) case final item?)
+            item,
+          ...card.contents
+              .map(LibraryPageParser.fromMusicResponsiveListItemRenderer)
+              .whereType<YTItem>(),
+        ];
+        if (items.isNotEmpty) {
+          summaries.add(
+            SearchSummary(
+              title: card.headerTitle ?? 'Top result',
+              items: items,
+            ),
+          );
+        }
+        continue;
+      }
+
+      final shelf = rawSection['musicShelfRenderer'];
+      if (shelf is Map<String, dynamic>) {
+        final items = parseResponsiveItems(shelf['contents']);
+        if (items.isEmpty) continue;
+        final titleRuns = shelf['title']?['runs'];
+        final apiTitle = titleRuns is List && titleRuns.isNotEmpty
+            ? titleRuns.first['text']?.toString()
+            : null;
+        if (apiTitle != null && apiTitle.isNotEmpty) {
+          summaries.add(SearchSummary(title: apiTitle, items: items));
+        } else {
+          summaries.addAll(groupItemsByType(items).summaries);
+        }
+        continue;
+      }
+
+      final itemSection = rawSection['itemSectionRenderer'];
+      if (itemSection is Map<String, dynamic>) {
+        final items = parseResponsiveItems(itemSection['contents']);
+        if (items.isNotEmpty) summaries.addAll(groupItemsByType(items).summaries);
+      }
+    }
+
+    final merged = <String, List<YTItem>>{};
+    for (final summary in summaries) {
+      merged.putIfAbsent(summary.title, () => []).addAll(summary.items);
+    }
+    const order = [
+      'Top result',
+      'Songs',
+      'Videos',
+      'Albums',
+      'Artists',
+      'Playlists',
+      'Podcasts',
+      'Episodes',
+      'Profiles',
+      'Other results',
+    ];
+    final titles = merged.keys.toList()
+      ..sort((a, b) {
+        final ai = order.indexOf(a);
+        final bi = order.indexOf(b);
+        return (ai < 0 ? order.length : ai).compareTo(
+          bi < 0 ? order.length : bi,
+        );
+      });
+
+    return SearchSummaryPageData(
+      summaries: [
+        for (final title in titles)
+          SearchSummary(
+            title: title,
+            items: {
+              for (final item in merged[title]!) item.id: item,
+            }.values.toList(),
+          ),
+      ],
+    );
   }
 
   Future<ExplorePageData> getExplorePage() async {
