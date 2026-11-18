@@ -143,7 +143,11 @@ class YouTubeService {
       if (continuation != null && continuation.isNotEmpty) {
         body['continuation'] = continuation;
         final response = await _dio.post(
-          '/browse?continuation=$continuation&ctoken=$continuation',
+          '/browse',
+          queryParameters: {
+            'continuation': continuation,
+            'ctoken': continuation,
+          },
           data: body,
         );
         if (response.statusCode == 200) {
@@ -390,7 +394,11 @@ class YouTubeService {
     try {
       final body = _buildContext()..['continuation'] = continuation;
       final response = await _dio.post(
-        '/search?continuation=$continuation&ctoken=$continuation',
+        '/search',
+        queryParameters: {
+          'continuation': continuation,
+          'ctoken': continuation,
+        },
         data: body,
         options: Options(
           headers: recordSearchHistory ? _getHeaders() : const {},
@@ -487,7 +495,14 @@ class YouTubeService {
   Future<ArtistSection?> getArtistItemsContinuation(String continuation) async {
     try {
       final body = _buildContext()..['continuation'] = continuation;
-      final response = await _dio.post('/browse?continuation=$continuation&ctoken=$continuation', data: body);
+      final response = await _dio.post(
+        '/browse',
+        queryParameters: {
+          'continuation': continuation,
+          'ctoken': continuation,
+        },
+        data: body,
+      );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         final continuationContents = response.data['continuationContents']?['musicShelfContinuation'];
         if (continuationContents is Map<String, dynamic>) {
@@ -1232,11 +1247,14 @@ class YouTubeService {
       if (continuation != null && continuation.isNotEmpty) {
         body['continuation'] = continuation;
       }
-      final path = continuation == null
-          ? '/browse'
-          : '/browse?continuation=$continuation&ctoken=$continuation';
       final response = await _dio.post(
-        path,
+        '/browse',
+        queryParameters: continuation == null
+            ? null
+            : {
+                'continuation': continuation,
+                'ctoken': continuation,
+              },
         data: body,
         options: Options(headers: useLogin ? _getHeaders() : const {}),
       );
