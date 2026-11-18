@@ -2,7 +2,6 @@ library;
 
 import '../models/renderers.dart';
 import '../models/yt_item.dart';
-import 'page_helper.dart';
 import 'artist_items_page.dart';
 import 'playlist_continuation_page.dart';
 
@@ -40,7 +39,9 @@ class PlaylistPageParser {
     String? continuation;
     if (rawContinuations is List) {
       for (final entry in rawContinuations) {
-        final token = entry?['nextContinuationData']?['continuation']?.toString();
+        final token = entry?['nextContinuationData']?['continuation']?.toString() ??
+            entry?['continuationItemRenderer']?['continuationEndpoint']
+                ?['continuationCommand']?['token']?.toString();
         if (token != null && token.isNotEmpty) {
           continuation = token;
           break;
