@@ -1307,7 +1307,10 @@ class YouTubeService {
         if (playlistId != null && playlistId.isNotEmpty) 'list': playlistId,
       };
       final headers = {
-        ..._getHeaders(client: client),
+        ..._getHeaders(
+          client: client,
+          includeAccountCookies: client.client.loginSupported,
+        ),
         'X-Goog-Api-Format-Version': '1',
         'Origin': origin,
         'X-Origin': origin,
