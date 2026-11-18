@@ -211,13 +211,16 @@ class PodcastPageParser {
       continuation = continuationList.first?['nextContinuationData']?['continuation']
           ?.toString();
     }
-    final subscribed = header?['subscriptionButton']?['subscribeButtonRenderer']
-            ?['subscribed'] == true ||
-        header?['buttons']?.any(
-              (button) =>
-                  button['subscribeButtonRenderer']?['subscribed'] == true,
-            ) ==
-            true;
+    final headerButtons = header is Map ? header['buttons'] : null;
+    final subscribed =
+        header?['subscriptionButton']?['subscribeButtonRenderer']?['subscribed'] ==
+                true ||
+            (headerButtons is List &&
+                headerButtons.any(
+                  (button) =>
+                      button is Map &&
+                      button['subscribeButtonRenderer']?['subscribed'] == true,
+                ));
 
     final episodes = <EpisodeItem>[];
     if (episodeContents is List) {
